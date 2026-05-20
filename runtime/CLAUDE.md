@@ -26,7 +26,10 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 - **Drift:** code change at evidence path demotes `confirmed` → `inferred`; refresh and log ambiguity in `unknowns.md`.
 - **No phantom ADRs:** never cite `ADR-NNNN` unless the file exists. Planned ADRs → `assumptions.md`/`unknowns.md`.
 - **Implicit constraints:** during init, scan code for enums, validators, required fields, ID semantics, status fields, retry/idempotency. Place global → `constraints.md`, system-specific → `systems/<name>/system.md`.
+- **Validation semantics:** preserve enforcement layer (service / handler / DB / repository fallback / business intent). Never flatten everything into "required fields".
 - **Internal table hygiene:** table cells follow same conventions as front-matter (no `TBD`).
+- **Language consistency:** one dominant natural language per repo (chosen at init). Never translate identifiers (table names, enum values, RPC names, etc.). No mixed-language sentences in narrative content.
+- **Reference stability:** prefer `id`/file references over translated heading text. Citing `core.product` is stable; citing `"Data Sources" section` is fragile.
 
 ## Notes
 

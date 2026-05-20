@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-05-20 |
-| Status | `decision` — extended after first real-world audit |
+| Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 |
 
-> **v1.0 → v1.1 changes:** Added Category J (Evidence Consistency) and Category K (Drift & Phantom Detection). Refined F4 to detect domain-list duplication. Added rules for internal table TBD detection and glossary signal compaction.
+> **v1.1 → v1.2 changes:** Added Category L (Language & Reference Stability). Extended Category J with rules J10–J14 (validation-layer attribution: required-field mismatch, DB-vs-service distinction, repository fallback, layer attribution, generated-code policy). No new file types or zones.
 
 ---
 
@@ -148,7 +148,7 @@ Use this as:
 | I6 | `loading.default_mode` references an existing file in `modes/` | error | yes |
 | I7 | `governance.require_evidence_for` contains only valid status values | error | yes |
 
-### Category J — Evidence Consistency *(v1.1)*
+### Category J — Evidence Consistency *(v1.1, extended v1.2)*
 
 | ID | Rule | Severity | Automatable |
 |---|---|---|---|
@@ -161,6 +161,12 @@ Use this as:
 | J7 | External integrations cited match actual client libraries / config | error | yes |
 | J8 | Validation rules listed in `constraints.md` match actual validators / sentinel checks in code | warning | partial |
 | J9 | Implicit constraints found in code (enums, validators, required fields, ID semantics, currency rules) are reflected in `constraints.md` or `systems/<name>/system.md` | warning | partial |
+| J10 | **Required-field claims match service-layer empty-checks** — no field listed as service-required unless a corresponding empty-check exists in code *(v1.2)* | error | partial |
+| J11 | **DB constraints documented separately from service validation** — fields with `CHECK`/`NOT NULL` but no service empty-check are documented as DB-constrained, NOT service-required *(v1.2)* | error | partial |
+| J12 | **Repository fallback behavior documented** — fields where repository sets a default (e.g. `IsZero() → now`) are documented as repository-fallback, not service-required *(v1.2)* | warning | partial |
+| J13 | **Validation layer attribution present** — every constraint entry states which layer enforces it (service / handler / DB / repository / business intent) *(v1.2)* | warning | manual |
+| J14 | **Generated code policy documented** — if `gen/` (or equivalent) is committed, the policy (always-commit vs regenerate-only) is recorded in a layer/system file or ADR | info | manual |
+| J15 | **Table role not conflated** — context does not describe migration-seeded, lookup, or read-only tables as part of runtime write flows or transaction boundaries; each table's runtime role is stated explicitly *(v0.2.1 precision patch)* | error | partial |
 
 ### Category K — Drift & Phantom Detection *(v1.1)*
 
@@ -174,6 +180,19 @@ Use this as:
 | K6 | Glossary signal compaction: if all rows share `status`/`source`, header-note format is used | info | yes |
 | K7 | Producer/source-system list is canonical in `01-core/product.md`; other files reference, do not duplicate | warning | partial |
 | K8 | `inferred.md` evidence quality: every entry's evidence resolves to a real path/doc | error | yes |
+
+### Category L — Language & Reference Stability *(v1.2)*
+
+| ID | Rule | Severity | Automatable |
+|---|---|---|---|
+| L1 | Repo declares a dominant context language (set during init; recorded in `00-meta/conventions.md` or commit history) | warning | partial (heuristic) |
+| L2 | No file mixes whole-sentence prose in two languages (identifier + foreign word fragments allowed) | warning | partial (lang-detect) |
+| L3 | Untranslated narrative residue (paragraph in second language inside otherwise translated file) flagged | warning | partial (lang-detect) |
+| L4 | Technical identifiers (table names, enum values, RPC names, migration filenames, env keys) NOT translated | error | partial (must match code symbols verbatim) |
+| L5 | Glossary terminology consistent across context (same term → same definition wherever it appears) | warning | yes |
+| L6 | Cross-file references prefer `id` or file path over translated heading text | warning | partial |
+| L7 | No quoted translated headings used as primary reference (e.g. citing `"Sumber Data"` or `"Data Sources"` directly) | warning | partial |
+| L8 | Anchor links use stable slugs (`#producers`), not language-dependent ones | info | yes |
 
 ---
 
@@ -214,7 +233,7 @@ forge validate --severity error  # errors only
 forge validate --ci         # exit code 1 on any error (CI integration)
 ```
 
-> Catatan: CLI spec ada di fase tooling nanti. Dokumen ini hanya mendefinisikan RULES yang harus diimplementasikan.
+> Note: CLI spec is in the future tooling phase. This document only defines the RULES to be implemented.
 
 ---
 
@@ -290,9 +309,9 @@ B1 (front-matter exists)
        └── E1–E4 (source rules)
 ```
 
-Run in order: **A → B → C → I → D → E → F → G → H → J → K** to avoid cascading false failures.
+Run in order: **A → B → C → I → D → E → F → G → H → J → K → L** to avoid cascading false failures.
 
-J and K depend on Phases 0.5–6 of init having completed and on D (evidence) being clean — they verify *content correctness* against the repo, while D verifies *metadata correctness*.
+J, K, and L depend on Phases 0.5–6 of init having completed and on D (evidence) being clean — they verify *content correctness* and *language/reference quality*, while D verifies *metadata correctness*.
 
 ---
 
@@ -404,7 +423,7 @@ CONFIG CONSISTENCY
 [ ] I6  default_mode exists
 [ ] I7  governance values valid
 
-EVIDENCE CONSISTENCY (J — v1.1)
+EVIDENCE CONSISTENCY (J — v1.1+v1.2)
 [ ] J1  table count matches migrations
 [ ] J2  cited migrations exist
 [ ] J3  entity names match domain files
@@ -414,6 +433,12 @@ EVIDENCE CONSISTENCY (J — v1.1)
 [ ] J7  external integrations match clients
 [ ] J8  validation rules match validators
 [ ] J9  implicit constraints surfaced
+[ ] J10 required-field claims match service empty-checks (v1.2)
+[ ] J11 DB constraints separated from service validation (v1.2)
+[ ] J12 repository fallback documented (v1.2)
+[ ] J13 validation layer attribution present (v1.2)
+[ ] J14 generated code policy documented (v1.2)
+[ ] J15 table roles not conflated — seed/lookup separated from runtime writes (precision patch)
 
 DRIFT & PHANTOM (K — v1.1)
 [ ] K1  every cited ADR exists
@@ -424,4 +449,14 @@ DRIFT & PHANTOM (K — v1.1)
 [ ] K6  glossary signal compaction applied
 [ ] K7  producer list canonical in product.md
 [ ] K8  inferred entries have valid evidence
+
+LANGUAGE & REFERENCE STABILITY (L — v1.2)
+[ ] L1  dominant language declared
+[ ] L2  no mixed-language sentences
+[ ] L3  no untranslated residue paragraphs
+[ ] L4  identifiers preserved verbatim
+[ ] L5  glossary terms consistent across files
+[ ] L6  cross-refs prefer id/path over heading text
+[ ] L7  no quoted translated heading citations
+[ ] L8  stable anchor slugs
 ```

@@ -1,10 +1,10 @@
 # forge-context-engine — Engine Configuration
-# Bukan file konteks naratif. Diisi saat Context Initialization untuk repo target.
+# Not a narrative context file. Customize during Context Initialization for the target repo.
 
-forge_version: "0.5"
+forge_version: "0.2.1"   # framework version
 tier: standard  # minimal | standard | advanced
 
-# Hapus layer yang tidak relevan untuk repo target.
+# Remove layers not relevant to the target repo.
 layers_enabled:
   - backend
   - frontend
@@ -12,7 +12,7 @@ layers_enabled:
   - infrastructure
   - testing
 
-# Diisi saat init. Format: { name: <unit>, type: service|app|worker|library|infra-module|platform-component }
+# Populated during init. Format: { name: <unit>, type: service|app|worker|library|infra-module|platform-component }
 systems: []
 
 loading:

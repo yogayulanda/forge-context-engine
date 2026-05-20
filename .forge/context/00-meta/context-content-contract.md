@@ -1,6 +1,6 @@
 ---
 id: meta.context-content-contract
-title: Kontrak Konten Konteks — forge-context-engine
+title: Context Content Contract — forge-context-engine
 type: meta
 status: decision
 confidence: high
@@ -12,293 +12,298 @@ owner: forge-context-engine
 updated: 2026-05-20
 ---
 
-# Kontrak Konten Konteks — forge-context-engine
+# Context Content Contract — forge-context-engine
 
-> Versi 0.1 (Draft) · Pendamping `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · Bahasa Indonesia
+> v0.2 · Companion to `FORGE-CONTEXT-ARCHITECTURE.md` v0.5
 
-## 0. Tentang Dokumen Ini
+## 0. About This Document
 
-Dokumen arsitektur (`FORGE-CONTEXT-ARCHITECTURE.md`) menjawab **di mana** konteks hidup — struktur folder, zona, tier. Dokumen ini menjawab **apa** yang boleh hidup di setiap tempat dan **bagaimana** AI memperlakukannya: kontrak semantik per komponen.
+`FORGE-CONTEXT-ARCHITECTURE.md` answers **where** context lives — folder structure, zones, tiers. This document answers **what** may live in each place and **how** AI treats it: semantic contract per component.
 
-Ini **bukan** template dokumen, **bukan** skema markdown wajib, **bukan** birokrasi format. Kontrak ini mengikat **makna dan batas**, bukan tata letak. Penulis file bebas memakai struktur adaptif (heading, tabel, daftar) selama batas semantik dipatuhi — tidak ada section markdown yang diwajibkan.
+This is NOT a document template, NOT a mandatory markdown schema, NOT format bureaucracy. The contract binds **meaning and boundaries**, not layout. File authors may use adaptive structure (headings, tables, lists) as long as semantic boundaries are respected.
 
-Fungsi dokumen: aturan konteks engineering yang dapat dibaca AI, panduan anti-tumpang-tindih, panduan anti-halusinasi, dan panduan rawatan jangka panjang.
+Functions: AI-readable context engineering rules, anti-overlap guide, anti-hallucination guide, long-term maintenance guide.
 
-`CLAUDE.md` (adapter root) tidak menyimpan konteks sehingga berada di luar cakupan kontrak ini.
+`CLAUDE.md` (root adapter) stores no context and is outside this contract's scope.
 
-**Pemuatan dokumen ini sendiri:** ini file `type: meta` di `00-meta/`, namun bersifat referensi tata kelola yang verbose. Direkomendasikan dimuat **selektif** (saat Context Initialization & pemeliharaan konteks), bukan pada setiap bootstrap — `conventions.md` tetap satu-satunya file normatif yang selalu dimuat. Konsekuensi terhadap invarian arsitektur §8 dicatat di §6.
+**Loading this document:** it is `type: meta` in `00-meta/`, but is a verbose governance reference. Recommended: load **selectively** (during Context Initialization & context maintenance), not on every bootstrap — `conventions.md` remains the only normative file always loaded. Consequences for architecture invariant §8 noted in §6.
 
-## 1. Cara Membaca Kontrak
+## 1. How to Read This Contract
 
-Setiap komponen di §3 didefinisikan lewat tujuh field tetap:
+Each component in §3 is defined via seven fixed fields:
 
-1. **Tujuan** — alasan keberadaan komponen, dalam satu kalimat.
-2. **Pengetahuan yang dimuat** — jenis pengetahuan yang menjadi miliknya.
-3. **Yang TIDAK boleh dimuat** — batas eksklusi; mencegah tumpang-tindih.
-4. **Perilaku AI** — bagaimana AI membaca/menulis/mempercayai komponen.
-5. **Verbositas** — kepadatan yang diharapkan (lihat skala di bawah).
-6. **Loading** — kapan komponen masuk window konteks (lihat §2.1).
-7. **Relasi** — keterkaitan & garis pemisah dengan komponen lain.
+1. **Purpose** — reason for the component's existence, one sentence.
+2. **Knowledge it holds** — type of knowledge it owns.
+3. **What it must NOT hold** — exclusion boundaries; prevents overlap.
+4. **AI behavior** — how AI reads/writes/trusts the component.
+5. **Verbosity** — expected density (see scale below).
+6. **Loading** — when the component enters the AI context window (see §2.1).
+7. **Relations** — connections & separation lines with other components.
 
-**Skala verbositas:** `Minimal` (key/value) · `Sangat ringkas` (satu baris per entri) · `Ringkas` (pernyataan tegas) · `Sedang` (prosa padat terstruktur) · `Adaptif` (variabel sesuai isi).
+**Verbosity scale:** `Minimal` (key/value) · `Very concise` (one line per entry) · `Concise` (assertive statements) · `Medium` (dense structured prose) · `Adaptive` (variable by content).
 
-## 2. Aturan Global
+## 2. Global Rules
 
-### 2.1 Tiga Tier Pemuatan
+### 2.1 Three Loading Tiers
 
-| Tier | Komponen | Implikasi kontrak |
+| Tier | Components | Contract implication |
 |---|---|---|
-| **Selalu dimuat** | `forge.config.yaml`, `00-meta/*`, `01-core/*` | Biayanya dibayar setiap tugas → **wajib hemat token** (size budget ketat). |
-| **Selektif** | `layers/*`, `systems/*`, `knowledge/*`, `modes/<aktif>` | Dimuat hanya bila mode/intent merujuknya → **inilah sumber penghematan token**. |
-| **Dihasilkan kemudian** | `generated/*`, `temp/*` | Tidak ada saat bootstrap; dibuat saat dipakai, dimuat on-demand. |
+| **Always loaded** | `forge.config.yaml`, `00-meta/*`, `01-core/*` | Cost paid on every task → **must be token-efficient** (strict size budget). |
+| **Selective** | `layers/*`, `systems/*`, `knowledge/*`, `modes/<active>` | Loaded only when mode/intent references them → **this is where token savings come from**. |
+| **Generated later** | `generated/*`, `temp/*` | Absent at bootstrap; created when needed, loaded on-demand. |
 
-### 2.2 Hierarki Otoritas (resolusi konflik konteks)
+### 2.2 Authority Hierarchy (context conflict resolution)
 
-Bila dua sumber konteks bertentangan, AI mengikuti urutan kepercayaan ini (tertinggi → terendah):
+When two context sources conflict, AI follows this trust order (highest → lowest):
 
-1. **Kode nyata repo** — sumber kebenaran untuk fakta implementasi; konteks hanyalah cache turunan.
-2. **`knowledge/decisions/` (ADR)** — sumber kebenaran untuk intent & keputusan.
-3. **`01-core/constraints.md`** — batas keras; mengungguli kenyamanan desain.
-4. **Fakta `status: confirmed` tulisan manusia** di `01-core/`, `layers/`, `systems/`.
-5. **`01-core/principles.md`** — panduan lunak/heuristik.
-6. **`status: inferred`** — `knowledge/inferred.md` serta entri layer/system ber-inferensi.
+1. **Live repo code** — source of truth for implementation facts; context is a derived cache.
+2. **`knowledge/decisions/` (ADR)** — source of truth for intent & decisions.
+3. **`01-core/constraints.md`** — hard limits; overrides design convenience.
+4. **`status: confirmed` human-authored facts** in `01-core/`, `layers/`, `systems/`.
+5. **`01-core/principles.md`** — soft guidance/heuristics.
+6. **`status: inferred`** — `knowledge/inferred.md` and inferred layer/system entries.
 7. **`status: assumption`** — `knowledge/assumptions.md`.
-8. **`generated/*`** — tidak pernah otoritatif.
-9. **`temp/*`** — tidak pernah otoritatif; disposable.
+8. **`generated/*`** — never authoritative.
+9. **`temp/*`** — never authoritative; disposable.
 
-### 2.3 Uji Penempatan — Satu Fakta, Satu Rumah
+### 2.3 Placement Test — One Fact, One Home
 
-Sebelum menulis sebuah fakta, tanyakan: *"Selingkup apa fakta ini benar?"* — Berlaku untuk seluruh produk → `01-core/`. Berlaku untuk satu disiplin engineering → `layers/`. Benar **hanya** untuk satu unit implementasi → `systems/`. Konteks bersama dideklarasikan sekali dan dirujuk via `id`, **tidak pernah disalin**. Duplikasi hanya sah bila berupa ringkasan yang disengaja dan ditandai sebagai turunan.
+Before writing a fact, ask: *"At what scope is this fact true?"*
+- True for the entire product → `01-core/`
+- True for one engineering discipline → `layers/`
+- True **only** for one implementation unit → `systems/`
 
-### 2.4 Hemat Token
+Shared context declared once, referenced via `id`, **never copied**. Duplication only valid as an intentional summary explicitly marked as derivative.
 
-Utamakan konteks padat-sinyal di atas dokumentasi verbose. Hormati size budget (`01-core/*` ≤ ~200 baris; `layers/*` ≤ ~150; `systems/*` ≤ ~200; `modes/*` ≤ ~40). File yang melewati budget dipecah jadi sub-file, bukan dipadatkan dengan mengorbankan kejelasan. Komponen tier "Selalu dimuat" memikul disiplin paling ketat.
+### 2.4 Token Efficiency
 
-### 2.5 Anti-Halusinasi
+Prioritize signal-dense context over verbose documentation. Respect size budgets (`01-core/*` ≤ ~200 lines; `layers/*` ≤ ~150; `systems/*` ≤ ~200; `modes/*` ≤ ~40). Files exceeding budget split into sub-files, not compressed at the cost of clarity. Always-loaded tier components carry the strictest discipline.
 
-AI tidak pernah mengarang arsitektur, API, service, database, integrasi, kepemilikan, atau aturan bisnis. Tanpa `evidence`, status maksimal `assumption`. Inferensi baru masuk `inferred.md`/`generated/`, tidak pernah ke file `source: human`. `unknown` adalah tujuan wajib — dilarang ditebak. Kontrak operasi AI yang normatif berada di `00-meta/conventions.md` (lihat arsitektur §9).
+### 2.5 Anti-Hallucination
 
-## 3. Kontrak per Komponen
+AI never fabricates architecture, APIs, services, databases, integrations, ownership, or business rules. Without `evidence`, max status is `assumption`. New inferences go to `inferred.md`/`generated/`, never to `source: human` files. `unknown` is a mandatory destination — guessing forbidden. Normative AI operational contract lives in `00-meta/conventions.md`.
+
+## 3. Per-Component Contract
 
 ### 3.1 `00-meta/context-manifest.md`
 
-*Lokasi: `.forge/context/00-meta/` · type: `meta`*
+*Location: `.forge/context/00-meta/` · type: `meta`*
 
-- **Tujuan** — Indeks dan peta-routing seluruh sistem konteks; titik masuk tunggal yang memberi tahu AI file apa yang ada, di mana, dan aturan pemuatannya.
-- **Pengetahuan yang dimuat** — Registry file/folder beserta tier pemuatannya; urutan & aturan bootstrap; daftar layer, system, dan mode aktif; aturan validasi manifest. Pointer, bukan isi.
-- **Yang TIDAK boleh dimuat** — Pengetahuan domain apa pun (produk, arsitektur, konvensi, aturan bisnis); salinan isi file lain; keputusan engineering.
-- **Perilaku AI** — Dibaca pertama (setelah config) sebagai tabel routing untuk menentukan file lain yang dimuat per mode/intent. Bukan sumber fakta; bila manifest dan file nyata berbeda, file nyata menang dan manifest diperbarui.
-- **Verbositas** — Sangat ringkas; gaya tabel/daftar.
-- **Loading** — Selalu dimuat (bootstrap, file pertama `00-meta`).
-- **Relasi** — Akar graf dependensi; merujuk semua komponen. Berpasangan dengan `forge.config.yaml` (config = pengaturan; manifest = isi & routing). Dikonsumsi `modes/` saat resolusi delta.
+- **Purpose** — Index and routing map for the entire context system; single entry point telling AI what files exist, where, and their loading rules.
+- **Knowledge it holds** — File/folder registry with loading tiers; bootstrap order & rules; active layers, systems, and modes; manifest validation rules. Pointers, not content.
+- **Must NOT hold** — Any domain knowledge (product, architecture, conventions, business rules); copies of other file content; engineering decisions.
+- **AI behavior** — Read first (after config) as routing table to determine which files to load per mode/intent. Not a fact source; if manifest and actual files differ, actual files win and manifest is updated.
+- **Verbosity** — Very concise; table/list style.
+- **Loading** — Always loaded (bootstrap, first `00-meta` file).
+- **Relations** — Root of dependency graph; references all components. Paired with `forge.config.yaml` (config = settings; manifest = content & routing). Consumed by `modes/` during delta resolution.
 
 ### 3.2 `00-meta/conventions.md`
 
-*Lokasi: `.forge/context/00-meta/` · type: `meta`*
+*Location: `.forge/context/00-meta/` · type: `meta`*
 
-- **Tujuan** — Aturan main sistem konteks itu sendiri: konvensi penamaan & ID, skema front-matter, kosakata status, kontrak operasi AI (normatif), jalur promosi status, siklus hidup & staleness.
-- **Pengetahuan yang dimuat** — Konvensi stabil repo-wide tentang **cara mengelola konteks**; definisi "inti yang selalu termuat"; kontrak baca/tulis AI.
-- **Yang TIDAK boleh dimuat** — Konvensi koding spesifik disiplin (→ `layers/`); prinsip engineering produk (→ `principles.md`); pengetahuan domain; pengaturan mesin (→ `forge.config.yaml`).
-- **Perilaku AI** — Selalu hadir; kontrak operasi AI di sini bersifat **normatif** dan wajib dipatuhi (tidak menaikkan status sendiri, tidak menulis ke file `source: human`, tidak menebak `unknown`). Acuan setiap kali membuat/memperbarui file konteks.
-- **Verbositas** — Ringkas; pernyataan aturan yang tegas dan dapat dicek.
-- **Loading** — Selalu dimuat (bootstrap, `00-meta`).
-- **Relasi** — Menormakan setiap file konteks. Aturannya ditegakkan oleh blok `governance` di `forge.config.yaml`. Berbeda dari `principles.md`: ini aturan sistem konteks, bukan prinsip engineering produk.
+- **Purpose** — Rules of the context system itself: naming & ID conventions, front-matter schema, status vocabulary, AI operational contract (normative), status promotion path, lifecycle & staleness.
+- **Knowledge it holds** — Stable repo-wide conventions about **how to manage context**; definition of always-loaded core; AI read/write contract.
+- **Must NOT hold** — Discipline-specific coding conventions (→ `layers/`); product engineering principles (→ `principles.md`); domain knowledge; engine settings (→ `forge.config.yaml`).
+- **AI behavior** — Always present; AI operational contract here is **normative** and must be obeyed (no self-promoting status, no writing to `source: human` files, no guessing `unknown`). Reference every time creating/updating context files.
+- **Verbosity** — Concise; assertive, checkable rule statements.
+- **Loading** — Always loaded (bootstrap, `00-meta`).
+- **Relations** — Normalizes every context file. Rules enforced by `governance` block in `forge.config.yaml`. Distinct from `principles.md`: this is context system rules, not product engineering principles.
 
 ### 3.3 `00-meta/glossary.md`
 
-*Lokasi: `.forge/context/00-meta/` · type: `meta` · opsional pada tier Minimal*
+*Location: `.forge/context/00-meta/` · type: `meta` · optional in Minimal tier*
 
-- **Tujuan** — Kosakata kanonik: definisi tunggal dan otoritatif untuk istilah domain/teknis yang ambigu atau spesifik proyek.
-- **Pengetahuan yang dimuat** — Entri `istilah — definisi kanonik — status`; hanya istilah spesifik domain/proyek, akronim, atau istilah bermakna khusus di repo ini; alias bila perlu.
-- **Yang TIDAK boleh dimuat** — Istilah engineering umum; tutorial/penjelasan panjang; deskripsi arsitektur atau produk (→ `01-core/`).
-- **Perilaku AI** — Tabel lookup untuk meresolusi istilah ambigu dan menyelaraskan penamaan; mencegah makna karangan. Bila pemakaian menyimpang dari glossary, glossary menang atau gap dicatat.
-- **Verbositas** — Sangat ringkas; satu baris per istilah. Justru karena selalu dimuat, ketat-padat adalah syarat.
-- **Loading** — Selalu dimuat saat ada (`00-meta`); opsional pada tier Minimal.
-- **Relasi** — Mendukung `product.md`, `architecture.md`, `systems/*` dengan kosakata bersama; dirujuk via istilah, tidak disalin.
+- **Purpose** — Canonical vocabulary: single authoritative definition for ambiguous or project-specific domain/technical terms.
+- **Knowledge it holds** — `term — canonical definition` entries; only project/domain-specific terms, acronyms, or terms with special meaning in this repo; aliases if needed.
+- **Must NOT hold** — General engineering terms; tutorials/long explanations; architecture or product descriptions (→ `01-core/`).
+- **AI behavior** — Lookup table for resolving ambiguous terms and aligning naming; prevents fabricated meanings. If usage deviates from glossary, glossary wins or gap is recorded.
+- **Verbosity** — Very concise; one line per term. Because always loaded, tight-dense is a requirement.
+- **Loading** — Always loaded when present (`00-meta`); optional in Minimal tier.
+- **Relations** — Supports `product.md`, `architecture.md`, `systems/*` with shared vocabulary; referenced by term, not copied.
 
 ### 3.4 `01-core/product.md`
 
-*Lokasi: `.forge/context/01-core/` · type: `core`*
+*Location: `.forge/context/01-core/` · type: `core`*
 
-- **Tujuan** — Konteks produk & domain tingkat global: apa produk ini, masalah yang dipecahkan, untuk siapa, dan batas sistem — menjawab "produk apa & mengapa".
-- **Pengetahuan yang dimuat** — Ringkasan produk; domain & ruang masalah; pengguna & pemangku kepentingan; batas sistem (IN/OUT scope); istilah inti produk. Fakta & keputusan eksplisit.
-- **Yang TIDAK boleh dimuat** — Arsitektur teknis & solusi (→ `architecture.md`); detail satu unit (→ `systems/`); konvensi koding; roadmap spekulatif; materi marketing.
-- **Perilaku AI** — Selalu tersedia sebagai latar. AI menambatkan setiap keputusan generasi/spec pada intent produk & batas scope; menolak menambah fitur di luar scope tanpa keputusan; scope tak jelas → `unknowns.md`.
-- **Verbositas** — Sedang; prosa padat, ≤ ~200 baris.
-- **Loading** — Selalu dimuat (inti `01-core`).
-- **Relasi** — Membatasi `architecture.md` (masalah → solusi). Sumber intent untuk `modes/planning` & SDD masa depan. Berbeda dari `architecture.md`: product = ruang masalah, architecture = ruang solusi.
+- **Purpose** — Global product & domain context: what the product is, problem solved, for whom, and system boundaries — answers "what product & why".
+- **Knowledge it holds** — Product summary; domain & problem space; users & stakeholders; system boundaries (IN/OUT scope); core product terms. Facts & explicit decisions.
+- **Must NOT hold** — Technical architecture & solutions (→ `architecture.md`); single-unit details (→ `systems/`); coding conventions; speculative roadmap; marketing material.
+- **AI behavior** — Always available as background. AI anchors every generation/spec decision to product intent & scope boundaries; refuses to add features outside scope without a decision; unclear scope → `unknowns.md`.
+- **Verbosity** — Medium; dense prose, ≤ ~200 lines.
+- **Loading** — Always loaded (`01-core` core).
+- **Relations** — Constrains `architecture.md` (problem → solution). Intent source for `modes/planning` & future SDD. Distinct from `architecture.md`: product = problem space, architecture = solution space.
 
 ### 3.5 `01-core/architecture.md`
 
-*Lokasi: `.forge/context/01-core/` · type: `core`*
+*Location: `.forge/context/01-core/` · type: `core`*
 
-- **Tujuan** — Arsitektur sistem tingkat tinggi & global: gaya arsitektur, komponen utama, alur data menyeluruh, integrasi eksternal, batasan arsitektural.
-- **Pengetahuan yang dimuat** — Struktur level-sistem; tanggung jawab & batas komponen besar; alur data tingkat tinggi; titik integrasi eksternal; keputusan arsitektural mayor (dengan `status` & `evidence`).
-- **Yang TIDAK boleh dimuat** — Detail internal satu disiplin (→ `layers/`); detail satu unit (→ `systems/`); alasan bisnis (→ `product.md`); konvensi koding; arsitektur yang ditebak tanpa evidence.
-- **Perilaku AI** — Model mental sistem yang selalu hadir. AI menghormati batas komponen, **tidak mengarang** komponen/service/database/integrasi di luar yang terdaftar; komponen tak terverifikasi → `inferred`; gap → `unknowns.md`.
-- **Verbositas** — Sedang; terstruktur, ≤ ~200 baris.
-- **Loading** — Selalu dimuat (inti `01-core`).
-- **Relasi** — Induk konseptual `layers/` & `systems/` (keduanya menspesialisasikan, tidak menyalin). Dibatasi oleh `product.md` & `constraints.md`. Keputusan besar dicatat sebagai ADR di `knowledge/decisions/`.
+- **Purpose** — High-level global system architecture: architecture style, major components, end-to-end data flows, external integrations, architectural constraints.
+- **Knowledge it holds** — System-level structure; major component responsibilities & boundaries; high-level data flows; external integration points; major architectural decisions (with `status` & `evidence`).
+- **Must NOT hold** — Single-discipline internals (→ `layers/`); single-unit details (→ `systems/`); business rationale (→ `product.md`); coding conventions; architecture guessed without evidence.
+- **AI behavior** — Always-present mental model of the system. AI respects component boundaries, **does not fabricate** components/services/databases/integrations beyond what is registered; unverified components → `inferred`; gaps → `unknowns.md`.
+- **Verbosity** — Medium; structured, ≤ ~200 lines.
+- **Loading** — Always loaded (`01-core` core).
+- **Relations** — Conceptual parent of `layers/` & `systems/` (both specialize, not copy). Constrained by `product.md` & `constraints.md`. Major decisions recorded as ADRs in `knowledge/decisions/`.
 
 ### 3.6 `01-core/principles.md`
 
-*Lokasi: `.forge/context/01-core/` · type: `core` · opsional pada tier Minimal*
+*Location: `.forge/context/01-core/` · type: `core` · optional in Minimal tier*
 
-- **Tujuan** — Nilai & standar engineering yang tahan lama: heuristik pengambilan keputusan yang memandu penilaian saat aturan konkret tidak mencakup suatu kasus.
-- **Pengetahuan yang dimuat** — Prinsip engineering berprioritas; heuristik trade-off; filosofi keputusan & standar mutu. Stabil, jarang berubah.
-- **Yang TIDAK boleh dimuat** — Konvensi pengelolaan konteks (→ `conventions.md`); batasan keras (→ `constraints.md`); tujuan produk (→ `product.md`); detail implementasi atau aturan spesifik layer.
-- **Perilaku AI** — Penengah trade-off saat aturan konkret tak mencukupi; dipakai untuk menjustifikasi rekomendasi. Bukan batas keras — kalah terhadap `constraints.md` bila berbenturan.
-- **Verbositas** — Sangat ringkas; pernyataan prinsip.
-- **Loading** — Selalu dimuat saat ada (inti `01-core`); opsional pada tier Minimal.
-- **Relasi** — Mendasari konvensi koding per layer (konvensi = prinsip yang dikonkretkan). Dipakai `modes/review`. Berbeda dari `constraints.md`: principles = "sebaiknya", constraints = "wajib".
+- **Purpose** — Durable engineering values & standards: decision-making heuristics that guide judgment when concrete rules don't cover a case.
+- **Knowledge it holds** — Prioritized engineering principles; trade-off heuristics; decision philosophy & quality standards. Stable, rarely changes.
+- **Must NOT hold** — Context management conventions (→ `conventions.md`); hard constraints (→ `constraints.md`); product goals (→ `product.md`); implementation details or layer-specific rules.
+- **AI behavior** — Trade-off arbiter when concrete rules are insufficient; used to justify recommendations. Not a hard limit — yields to `constraints.md` on conflict.
+- **Verbosity** — Very concise; principle statements.
+- **Loading** — Always loaded when present (`01-core` core); optional in Minimal tier.
+- **Relations** — Underlies per-layer coding conventions (convention = concretized principle). Used by `modes/review`. Distinct from `constraints.md`: principles = "should", constraints = "must".
 
 ### 3.7 `01-core/constraints.md`
 
-*Lokasi: `.forge/context/01-core/` · type: `core` · opsional pada tier Minimal*
+*Location: `.forge/context/01-core/` · type: `core` · optional in Minimal tier*
 
-- **Tujuan** — Batas keras dan hal yang tidak bisa dinegosiasi: batasan compliance, performa, biaya, keamanan, dan legacy/platform yang wajib dipatuhi.
-- **Pengetahuan yang dimuat** — Batasan eksplisit & faktual: mandat regulasi, anggaran performa, batas platform, mandat keamanan, teknologi yang dilarang/diwajibkan — dengan `evidence`/sumber.
-- **Yang TIDAK boleh dimuat** — Preferensi atau prinsip lunak (→ `principles.md`); konvensi; tujuan aspiratif; asumsi yang disajikan seolah batasan (→ `knowledge/assumptions.md`).
-- **Perilaku AI** — Batas keras absolut. AI tidak pernah mengusulkan solusi yang melanggarnya; konflik tugas-vs-constraint → **berhenti dan tandai**. Otoritas tertinggi setelah kode nyata & ADR.
-- **Verbositas** — Sangat ringkas; terenumerasi, tegas, dapat diaudit.
-- **Loading** — Selalu dimuat saat ada (inti `01-core`); opsional pada tier Minimal.
-- **Relasi** — Membatasi `architecture.md`, `layers/`, `systems/`, dan `modes/implementation`. Mengungguli `principles.md` saat berkonflik.
+- **Purpose** — Hard limits and non-negotiables: compliance, performance, cost, security, and legacy/platform constraints that must be obeyed.
+- **Knowledge it holds** — Explicit & factual constraints: regulatory mandates, performance budgets, platform limits, security mandates, required/banned technologies — with `evidence`/source.
+- **Must NOT hold** — Soft preferences or principles (→ `principles.md`); conventions; aspirational goals; assumptions presented as constraints (→ `knowledge/assumptions.md`).
+- **AI behavior** — Absolute hard limits. AI never proposes solutions that violate them; task-vs-constraint conflict → **stop and flag**. Highest authority after live code & ADR.
+- **Verbosity** — Very concise; enumerated, assertive, auditable.
+- **Loading** — Always loaded when present (`01-core` core); optional in Minimal tier.
+- **Relations** — Constrains `architecture.md`, `layers/`, `systems/`, and `modes/implementation`. Overrides `principles.md` on conflict.
 
 ### 3.8 `forge.config.yaml`
 
-*Lokasi: `.forge/` (root namespace, satu-satunya komponen di luar `context/`) · tanpa front-matter — file konfigurasi, bukan file konteks naratif*
+*Location: `.forge/` (root namespace, only component outside `context/`) · no front-matter — config file, not narrative context*
 
-- **Tujuan** — Manifest engine yang dapat dibaca mesin: mendeklarasikan **konfigurasi** sistem konteks — tier, layer aktif, daftar systems, mode default, parameter governance & size budget.
-- **Pengetahuan yang dimuat** — Nilai konfigurasi saja: `forge_version`, `tier`, `layers_enabled`, `systems[]`, `loading.default_mode`, `size_budget`, `governance.*`.
-- **Yang TIDAK boleh dimuat** — Pengetahuan domain; prosa; fakta arsitektur; konvensi; narasi manusia. Komentar minimal saja.
-- **Perilaku AI** — Dibaca paling awal saat bootstrap untuk mengetahui **bagaimana** engine dikonfigurasi. Bukan sumber pengetahuan; tidak pernah dikutip sebagai fakta domain. AI boleh mengusulkan perubahan, tidak mengubah diam-diam.
-- **Verbositas** — Minimal; hanya key/value.
-- **Loading** — Selalu dimuat (bootstrap langkah ke-2, sebelum `context/`).
-- **Relasi** — Berpasangan dengan `context-manifest.md` (config = pengaturan & toggle; manifest = indeks isi). Mengaktifkan `layers/`, `systems/`, dan mode default. Parameter `governance`/`size_budget` menegakkan aturan `conventions.md`.
+- **Purpose** — Machine-readable engine manifest: declares **configuration** of the context system — tier, active layers, systems list, default mode, governance & size budget parameters.
+- **Knowledge it holds** — Configuration values only: `forge_version`, `tier`, `layers_enabled`, `systems[]`, `loading.default_mode`, `size_budget`, `governance.*`.
+- **Must NOT hold** — Domain knowledge; prose; architecture facts; conventions; human narrative. Minimal comments only.
+- **AI behavior** — Read earliest at bootstrap to know **how** the engine is configured. Not a knowledge source; never cited as domain fact. AI may propose changes, not silently modify.
+- **Verbosity** — Minimal; key/value only.
+- **Loading** — Always loaded (bootstrap step 2, before `context/`).
+- **Relations** — Paired with `context-manifest.md` (config = settings & toggles; manifest = content index). Activates `layers/`, `systems/`, and default mode. `governance`/`size_budget` parameters enforce `conventions.md` rules.
 
 ### 3.9 `layers/`
 
-*Lokasi: `.forge/context/layers/` · type: `layer` (per file `<layer>.md`)*
+*Location: `.forge/context/layers/` · type: `layer` (per `<layer>.md` file)*
 
-- **Tujuan** — Konteks **horizontal** per peran/disiplin engineering — backend, frontend, mobile, infrastructure, testing (+ observability & security pada tier Advanced); menjawab "bagaimana kita mengerjakan satu disiplin", membentang ke semua sistem.
-- **Pengetahuan yang dimuat** — Per layer: konvensi & pola spesifik disiplin, standar, struktur, batasan layer. Mulai sebagai `README.md` placeholder; konten `<layer>.md` dihasilkan saat init.
-- **Yang TIDAK boleh dimuat** — Konteks global lintas-disiplin (→ `01-core/`); konteks spesifik satu unit (→ `systems/`); pengetahuan produk; apa pun yang disalin dari core. Satu file layer tidak mencampur dua disiplin.
-- **Perilaku AI** — Memuat **hanya** layer yang relevan dengan tugas; tidak mencampur konteks antar-layer. Fakta brownfield → `inferred`+evidence; greenfield → `assumption`+ADR.
-- **Verbositas** — Sedang per layer; fokus, ≤ ~150 baris; dipecah jadi sub-file bila melewati budget.
-- **Loading** — Selektif; per layer, didorong mode/intent. Placeholder README ringan; konten dimuat hanya saat layer aktif.
-- **Relasi** — Menspesialisasikan `architecture.md` dan menerapkan `principles.md`. Ortogonal terhadap `systems/` (layer = irisan horizontal, system = irisan vertikal); uji penempatan §2.3 mencegah duplikasi.
+- **Purpose** — **Horizontal** context per engineering role/discipline — backend, frontend, mobile, infrastructure, testing (+ observability & security in Advanced tier); answers "how we work in one discipline", spanning all systems.
+- **Knowledge it holds** — Per layer: discipline-specific conventions & patterns, standards, structure, layer constraints. Starts as `README.md` placeholder; `<layer>.md` content generated at init.
+- **Must NOT hold** — Cross-discipline global context (→ `01-core/`); single-unit specific context (→ `systems/`); product knowledge; anything copied from core. One layer file does not mix two disciplines.
+- **AI behavior** — Loads **only** layers relevant to the task; does not mix cross-layer context. Brownfield facts → `inferred`+evidence; greenfield → `assumption`+ADR.
+- **Verbosity** — Medium per layer; focused, ≤ ~150 lines; split into sub-files when over budget.
+- **Loading** — Selective; per layer, driven by mode/intent. Placeholder README is lightweight; content loaded only when layer is active.
+- **Relations** — Specializes `architecture.md` and applies `principles.md`. Orthogonal to `systems/` (layer = horizontal slice, system = vertical slice); placement test §2.3 prevents duplication.
 
 ### 3.10 `systems/`
 
-*Lokasi: `.forge/context/systems/` · type: `system` (per `<nama>/system.md`)*
+*Location: `.forge/context/systems/` · type: `system` (per `<name>/system.md`)*
 
-- **Tujuan** — Konteks **vertikal** per unit implementasi nyata — service, app, worker, library, infra-module, platform-component; menjawab "apa yang spesifik tentang satu unit ini", menembus semua layer yang disentuhnya.
-- **Pengetahuan yang dimuat** — Per unit: tanggung jawab, antarmuka publik/API, dependensi (unit lain via `id` + eksternal), layer yang disentuh (referensi), konteks runtime spesifik, unknown/asumsi unit. Hanya yang benar **hanya** untuk unit ini.
-- **Yang TIDAK boleh dimuat** — Konteks global (→ `01-core/`); standar disiplin yang berlaku untuk semua unit sejenis (→ `layers/`); dokumentasi domain bisnis; unit yang tidak ada/dikarang.
-- **Perilaku AI** — Memuat hanya system yang disentuh tugas; dipakai untuk memahami dampak lintas-layer & dependensi antar-unit. Dependensi dinyatakan sebagai referensi `id`, bukan salinan.
-- **Verbositas** — Sedang; fokus per unit, ≤ ~200 baris; dipecah saat besar.
-- **Loading** — Selektif; per unit, didorong mode/intent. Pada monorepo, hanya unit terkait yang dimuat (biaya token per-tugas O(1)).
-- **Relasi** — Menyusun `layers/` secara vertikal; didetailkan di bawah `architecture.md`. Uji penempatan tegas mencegah duplikasi dengan core & layers.
+- **Purpose** — **Vertical** context per real implementation unit — service, app, worker, library, infra-module, platform-component; answers "what is specific about this one unit", cutting across all layers it touches.
+- **Knowledge it holds** — Per unit: responsibilities, public interfaces/API, dependencies (other units via `id` + external), layers touched (references), unit-specific runtime context, unit unknowns/assumptions. Only what is true **only** for this unit.
+- **Must NOT hold** — Global context (→ `01-core/`); discipline standards applying to all similar units (→ `layers/`); business domain documentation; fabricated units.
+- **AI behavior** — Loads only systems touched by the task; used to understand cross-layer impact & inter-unit dependencies. Dependencies declared as `id` references, not copies.
+- **Verbosity** — Medium; focused per unit, ≤ ~200 lines; split when large.
+- **Loading** — Selective; per unit, driven by mode/intent. In monorepo, only related units loaded (per-task token cost O(1)).
+- **Relations** — Composes `layers/` vertically; detailed under `architecture.md`. Strict placement test prevents duplication with core & layers.
 
 ### 3.11 `knowledge/`
 
-*Lokasi: `.forge/context/knowledge/` · berisi `decisions/`, `assumptions.md`, `unknowns.md`, `inferred.md`, `confirmations.md`*
+*Location: `.forge/context/knowledge/` · contains `decisions/`, `assumptions.md`, `unknowns.md`, `inferred.md`, `confirmations.md`*
 
-- **Tujuan** — Ledger kebenaran tunggal: memisahkan secara fisik keenam keadaan pengetahuan dan menjadi mesin resistensi halusinasi sistem.
-- **Pengetahuan yang dimuat** — Lihat batas per sub-komponen:
+- **Purpose** — Single truth ledger: physically separates the six knowledge states and serves as the system's hallucination-resistance engine.
+- **Knowledge it holds** — See per-sub-component boundaries:
 
-  | Sub-komponen | Keadaan | Otoritatif? | Catatan |
+  | Sub-component | State | Authoritative? | Notes |
   |---|---|---|---|
-  | `decisions/` (ADR) | Keputusan / intent | Ya (untuk intent) | Append-only; `ADR-NNNN`; immutable saat `accepted` |
-  | `assumptions.md` | Asumsi sementara | Tidak | Bukan dasar keputusan final |
-  | `unknowns.md` | Gap yang diakui | — | Tujuan wajib; dilarang ditebak |
-  | `inferred.md` | Inferensi AI | Tidak | `source: ai`; wajib dilabeli; dikarantina |
-  | `confirmations.md` | Log konfirmasi | Ya (audit) | Mencatat promosi status ke `confirmed` |
+  | `decisions/` (ADR) | Decision / intent | Yes (for intent) | Append-only; `ADR-NNNN`; immutable when `accepted` |
+  | `assumptions.md` | Temporary assumptions | No | Not a basis for final decisions |
+  | `unknowns.md` | Acknowledged gaps | — | Mandatory destination; guessing forbidden |
+  | `inferred.md` | AI inferences | No | `source: ai`; must be labeled; quarantined |
+  | `confirmations.md` | Confirmation log | Yes (audit) | Records status promotions to `confirmed` |
 
-- **Yang TIDAK boleh dimuat** — Fakta manusia otoritatif (→ `01-core/`/`layers/`/`systems/`); artefak generate mentah (→ `generated/`); scratch (→ `temp/`). `inferred` tidak pernah bercampur fisik dengan fakta manusia.
-- **Perilaku AI** — AI menulis inferensi/asumsi/unknown **di sini**, tidak pernah ke file `source: human`. AI tidak menaikkan status sendiri — hanya mengusulkan; promosi ke `confirmed` butuh entri `confirmations.md`. `unknown` = tujuan wajib, dilarang ditebak.
-- **Verbositas** — Ringkas, append-only; tabel ledger; ADR terstruktur. Tumbuh dengan menambah entri, bukan memperbesar file.
-- **Loading** — Selektif per mode: `decisions/` → implementation/review; `assumptions`/`unknowns` → planning/testing; `inferred` → implementation.
-- **Relasi** — `decisions/` = sumber kebenaran intent (mengikat `architecture.md` & `systems/`). Memberi makan `modes/`. `inferred.md` berpasangan dengan `generated/` (keduanya non-otoritatif).
+- **Must NOT hold** — Authoritative human facts (→ `01-core/`/`layers/`/`systems/`); raw generated artifacts (→ `generated/`); scratch (→ `temp/`). `inferred` never physically mixed with human facts.
+- **AI behavior** — AI writes inferences/assumptions/unknowns **here**, never to `source: human` files. AI does not self-promote status — proposes only; promotion to `confirmed` requires `confirmations.md` entry. `unknown` = mandatory destination, guessing forbidden.
+- **Verbosity** — Concise, append-only; ledger tables; structured ADRs. Grows by adding entries, not enlarging files.
+- **Loading** — Selective per mode: `decisions/` → implementation/review; `assumptions`/`unknowns` → planning/testing; `inferred` → implementation.
+- **Relations** — `decisions/` = intent source of truth (binds `architecture.md` & `systems/`). Feeds `modes/`. `inferred.md` paired with `generated/` (both non-authoritative).
 
 ### 3.12 `modes/`
 
-*Lokasi: `.forge/context/modes/` · type: `mode` (per `<mode>.md`)*
+*Location: `.forge/context/modes/` · type: `mode` (per `<mode>.md`)*
 
-- **Tujuan** — Deklarasi pemuatan konteks per jenis pekerjaan — planning, implementation, review, testing (+ security & documentation pada Advanced); menentukan konteks **apa** yang masuk window AI.
-- **Pengetahuan yang dimuat** — Per mode: `include` (delta di atas inti yang selalu termuat), `on_demand`, `exclude`, `token_budget`. Hanya deklarasi referensi.
-- **Yang TIDAK boleh dimuat** — Pengetahuan domain apa pun; kode runtime/otomasi; langkah prosedural/perilaku; `00-meta/*` atau `01-core/*` (inti tidak pernah didaftar ulang — hanya delta).
-- **Perilaku AI** — AI mengidentifikasi mode aktif lalu mengikuti resep pemuatannya (resolusi `include`/`on_demand`/`exclude`, hormati `token_budget`). Mode = kebijakan pemilihan konteks, bukan kebijakan perilaku.
-- **Verbositas** — Sangat ringkas; deklarasi murni, ≤ ~40 baris per mode.
-- **Loading** — Selektif; hanya mode aktif diresolusi (`default_mode` dari `forge.config.yaml`). Mode itu sendiri yang mendorong pemuatan komponen lain.
-- **Relasi** — Mengonsumsi `context-manifest.md`; mendorong selective loading atas `layers/`, `systems/`, `knowledge/`. Titik ekstensi untuk SDD & agent workflow masa depan.
+- **Purpose** — Context loading declaration per work type — planning, implementation, review, testing (+ security & documentation in Advanced); determines **what** context enters the AI window.
+- **Knowledge it holds** — Per mode: `include` (delta above always-loaded core), `on_demand`, `exclude`, `token_budget`. Declaration references only.
+- **Must NOT hold** — Any domain knowledge; runtime/automation code; procedural/behavioral steps; `00-meta/*` or `01-core/*` (core never re-listed — delta only).
+- **AI behavior** — AI identifies active mode then follows its loading recipe (resolve `include`/`on_demand`/`exclude`, respect `token_budget`). Mode = context selection policy, not behavior policy.
+- **Verbosity** — Very concise; pure declaration, ≤ ~40 lines per mode.
+- **Loading** — Selective; only active mode resolved (`default_mode` from `forge.config.yaml`). Mode itself drives loading of other components.
+- **Relations** — Consumes `context-manifest.md`; drives selective loading of `layers/`, `systems/`, `knowledge/`. Extension point for future SDD & agent workflows.
 
 ### 3.13 `generated/`
 
-*Lokasi: `.forge/context/generated/` · type: `generated` · dibuat saat dipakai*
+*Location: `.forge/context/generated/` · type: `generated` · created when needed*
 
-- **Tujuan** — Konteks turunan hasil generate AI: ringkasan, indeks, peta kode, snapshot yang diekstrak AI dari repo/konteks nyata — terpisah tegas dari ground truth tulisan manusia.
-- **Pengetahuan yang dimuat** — Artefak turunan mesin: peta kode, ringkasan dependensi, snapshot arsitektur terekstrak. Selalu ditandai `source: ai`, status non-otoritatif, dengan timestamp & sumber.
-- **Yang TIDAK boleh dimuat** — Ground truth tulisan manusia; keputusan; batasan; apa pun yang otoritatif. Tidak diedit tangan — diregenerasi, bukan dipelihara.
-- **Perilaku AI** — Diperlakukan sebagai kepercayaan rendah & dapat diregenerasi. AI memverifikasi terhadap sumber nyata sebelum mengandalkannya; tidak pernah dikutip mengungguli `01-core/`. Bisa usang.
-- **Verbositas** — Adaptif; tetap ringkas — ringkasan hemat token, bukan dump.
-- **Loading** — Dihasilkan kemudian; dibuat saat dipakai, dimuat selektif on-demand; tidak pernah selalu-muat.
-- **Relasi** — Diturunkan dari repo nyata + konteks core; dikonsumsi `modes/`. Berpasangan dengan `knowledge/inferred.md` (keduanya non-otoritatif).
+- **Purpose** — AI-generated derivative context: summaries, indexes, code maps, snapshots extracted by AI from the real repo/context — strictly separated from human-authored ground truth.
+- **Knowledge it holds** — Machine-derived artifacts: code maps, dependency summaries, extracted architecture snapshots. Always tagged `source: ai`, non-authoritative status, with timestamp & source.
+- **Must NOT hold** — Human-authored ground truth; decisions; constraints; anything authoritative. Not hand-edited — regenerated, not maintained.
+- **AI behavior** — Treated as low-trust & regenerable. AI verifies against real sources before relying on it; never cited over `01-core/`. Can be stale.
+- **Verbosity** — Adaptive; stays concise — token-efficient summaries, not dumps.
+- **Loading** — Generated later; created when needed, loaded selectively on-demand; never always-loaded.
+- **Relations** — Derived from real repo + core context; consumed by `modes/`. Paired with `knowledge/inferred.md` (both non-authoritative).
 
 ### 3.14 `temp/`
 
-*Lokasi: `.forge/context/temp/` · gitignored · dibuat saat dipakai*
+*Location: `.forge/context/temp/` · gitignored · created when needed*
 
-- **Tujuan** — Scratch ephemeral: konteks kerja berumur pendek untuk satu sesi/tugas. Sepenuhnya disposable.
-- **Pengetahuan yang dimuat** — Catatan transien, state tugas antara, draf konteks — apa pun yang aman dihapus saat sesi berakhir.
-- **Yang TIDAK boleh dimuat** — Apa pun yang tahan lama; keputusan; ground truth; apa pun yang komponen lain bergantung padanya. Tidak di-commit (gitignored).
-- **Perilaku AI** — Boleh dipakai bebas sebagai scratchpad dalam satu tugas; tidak pernah diandalkan lintas sesi; tidak pernah dijadikan otoritas tanpa dipromosikan keluar lebih dulu.
-- **Verbositas** — Tidak dibatasi; tidak relevan karena konten disposable.
-- **Loading** — Tidak pernah dimuat otomatis; hanya dalam tugas aktif yang membuatnya. Dikecualikan dari routing manifest.
-- **Relasi** — Terisolasi — tidak ada komponen yang boleh bergantung padanya. Jalur promosi: `temp/` → (diverifikasi) → `knowledge/` atau `01-core/`.
+- **Purpose** — Ephemeral scratch: short-lived working context for one session/task. Fully disposable.
+- **Knowledge it holds** — Transient notes, intermediate task state, context drafts — anything safe to delete when the session ends.
+- **Must NOT hold** — Anything durable; decisions; ground truth; anything other components depend on. Not committed (gitignored).
+- **AI behavior** — May be used freely as scratchpad within one task; never relied on across sessions; never made authoritative without being promoted out first.
+- **Verbosity** — Unconstrained; irrelevant because content is disposable.
+- **Loading** — Never auto-loaded; only within the active task that created it. Excluded from manifest routing.
+- **Relations** — Isolated — no component may depend on it. Promotion path: `temp/` → (verified) → `knowledge/` or `01-core/`.
 
-## 4. Matriks Ringkas
+## 4. Summary Matrix
 
-| Komponen | Tier pemuatan | Verbositas | Inti batas semantik |
+| Component | Loading tier | Verbosity | Core semantic boundary |
 |---|---|---|---|
-| `context-manifest.md` | Selalu | Sangat ringkas | Indeks & routing — bukan pengetahuan |
-| `conventions.md` | Selalu | Ringkas | Aturan sistem konteks & kontrak AI |
-| `glossary.md` | Selalu * | Sangat ringkas | Kosakata kanonik |
-| `product.md` | Selalu | Sedang | Ruang masalah & domain |
-| `architecture.md` | Selalu | Sedang | Ruang solusi tingkat sistem |
-| `principles.md` | Selalu * | Sangat ringkas | Heuristik "sebaiknya" |
-| `constraints.md` | Selalu * | Sangat ringkas | Batas keras "wajib" |
-| `forge.config.yaml` | Selalu | Minimal | Pengaturan engine |
-| `layers/` | Selektif | Sedang / layer | Disiplin engineering horizontal |
-| `systems/` | Selektif | Sedang / unit | Unit implementasi vertikal nyata |
-| `knowledge/` | Selektif | Ringkas, append-only | Ledger enam keadaan pengetahuan |
-| `modes/` | Selektif | Sangat ringkas | Deklarasi delta pemuatan |
-| `generated/` | Dihasilkan kemudian | Adaptif ringkas | Turunan AI non-otoritatif |
-| `temp/` | Tidak otomatis | Bebas / disposable | Scratch satu sesi |
+| `context-manifest.md` | Always | Very concise | Index & routing — not knowledge |
+| `conventions.md` | Always | Concise | Context system rules & AI contract |
+| `glossary.md` | Always* | Very concise | Canonical vocabulary |
+| `product.md` | Always | Medium | Problem space & domain |
+| `architecture.md` | Always | Medium | Solution space at system level |
+| `principles.md` | Always* | Very concise | "Should" heuristics |
+| `constraints.md` | Always* | Very concise | "Must" hard limits |
+| `forge.config.yaml` | Always | Minimal | Engine settings |
+| `layers/` | Selective | Medium / layer | Horizontal engineering discipline |
+| `systems/` | Selective | Medium / unit | Vertical real implementation unit |
+| `knowledge/` | Selective | Concise, append-only | Six-state knowledge ledger |
+| `modes/` | Selective | Very concise | Loading delta declaration |
+| `generated/` | Generated later | Adaptive concise | Non-authoritative AI derivative |
+| `temp/` | Never auto | Free / disposable | Single-session scratch |
 
-\* Selalu dimuat saat ada; opsional pada tier Minimal.
+\* Always loaded when present; optional in Minimal tier.
 
-## 5. Peta Anti-Overlap
+## 5. Anti-Overlap Map
 
-Garis pemisah untuk pasangan komponen yang paling sering tertukar:
+Separation lines for the most commonly confused component pairs:
 
-| Pasangan | Garis pemisah |
+| Pair | Separation line |
 |---|---|
-| `product.md` ↔ `architecture.md` | Masalah & "mengapa" vs solusi & "bagaimana sistem" |
-| `architecture.md` ↔ `layers/` ↔ `systems/` | Global vs disiplin horizontal vs unit vertikal |
-| `principles.md` ↔ `constraints.md` | Panduan "sebaiknya" vs batas "wajib" |
-| `conventions.md` ↔ `principles.md` | Aturan mengelola sistem konteks vs prinsip engineering produk |
-| `conventions.md` ↔ `layers/` | Konvensi meta-konteks vs konvensi koding per disiplin |
-| `glossary.md` ↔ `product.md` | Definisi istilah satu baris vs deskripsi domain |
-| `context-manifest.md` ↔ `forge.config.yaml` | Indeks isi & routing vs pengaturan & toggle engine |
-| `knowledge/inferred.md` ↔ `generated/` | Entri ledger inferensi terkurasi vs artefak generate mentah |
-| `generated/` ↔ `temp/` | Turunan persisten sampai diregenerasi vs scratch satu sesi |
-| `layers/` ↔ `modes/` | Pengetahuan disiplin yang bertahan vs lensa pemuatan per pekerjaan |
+| `product.md` ↔ `architecture.md` | Problem & "why" vs solution & "how the system works" |
+| `architecture.md` ↔ `layers/` ↔ `systems/` | Global vs horizontal discipline vs vertical unit |
+| `principles.md` ↔ `constraints.md` | "Should" guidance vs "must" hard limits |
+| `conventions.md` ↔ `principles.md` | Context system management rules vs product engineering principles |
+| `conventions.md` ↔ `layers/` | Meta-context conventions vs per-discipline coding conventions |
+| `glossary.md` ↔ `product.md` | One-line term definitions vs domain description |
+| `context-manifest.md` ↔ `forge.config.yaml` | Content index & routing vs settings & engine toggles |
+| `knowledge/inferred.md` ↔ `generated/` | Curated inference ledger entries vs raw generated artifacts |
+| `generated/` ↔ `temp/` | Persistent until regenerated vs single-session scratch |
+| `layers/` ↔ `modes/` | Durable discipline knowledge vs per-work-type loading lens |
 
-## 6. Titik Terbuka
+## 6. Open Points
 
-Hal-hal yang memerlukan keputusan pemilik sebelum kontrak ini naik dari `status: decision` ke `confirmed`:
+Items requiring owner decision before this contract promotes from `status: decision` to `confirmed`:
 
-1. **Pemuatan dokumen ini** — Menempatkan file ber-isi verbose di `00-meta/` menabrak invarian arsitektur §8 ("`00-meta/*` selalu dimuat"). Rekomendasi: dokumen ini dimuat **selektif** (mode `init` & pemeliharaan konteks), dan aturan §8 disempurnakan menjadi "`00-meta/*` selalu dimuat **kecuali** file ber-`loading: selective` eksplisit". Alternatif: pindah ke sub-folder `00-meta/governance/` yang dikecualikan dari always-load.
-2. **Registrasi & validasi** — Saat skeleton dibuat (fase Context Initialization), `context-content-contract.md` harus didaftarkan di `context-manifest.md` dan lulus invarian validasi arsitektur §16 (front-matter valid, `id` unik, terdaftar di manifest).
-3. **Promosi status** — Dokumen ini `status: decision`; konfirmasi pemilik menaikkannya ke `confirmed` dengan mencatat entri di `confirmations.md` saat ledger `knowledge/` aktif.
+1. **Loading of this document** — Placing a verbose file in `00-meta/` conflicts with architecture invariant §8 ("`00-meta/*` always loaded"). Recommendation: load **selectively** (mode `init` & context maintenance), refine §8 to "`00-meta/*` always loaded **except** files with explicit `loading: selective`". Alternative: move to `00-meta/governance/` sub-folder excluded from always-load.
+2. **Registration & validation** — When skeleton is created (Context Initialization phase), `context-content-contract.md` must be registered in `context-manifest.md` and pass architecture validation invariants §16 (valid front-matter, unique `id`, registered in manifest).
+3. **Status promotion** — This document is `status: decision`; owner confirmation promotes it to `confirmed` by recording an entry in `confirmations.md` when the `knowledge/` ledger is active.

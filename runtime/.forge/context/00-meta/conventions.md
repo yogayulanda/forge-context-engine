@@ -223,3 +223,203 @@ When repo evidence at an `evidence: ref` path changes:
 | ADR exists | Cite as `evidence: { type: adr, ref: ... }` |
 | ADR planned but not written | Entry in `assumptions.md` or `unknowns.md` (priority `important`) |
 | Roadmap idea | `unknowns.md` (priority `informational`) — never cited as evidence |
+
+## Language Consistency Rule
+
+Each repo's `.forge/context/` uses **one dominant natural language** for narrative content. Selected during init based on (in order):
+
+1. Existing repo documentation language (README, ADRs, /docs)
+2. Engineering team convention
+3. Pre-existing context (legacy `.ai/` etc.)
+4. Dominant commit/documentation language
+
+The chosen language must be applied consistently across:
+
+`01-core/product.md` · `01-core/architecture.md` · `01-core/principles.md` · `01-core/constraints.md` · `systems/<unit>/system.md` · `layers/<x>/<x>.md` · `00-meta/glossary.md` · `knowledge/inferred.md` · `knowledge/assumptions.md` · `knowledge/unknowns.md` · `knowledge/decisions/ADR-NNNN-*.md` · layer `README.md`
+
+### What MUST NEVER Be Translated
+
+Technical identifiers stay verbatim regardless of dominant language:
+
+- Source code symbols (function/class/variable names)
+- Database table & column names
+- Field names, enum values, status codes
+- Protocol names (gRPC, HTTP, AMQP, etc.)
+- API paths, RPC method names, route patterns
+- Migration filenames
+- Event/topic names, queue names
+- External system names, dependency names
+- Configuration keys (env vars, config paths)
+
+Examples:
+
+| Rule | Example |
+|---|---|
+| Keep verbatim | `ExternalRefID` stays `ExternalRefID` |
+| Keep verbatim | `transaction_error_definitions` stays as-is |
+| Keep verbatim | `direction: INBOUND/OUTBOUND` enum values unchanged |
+| Keep verbatim | `CreateTransactionHistory` RPC name unchanged |
+
+### Mixed Language Allowed Only For
+
+- Preserving repo-native or business-native terminology when no equivalent exists
+- External protocol or product naming
+- Source-code identifiers embedded in prose
+
+Whole sentences in a second language inside an otherwise single-language file are NOT acceptable.
+
+### Anti-Patterns
+
+- Translating only headings while leaving body in another language.
+- Half-translating a file then leaving residue paragraphs untranslated.
+- Translating identifier-shaped terms to "explain" them in prose.
+- Forcing translation of repo-native business jargon that has no equivalent.
+
+## Reference Stability Rule
+
+When one context file refers to content in another, prefer **stable references** over fragile prose pointers — especially for translated/translatable headings.
+
+| Prefer (stable) | Avoid (fragile) |
+|---|---|
+| `core.product` (id ref) | "the product file" |
+| `01-core/product.md` (file ref) | the file currently named "Product" |
+| `core.product → producers list` (semantic ref) | `"Sumber Data"` section / `"Data Sources"` section |
+| `system.payment-service` (id ref) | "payment service docs" |
+| Slug anchor `#producers` if used consistently | Verbatim heading text in any language |
+
+### Why
+
+Heading text changes when language switches or when content is refactored. Identifier (`id`) and file-path references survive both.
+
+### Practical Guidance
+
+- Reference by `id` first, then file path, then anchor — heading text last.
+- If anchor must be used, define it via consistent slug (e.g. `#producers`, `#data-flow`) that does not depend on translated heading.
+- Avoid quoting translated headings inline; cite the file/id and let the reader navigate.
+
+## Validation Semantics Rule
+
+Validation lives in **multiple layers**. Context must preserve where each rule is enforced — never flatten everything into "required fields".
+
+### Validation Layers
+
+| Layer | Where | What it does | How to read in code |
+|---|---|---|---|
+| Handler / API | `internal/handler/*` (or routes) | Transport-level shape, format, range | Validators on request DTOs, OpenAPI/proto annotations |
+| Service | `internal/service/*` (or use-cases) | Business validation, empty-checks, normalization | Functions like `sanitize<X>Input`, explicit `if x == "" return error` |
+| Database | `migrations/*`, schema | `NOT NULL`, `CHECK`, `UNIQUE`, FK | SQL DDL + index definitions |
+| Repository | `internal/repository/*` | Persistence-time fallback, defaults, transaction boundary | Code paths like `if x.IsZero() { x = now }` |
+| Business intent | ADRs, product spec | Why a rule exists | Cross-reference between code and `01-core/product.md` |
+| Inferred | `knowledge/inferred.md` | AI-derived guesses (still needs validation) | — |
+
+### Mandatory Distinctions
+
+When documenting a field constraint, the context must state:
+
+1. **At which layer is it enforced?** (service / handler / DB / repository)
+2. **What is the failure mode?** (returns error, demoted to default, DB-rejected)
+3. **Is it consistent across layers?** (e.g. service-required + DB-NOT NULL = aligned; service-optional + DB-CHECK = different concerns)
+
+### Anti-Pattern
+
+```
+❌ "required: user_id, channel, direction, transaction_time"
+   (flattens 4 different validation realities into one false claim)
+
+✅ Service-required (empty-check): user_id, channel
+   DB-constrained (CHECK): direction (∈ debit|credit)
+   Repository fallback: transaction_time (zero → now)
+```
+
+### Source-of-Truth Order
+
+When validation evidence conflicts:
+1. **Code** wins (service code, schema DDL, repository code).
+2. **ADR** for intent ("why").
+3. **Existing context** is least authoritative — corrected against #1 and #2.
+
+If business intent is unclear (a field is DB-constrained but never service-validated, and no ADR explains why), record an unknown with priority `important`.
+
+## Implicit Constraint Extraction
+
+During brownfield init, AI must scan code for **implicit constraints not obvious from naming alone**, and route them correctly.
+
+### What to Extract
+
+| Source | Extract |
+|---|---|
+| SQL `CHECK` constraints | Enum value sets per column |
+| `UNIQUE` indexes | Uniqueness contracts (e.g. `reference_id`) |
+| `NOT NULL` columns | Hard required-at-DB fields |
+| FK with `CASCADE` / `RESTRICT` | Lifecycle coupling between tables |
+| Service `sanitize*Input` | Service-required vs trimmed-only fields |
+| Validators (`isAlphaString`, regex, length) | Format constraints |
+| Repository defaults / fallbacks | What happens when caller omits a value |
+| Retry / idempotency code | Whether operation is replay-safe |
+| Status transition tables | Allowed lifecycle moves |
+| Currency / amount handling | Smallest-unit storage, ISO codes, non-negative checks |
+| Seeded reference data | Pre-defined codes (error catalogs, lookup tables) |
+
+### Routing
+
+| Constraint nature | Destination |
+|---|---|
+| Global hard rule (compliance, platform-wide, regulatory) | `01-core/constraints.md` |
+| Single-unit behavior | `systems/<name>/system.md` |
+| Weak inference (no clear ADR backing) | `knowledge/inferred.md` |
+| Unclear business intent | `knowledge/unknowns.md` (priority `important`) |
+
+### Audit Triggers
+
+Flag the context as drifted if any of these appear without a corresponding constraint entry:
+- New `CHECK` constraint in a recent migration
+- New `UNIQUE` index added
+- New `sanitize*` empty-check added
+- New repository fallback / default
+- New seeded lookup row in error/code catalog
+
+## Runtime vs Seed Semantics Rule
+
+AI must not describe migration-seeded, bootstrap-only, lookup, or static configuration tables as part of runtime operational write flows unless runtime code actually writes to them.
+
+### Table Role Classification
+
+When extracting database tables during init, classify each by role:
+
+| Role | Definition | Evidence |
+|---|---|---|
+| `operational-write` | Written by application code during normal request/event processing | Repository `Create`/`Update`/`Delete` calls |
+| `transactional-write` | Written together inside one runtime transaction boundary | `dbtx.WithTx` / `BEGIN...COMMIT` wrapping multiple tables |
+| `read-only-runtime` | Read at runtime but never written by application code | Only `SELECT` in repository; no `INSERT`/`UPDATE` |
+| `migration-seeded` | Rows/tables populated only by migration scripts or init scripts | `INSERT` only in `*.up.sql`; no runtime write path |
+| `lookup/reference` | Read at runtime for resolution (e.g. error catalogs, config tables) | `SELECT` in service/repository; seeded by migration |
+| `generated/internal` | Created by framework, ORM, or tooling; not owned by application | ORM audit tables, migration tracking tables |
+| `unknown` | Role cannot be determined from available evidence | — |
+
+### Mandatory Distinctions in Context
+
+When documenting tables in `architecture.md`, `system.md`, or `constraints.md`:
+
+1. **Runtime write path** — tables written by application code during normal operations.
+2. **Transactional write path** — tables written together inside one transaction boundary. State the exact count and names.
+3. **Migration/seed data** — tables or rows populated only by migration scripts. Must NOT be described as part of runtime write flows.
+4. **Lookup/reference** — tables read at runtime for resolution; seeded by migration. State read-only runtime role explicitly.
+5. **Repository fallback** — values assigned by repository code when caller omits them (e.g. `IsZero() → now`). Not a service-layer default.
+6. **Database constraints** — `CHECK`, `UNIQUE`, `FK`, `NOT NULL` enforced at persistence layer. Separate from service validation.
+
+### Anti-Patterns
+
+```
+❌ "writes to 4 tables" — when one table is migration-seeded only
+❌ "4-table transaction" — when only 3 tables are in the runtime transaction boundary
+❌ "owned tables: [A, B, C, D]" — without clarifying runtime role of each
+
+✅ "Create-flow transaction writes to 3 operational tables: A, B, C.
+    D is migration-seeded and read at runtime for lookup; not part of runtime writes."
+```
+
+### If Classification Is Unclear
+
+- Record table role as `unknown` in `knowledge/unknowns.md` (priority `important`).
+- Do not flatten into a generic "owned tables" claim.
+- Do not assume a table is part of the runtime write path without evidence in repository code.

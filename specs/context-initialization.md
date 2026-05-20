@@ -5,11 +5,11 @@
 | Document | Context Initialization Protocol |
 | Version | 1.2 |
 | Date | 2026-05-20 |
-| Status | `decision` — patched after first real-world audit |
+| Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.1 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.2 |
 
-> **v1.1 → v1.2 changes:** Added evidence consistency sweep to Phase 1, implicit constraint extraction to Phase 1, drift refresh guidance to Phase 6, and refined infrastructure activation criteria. Aligned with `forge-context-engine` v0.2.1 patch.
+> **v1.1 → v1.2 changes:** Added evidence consistency sweep, implicit constraint extraction, validation layer attribution, generated code policy check to Phase 1; drift refresh guidance to Phase 6; refined infrastructure activation criteria. Aligned with `forge-context-engine` v0.2.1 patch.
 
 ---
 
@@ -72,12 +72,14 @@ Phase 7:    Human Confirmation Pass            ← NEW (operational feedback v1.
    - Set `loading.default_mode` based on immediate work type.
 3. Merge `.gitignore` entries with target repo's existing `.gitignore`.
 4. Verify `.forge/` structure is intact after copy.
+5. **Declare dominant context language** *(v1.2)* — pick one based on (in order): existing repo docs language, team convention, legacy `.ai/` content, dominant commit language. Record in `00-meta/conventions.md` if it differs from the runtime default. Apply consistently from this phase onward.
 
 ### Exit Criteria
 
 - `forge.config.yaml` reflects actual repo scope.
 - `layers_enabled` contains only layers the repo owns.
 - No broken folder structure.
+- Dominant context language declared.
 
 ---
 
@@ -180,8 +182,38 @@ Before exiting Phase 1, AI runs a cross-check pass:
 | Background workers | Worker entrypoints, schedulers |
 | External integrations | Client libs, dep manifests, integration configs |
 | Validation rules / implicit constraints | Validators, sentinels, enum constraints, required fields, ID semantics, currency rules |
+| Generated code policies | `gen/` directory + commit history (regenerate-only vs always-commit) |
 
 If a context claim does not match the repo (e.g. "3 tables" vs 4 migrations), correct the context. Log root-cause ambiguity in `unknowns.md`.
+
+### Table Role Classification *(precision patch)*
+
+For each database table discovered, determine its runtime role before writing context:
+
+| Question | If yes → role |
+|---|---|
+| Written by application code during normal request/event processing? | `operational-write` |
+| Written together with other tables inside one transaction boundary? | `transactional-write` |
+| Read at runtime but never written by application code? | `read-only-runtime` or `lookup/reference` |
+| Populated only by migration scripts (`INSERT` in `*.up.sql`, no runtime write)? | `migration-seeded` |
+| Created by framework/ORM/tooling, not owned by application? | `generated/internal` |
+| Cannot determine from available evidence? | `unknown` → `unknowns.md` |
+
+State each table's role explicitly in `architecture.md` and `system.md`. Never describe migration-seeded or lookup tables as part of runtime write flows or transaction boundaries.
+
+### Validation Layer Attribution *(v1.2 patch)*
+
+When documenting field constraints, attribute each to the layer that enforces it. Never flatten different validation realities into one "required" list.
+
+| Layer | Source |
+|---|---|
+| Service | `internal/service/*` empty-checks, `sanitize*Input` |
+| Handler / API | `internal/handler/*` validators, OpenAPI/proto annotations |
+| Database | `migrations/*` `NOT NULL`, `CHECK`, `UNIQUE`, FK |
+| Repository | `internal/repository/*` defaults, fallbacks (`IsZero() → now`) |
+| Business intent | ADRs, `01-core/product.md` |
+
+A field can be DB-constrained but not service-required. Document both facts; do not collapse them.
 
 ### Implicit Constraint Extraction *(v1.2)*
 
@@ -206,6 +238,7 @@ While reading code, harvest implicit rules and route them:
 - All `01-core/` files have valid front-matter with correct `status`.
 - Evidence consistency sweep complete; mismatches corrected or logged.
 - Implicit constraints harvested and routed.
+- **Validation layer attribution present** for every constraint entry (which layer enforces it).
 - No phantom ADR references.
 
 ---
@@ -388,7 +421,7 @@ git add .forge/ CLAUDE.md
 git commit -m "forge: context initialization complete"
 ```
 
-> Catatan: Jangan commit `.forge/context/temp/` — sudah di-gitignore.
+> Note: Do not commit `.forge/context/temp/` — already gitignored.
 
 ### Exit Criteria
 
@@ -585,7 +618,7 @@ After successful initialization:
 | Monorepo, 3–5 units | 2–4 hours | All 6 phases |
 | Monorepo, 10+ units | 4–8 hours (batch by unit group) | Phases 0–1 once; Phases 2–5 per batch |
 
-> Catatan: Ini estimasi untuk kolaborasi manusia-AI. Automation akan memangkas durasi ini secara signifikan di fase tooling mendatang.
+> Note: This is an estimate for human-AI collaboration. Automation will significantly reduce these durations in future tooling phases.
 
 ---
 
