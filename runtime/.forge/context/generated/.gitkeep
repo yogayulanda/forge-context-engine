@@ -1,3 +1,11 @@
-# Placeholder. `generated/` created when needed.
-# AI-derived context (code maps, summaries, snapshots) — non-authoritative.
-# Every file here must have `source: ai` and non-authoritative status.
+# generated/ — AI-derived artifacts (code maps, summaries, snapshots).
+# 
+# Lifecycle:
+#   - Overwrite when regenerated.
+#   - Never source-of-truth.
+#   - Must remain reproducible from current code + context.
+# 
+# Commit policy:
+#   - Default gitignored (see /.gitignore at repo root).
+#   - Commit ONLY if: stable, useful across sessions, reproducible.
+#   - Every file MUST have `source: ai` and non-authoritative status.

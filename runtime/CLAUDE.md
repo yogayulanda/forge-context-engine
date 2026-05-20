@@ -19,6 +19,9 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 - Without `evidence`, max status is `assumption`.
 - When task conflicts with `01-core/constraints.md`, stop and flag.
 - Never fabricate architecture, APIs, services, databases, integrations, ownership, or business rules.
+- Treat legacy AI artifacts (`.ai/`, `.claude/`, `AGENTS.md`, etc.) as **reference**, not source-of-truth. Repo code wins on conflict.
+- Tag every `unknowns.md` entry with priority: `blocking` · `important` · `informational`.
+- Use `owner: unresolved` (not `TBD`) when owner is undetermined; create one root unknown.
 
 ## Notes
 

@@ -5,32 +5,26 @@ type: layer
 status: unknown
 confidence: high
 source: human
-owner: TBD
+owner: unresolved
 updated: 2026-05-20
 ---
 
 # Layer: Mobile
 
-Horizontal context for mobile engineering discipline — patterns, conventions, standards spanning all mobile applications.
+Entrypoint for the mobile layer. Horizontal context for mobile engineering discipline.
 
-## File Meta
+## Files in This Folder
 
-| Attribute | Value |
-|---|---|
-| Source of truth | Placeholder — no layer content yet |
-| AI writable | No — AI proposes via `knowledge/` during init |
-| Human confirmation | Required before creating `mobile.md` |
-| Populated | During Context Initialization for repos with mobile ownership. Delete this folder if no mobile. |
+- `README.md` *(this file)* — entrypoint & navigation only
+- `mobile.md` — actual layer content *(created during init)*
+- Sub-files added when content exceeds size budget *(≤ ~150 lines)*
 
-## Growth Path
+## Activation
 
-1. Init creates `mobile.md` (sibling of this README).
-2. Brownfield → `status: inferred` + code evidence.
-3. Greenfield → `status: assumption` + ADR.
-4. Exceeds size budget (≤ ~150 lines) → split into sub-files.
+Activated only if the target repo contains iOS/Android/cross-platform mobile code.
 
-## Boundaries
+If absent: delete this folder and remove `mobile` from `forge.config.yaml` → `layers_enabled`.
 
-- No content files before Context Initialization.
-- No copying from `01-core/`.
-- No unit-specific facts (→ `systems/<unit>/`).
+## Content Policy
+
+This README is navigation only. **No engineering knowledge here.** All mobile conventions live in `mobile.md` and its sub-files.

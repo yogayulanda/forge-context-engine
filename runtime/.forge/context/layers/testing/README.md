@@ -5,32 +5,26 @@ type: layer
 status: unknown
 confidence: high
 source: human
-owner: TBD
+owner: unresolved
 updated: 2026-05-20
 ---
 
 # Layer: Testing
 
-Horizontal context for testing discipline — strategy, test pyramid, naming conventions, coverage boundaries spanning all systems.
+Entrypoint for the testing layer. Horizontal context for testing strategy and conventions.
 
-## File Meta
+## Files in This Folder
 
-| Attribute | Value |
-|---|---|
-| Source of truth | Placeholder — no layer content yet |
-| AI writable | No — AI proposes via `knowledge/` during init |
-| Human confirmation | Required before creating `testing.md` |
-| Populated | During Context Initialization for repos with testing strategy. |
+- `README.md` *(this file)* — entrypoint & navigation only
+- `testing.md` — actual layer content *(created during init)*
+- Sub-files added when content exceeds size budget *(≤ ~150 lines)*
 
-## Growth Path
+## Activation
 
-1. Init creates `testing.md` (sibling of this README).
-2. Brownfield → `status: inferred` + code evidence.
-3. Greenfield → `status: assumption` + ADR.
-4. Exceeds size budget (≤ ~150 lines) → split into sub-files.
+Activated if the target repo contains test files or test runner configuration.
 
-## Boundaries
+If absent: delete this folder and remove `testing` from `forge.config.yaml` → `layers_enabled`.
 
-- No content files before Context Initialization.
-- No copying from `01-core/`.
-- No unit-specific facts (→ `systems/<unit>/`).
+## Content Policy
+
+This README is navigation only. **No engineering knowledge here.** All testing conventions live in `testing.md` and its sub-files.

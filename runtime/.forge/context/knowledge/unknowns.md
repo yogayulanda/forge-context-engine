@@ -24,11 +24,12 @@ Acknowledged knowledge gaps. Mandatory destination when AI encounters incomplete
 
 ## Rules
 
-- Each entry has owner & status.
+- Each entry has owner, status, and priority.
+- Priority: `blocking` (cannot proceed) · `important` (resolve this cycle) · `informational` (resolve when convenient).
 - Resolution: answer goes to correct semantic location (`01-core/`/`layers/`/`systems/` if human fact, or `inferred.md` if AI inference), then unknown entry marked `resolved`.
 
 ## Entries
 
-| ID | Question / Gap | Owner | Created | Status | Resolution |
-|---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| ID | Question / Gap | Priority | Owner | Created | Status | Resolution |
+|---|---|---|---|---|---|---|
+| — | — | — | — | — | — | — |

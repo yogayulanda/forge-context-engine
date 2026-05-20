@@ -5,32 +5,26 @@ type: layer
 status: unknown
 confidence: high
 source: human
-owner: TBD
+owner: unresolved
 updated: 2026-05-20
 ---
 
 # Layer: Frontend
 
-Horizontal context for frontend engineering discipline — patterns, conventions, standards spanning all frontend systems.
+Entrypoint for the frontend layer. Horizontal context for frontend engineering discipline.
 
-## File Meta
+## Files in This Folder
 
-| Attribute | Value |
-|---|---|
-| Source of truth | Placeholder — no layer content yet |
-| AI writable | No — AI proposes via `knowledge/` during init |
-| Human confirmation | Required before creating `frontend.md` |
-| Populated | During Context Initialization for repos with frontend ownership. Delete this folder if no frontend. |
+- `README.md` *(this file)* — entrypoint & navigation only
+- `frontend.md` — actual layer content *(created during init)*
+- Sub-files added when content exceeds size budget *(≤ ~150 lines)*
 
-## Growth Path
+## Activation
 
-1. Init creates `frontend.md` (sibling of this README).
-2. Brownfield → `status: inferred` + code evidence.
-3. Greenfield → `status: assumption` + ADR.
-4. Exceeds size budget (≤ ~150 lines) → split into sub-files.
+Activated only if the target repo contains UI/web client code.
 
-## Boundaries
+If absent: delete this folder and remove `frontend` from `forge.config.yaml` → `layers_enabled`.
 
-- No content files before Context Initialization.
-- No copying from `01-core/`.
-- No unit-specific facts (→ `systems/<unit>/`).
+## Content Policy
+
+This README is navigation only. **No engineering knowledge here.** All frontend conventions live in `frontend.md` and its sub-files.

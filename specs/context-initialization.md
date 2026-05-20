@@ -3,11 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context Initialization Protocol |
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2026-05-20 |
-| Status | `decision` — awaiting owner confirmation |
+| Status | `decision` — refined after first real-world test |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer |
+
+> **v1.0 → v1.1 changes:** Added Phase 0.5 (legacy AI artifact discovery) and Phase 7 (human confirmation pass). Refined ownership handling, layer activation rules, and unknown priority based on first real-world initialization on `transaction-history-service`.
 
 ---
 
@@ -44,13 +46,15 @@ Before running init:
 ## 2. Initialization Phases
 
 ```
-Phase 0: Setup & Configuration
-Phase 1: Core Context Discovery
-Phase 2: Layer Identification & Population
-Phase 3: System Unit Registration
-Phase 4: Knowledge Ledger Seeding
-Phase 5: Manifest Finalization
-Phase 6: Validation & First Commit
+Phase 0:    Setup & Configuration
+Phase 0.5:  Legacy AI Context Discovery       ← NEW (operational feedback v1.1)
+Phase 1:    Core Context Discovery
+Phase 2:    Layer Identification & Population
+Phase 3:    System Unit Registration
+Phase 4:    Knowledge Ledger Seeding
+Phase 5:    Manifest Finalization
+Phase 6:    Validation & First Commit
+Phase 7:    Human Confirmation Pass            ← NEW (operational feedback v1.1)
 ```
 
 ---
@@ -77,7 +81,56 @@ Phase 6: Validation & First Commit
 
 ---
 
-## 4. Phase 1 — Core Context Discovery
+## 4. Phase 0.5 — Legacy AI Context Discovery
+
+**Actor:** Hybrid (AI scans, human classifies on conflict)
+
+### Goal
+
+Discover and classify pre-existing AI/context artifacts before populating new context. Real repos often contain `.ai/`, `.claude/`, `.cursor/`, `AGENTS.md`, or ad-hoc architecture docs. These accelerate init when used correctly — and corrupt it when blindly trusted.
+
+### Discovery Targets
+
+Scan target repo for:
+
+- `.ai/`, `.claude/`, `.cursor/`, `.github/copilot/`, `.aider/`
+- `AGENTS.md`, `CLAUDE.md` (existing), `CONTEXT.md`, `ARCHITECTURE.md` at root
+- `docs/`, `architecture/`, `adr/`, `decisions/` folders
+- README sections that describe architecture, conventions, decisions
+- `*.context.md`, `*.ai.md` patterns
+
+### Classification
+
+Each discovered artifact gets one classification:
+
+| Class | Meaning | Treatment |
+|---|---|---|
+| `authoritative` | Owned, current, validated by team | Reference as evidence; promote facts to correct zone with `source: hybrid` |
+| `useful-reference` | Likely accurate but not formally validated | Use to seed `inferred` entries; cite as evidence |
+| `outdated` | Predates significant changes; contradicts code | Record contradiction in `unknowns.md`; do NOT use as evidence |
+| `unknown-authority` | Origin/freshness unclear | Default to `useful-reference` until confirmed; add unknown entry |
+
+### Operating Rules
+
+1. **Repo code wins on conflict.** If legacy doc says X but code shows Y, code is truth.
+2. **Never copy verbatim** into `01-core/`/`layers/`/`systems/`. Re-express with proper `status` + `evidence`.
+3. **Conflicts → `unknowns.md`** with priority `important` (or `blocking` for security/data integrity).
+4. **Cite legacy as evidence** with `evidence: [{ type: doc, ref: .ai/architecture.md }]` when content is reused.
+5. Legacy artifacts may **stay in place** during transition. They are reference, not source-of-truth.
+
+### Output
+
+A discovery summary added to `knowledge/inferred.md` listing each legacy artifact and its classification. Used as input for Phases 1–3.
+
+### Exit Criteria
+
+- All legacy AI artifacts identified and classified.
+- Conflicts with code recorded as unknowns.
+- AI is aware of which legacy content to lean on (vs ignore) during downstream phases.
+
+---
+
+## 5. Phase 1 — Core Context Discovery
 
 **Actor:** Hybrid (AI proposes, human confirms)
 
@@ -122,7 +175,7 @@ Populate `01-core/{product, architecture, principles, constraints}.md` with real
 
 ---
 
-## 5. Phase 2 — Layer Identification & Population
+## 6. Phase 2 — Layer Identification & Population
 
 **Actor:** Hybrid
 
@@ -159,7 +212,7 @@ Before writing any fact to a layer file, ask:
 
 ---
 
-## 6. Phase 3 — System Unit Registration
+## 7. Phase 3 — System Unit Registration
 
 **Actor:** Hybrid
 
@@ -203,7 +256,7 @@ For every fact about to enter `system.md`, apply:
 
 ---
 
-## 7. Phase 4 — Knowledge Ledger Seeding
+## 8. Phase 4 — Knowledge Ledger Seeding
 
 **Actor:** AI (with human review)
 
@@ -223,10 +276,12 @@ Populate initial entries in all four knowledge ledgers from discoveries during P
 
 ### Rules
 
-- Every entry has: ID, owner, created date, status.
+- Every entry has: ID, owner, created date, status, **priority**.
+- Unknown priority levels: `blocking` · `important` · `informational`.
 - `inferred` entries must have `evidence`.
 - `unknowns` must NOT be guessed — they stay open until resolved.
 - ADR numbering starts at `0001` (template is `0000`).
+- If repo owner is not yet identified, create a **single** root unknown `U-OWN` rather than spreading `owner: TBD` across files.
 
 ### Exit Criteria
 
@@ -237,7 +292,7 @@ Populate initial entries in all four knowledge ledgers from discoveries during P
 
 ---
 
-## 8. Phase 5 — Manifest Finalization
+## 9. Phase 5 — Manifest Finalization
 
 **Actor:** AI (human reviews)
 
@@ -263,7 +318,7 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 
 ---
 
-## 9. Phase 6 — Validation & First Commit
+## 10. Phase 6 — Validation & First Commit
 
 **Actor:** Human + AI
 
@@ -301,7 +356,106 @@ git commit -m "forge: context initialization complete"
 
 ---
 
-## 10. Brownfield vs Greenfield — Summary Matrix
+## 11. Phase 7 — Human Confirmation Pass
+
+**Actor:** Human (AI prepares the summary)
+
+### Goal
+
+Surface critical inferred knowledge and high-priority unknowns to the human owner for explicit confirmation. Without this pass, `inferred` content can drift indefinitely without ever being promoted or rejected.
+
+### Steps
+
+| Step | Action |
+|---|---|
+| 7.1 | AI generates a confirmation summary (max ~30 items) |
+| 7.2 | Summary groups items into: **critical inferred** (high-confidence facts ready to promote), **blocking unknowns**, **important unknowns** |
+| 7.3 | Human reviews each item: confirm / reject / defer |
+| 7.4 | Confirmed items → `status: confirmed` + entry in `knowledge/confirmations.md` |
+| 7.5 | Rejected items → demote to `assumption` or move to `unknowns.md` |
+| 7.6 | Deferred items → stay `inferred` with `review_by` date set |
+
+### Confirmation Summary Format
+
+```
+=== CONFIRMATION REQUEST ===
+
+CRITICAL INFERRED (recommend promote → confirmed):
+  [I-002] Framework-first runtime via go-core
+          Evidence: go.mod replace + .ai/decisions.md
+          → Confirm? (y/n/defer)
+
+  [I-007] DB tables: transaction_histories, ...
+          Evidence: migrations/transaction/0001_init...
+          → Confirm? (y/n/defer)
+
+BLOCKING UNKNOWNS (must resolve before next implementation work):
+  [U-007] Compliance regime — PII/retention/audit?
+  [U-006] SLA / performance targets?
+
+IMPORTANT UNKNOWNS:
+  [U-002] Does this repo own deployment manifests?
+  [U-008] Cursor pagination roadmap?
+```
+
+### Rules
+
+- Do NOT request confirmation for trivial inferences (low-noise rule).
+- Cap summary at ~30 items per session — split across multiple passes if needed.
+- AI never promotes without explicit `y` from human.
+- Deferred items automatically resurface when `review_by` date arrives.
+
+### Exit Criteria
+
+- Critical inferences explicitly confirmed or rejected.
+- Blocking unknowns have an action plan or owner assigned.
+- `confirmations.md` reflects all promotions performed in this pass.
+
+---
+
+## 12. Operational Rule — Ownership Handling
+
+`owner: TBD` is **deprecated** as a value (creates noise across many files).
+
+### Rules
+
+| Situation | Action |
+|---|---|
+| Owner known at init | Set on every file as canonical team/individual reference |
+| Owner unknown at init | Use `owner: unresolved` and create **one** root unknown entry (`U-OWN`) in `unknowns.md` |
+| Multiple ownership | Use a short ref token (e.g. `team.payments`) and define it once in `glossary.md` |
+| Ownership changes | Update files in batch; record reason in `confirmations.md` |
+
+### Anti-Pattern
+
+Repeating `owner: TBD` across 20 files = 20 noise points. Repeating `owner: unresolved` references **one** unknown = 1 actionable item.
+
+---
+
+## 13. Operational Rule — Layer Activation
+
+A layer is **activated** only when concrete evidence exists. See `00-meta/conventions.md` → "Layer Activation Rule" for the canonical evidence table.
+
+### Decision Flow
+
+```
+Evidence strong?  → Activate, confidence: high
+Evidence partial? → Activate, confidence: medium/low + add unknowns
+Evidence absent?  → Delete folder + remove from layers_enabled
+```
+
+### Common Trap
+
+Service repos often delegate deployment to a separate repo. Activating `infrastructure` based on the *presence of a Dockerfile* alone is too aggressive — Dockerfiles often serve only local dev. Look for **deployment-binding** evidence:
+- Helm / Terraform / K8s manifests
+- CI/CD deploy steps (not just test/build)
+- Cloud-resource configs (cluster definitions, infra modules)
+
+If only Dockerfile + Makefile exist, infrastructure layer = `confidence: medium` with explicit unknowns about deployment ownership.
+
+---
+
+## 14. Brownfield vs Greenfield — Summary Matrix
 
 | Aspect | Brownfield | Greenfield |
 |---|---|---|
@@ -316,7 +470,7 @@ git commit -m "forge: context initialization complete"
 
 ---
 
-## 11. Question Protocol
+## 15. Question Protocol
 
 During init, AI must gather information. This is the priority order:
 
@@ -352,7 +506,7 @@ During init, AI must gather information. This is the priority order:
 
 ---
 
-## 12. Error Handling
+## 16. Error Handling
 
 | Situation | Action |
 |---|---|
@@ -365,7 +519,7 @@ During init, AI must gather information. This is the priority order:
 
 ---
 
-## 13. Post-Init Operations
+## 17. Post-Init Operations
 
 After successful initialization:
 
@@ -380,7 +534,7 @@ After successful initialization:
 
 ---
 
-## 14. Init Duration Estimate
+## 18. Init Duration Estimate
 
 | Repo Complexity | Estimated Effort | Phases |
 |---|---|---|
@@ -393,7 +547,7 @@ After successful initialization:
 
 ---
 
-## 15. Relationship to Future Tooling
+## 19. Relationship to Future Tooling
 
 This protocol is designed to be **automatable**. Future `forge init` CLI will:
 
@@ -448,21 +602,96 @@ INIT CHECKLIST — AI Agent Quick Reference
 
 □ Scenario confirmed (brownfield/greenfield)
 □ forge.config.yaml configured
+
+PHASE 0.5 — LEGACY DISCOVERY
+□ Legacy AI artifacts scanned (.ai/, .claude/, AGENTS.md, etc.)
+□ Each artifact classified (authoritative/useful-reference/outdated/unknown-authority)
+□ Conflicts with code recorded as unknowns
+
+PHASE 1–3 — POPULATION
 □ 01-core/product.md populated (status tagged)
 □ 01-core/architecture.md populated (status tagged)
 □ 01-core/principles.md populated or unknown-logged
 □ 01-core/constraints.md populated or unknown-logged
-□ layers/ — irrelevant folders removed
+□ layers/ — irrelevant folders removed (per Layer Activation Rule §13)
 □ layers/ — <layer>.md created for each enabled layer
+□ layers/ — README.md kept lightweight (TOC only, no content duplication)
 □ systems/ — all units registered in config
 □ systems/ — system.md created for each unit
-□ knowledge/unknowns.md — all gaps recorded
+
+PHASE 4 — KNOWLEDGE LEDGERS
+□ knowledge/unknowns.md — all gaps recorded with priority (blocking/important/informational)
 □ knowledge/assumptions.md — all unverified beliefs recorded
 □ knowledge/inferred.md — all AI inferences recorded with evidence
 □ knowledge/decisions/ADR-0001 — architecture adoption recorded
 □ knowledge/confirmations.md — all human confirmations logged
+□ Owner handling: single U-OWN if owner unresolved (no spread of owner: TBD)
+
+PHASE 5–6 — FINALIZATION
 □ 00-meta/context-manifest.md — file registry complete
 □ 00-meta/glossary.md — domain terms added
-□ Validation checklist passes (§9)
+□ Validation checklist passes (specs/context-validation.md)
 □ First commit made
+
+PHASE 7 — CONFIRMATION PASS
+□ Confirmation summary presented to human
+□ Critical inferences confirmed/rejected/deferred
+□ Blocking unknowns assigned owners
+□ confirmations.md updated with promotions
 ```
+
+
+---
+
+## Appendix C — Operational Recommendations (After First Real-World Validation)
+
+Distilled from initialization on `transaction-history-service` (2026-05-20). These are operational defaults — not architectural changes.
+
+### What Worked Well
+
+- Existing `.ai/` artifacts dramatically accelerated Phase 1–3 when treated as evidence, not authority.
+- `inferred + evidence` workflow produced high-quality drafts on first pass.
+- Single-service Standard tier scaled well for a focused Go service.
+- Anti-hallucination rules held: every claim was either evidenced or routed to `unknowns.md`.
+
+### Behaviors to Default On
+
+1. **Always run Phase 0.5** (legacy artifact discovery) before Phase 1 on brownfield repos.
+2. **Conditional layer activation** — never auto-include layers without evidence.
+3. **Single-root unknown for ownership** — never spread `owner: TBD` across files.
+4. **Priority on every unknown entry** — blocking/important/informational.
+5. **Phase 7 confirmation pass** before declaring init complete.
+6. **README = TOC only** — content lives in `<layer>.md`.
+
+### Behaviors to Avoid
+
+- Verbatim copying from legacy `.ai/` to new `01-core/` (use as evidence, not source).
+- Activating `infrastructure` layer just because Dockerfile exists.
+- Treating high inference volume as a sign of completeness — without confirmation pass, nothing has actually been validated.
+- Inflating `01-core/*` files beyond size budget to capture every detail (split or push detail to `layers/`).
+
+### Token Efficiency Guardrails
+
+These improvements MUST preserve runtime lightweight behavior:
+
+| Concern | Default |
+|---|---|
+| README size | Stays small — TOC + activation rule only |
+| Confirmation summary cap | ~30 items per pass |
+| Unknown growth | Bounded by priority filtering during planning mode |
+| Legacy reference | Never inlined into core context |
+| Generated artifacts | Default gitignored; commit only when reproducibly useful |
+
+### When to Re-Run Phases
+
+| Trigger | Re-run |
+|---|---|
+| New unit added | Phase 3 + Phase 5 (manifest update) |
+| New layer needed | Phase 2 + Phase 5 |
+| Major refactor | Phase 1 (re-verify core) + Phase 7 (re-confirm) |
+| Ownership change | Phase 4 (update ledgers) + Phase 5 |
+| Quarterly review | Phase 7 (confirmation pass on stale `inferred`) |
+
+### Final Note
+
+The framework's value comes from **discipline**, not volume. A 25-file context with confirmed core + acknowledged unknowns beats a 60-file context full of unverified `inferred` entries. Resist the urge to "fill everything in" during init — leave gaps explicit.

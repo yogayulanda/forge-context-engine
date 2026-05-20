@@ -5,32 +5,26 @@ type: layer
 status: unknown
 confidence: high
 source: human
-owner: TBD
+owner: unresolved
 updated: 2026-05-20
 ---
 
 # Layer: Backend
 
-Horizontal context for backend engineering discipline — patterns, conventions, standards spanning all backend systems.
+Entrypoint for the backend layer. Horizontal context for backend engineering discipline.
 
-## File Meta
+## Files in This Folder
 
-| Attribute | Value |
-|---|---|
-| Source of truth | Placeholder — no layer content yet |
-| AI writable | No — AI proposes via `knowledge/` during init |
-| Human confirmation | Required before creating `backend.md` |
-| Populated | During Context Initialization for repos with backend ownership. Delete this folder if no backend. |
+- `README.md` *(this file)* — entrypoint & navigation only
+- `backend.md` — actual layer content *(created during init; absent in fresh runtime)*
+- Sub-files added when content exceeds size budget *(≤ ~150 lines)*
 
-## Growth Path
+## Activation
 
-1. Init creates `backend.md` (sibling of this README).
-2. Brownfield → `status: inferred` + code evidence.
-3. Greenfield → `status: assumption` + ADR.
-4. Exceeds size budget (≤ ~150 lines) → split into sub-files in this folder.
+Activated only if the target repo contains backend code (server, API, business logic).
 
-## Boundaries
+If absent: delete this folder and remove `backend` from `forge.config.yaml` → `layers_enabled`.
 
-- No content files before Context Initialization.
-- No copying from `01-core/`.
-- No unit-specific facts (→ `systems/<unit>/`).
+## Content Policy
+
+This README is navigation only. **No engineering knowledge here.** All backend conventions, patterns, and standards live in `backend.md` and its sub-files.
