@@ -21,20 +21,33 @@ Entrypoint for the infrastructure layer. Horizontal context for IaC, deployment,
 
 ## Activation
 
-**Conditional activation.** Activate only if the target repo contains concrete infrastructure ownership evidence:
+**Conditional activation.** Activate ONLY if the target repo demonstrably owns deployment or environment provisioning.
 
-- Helm charts
+### Sufficient evidence (activate)
+
 - Terraform / OpenTofu modules
+- Helm charts
 - Kubernetes manifests
-- Dockerfile + orchestration configs (compose, etc.)
-- CI/CD deployment logic (not just test runs)
+- CI/CD **deployment** logic (not just test/build steps)
+- Deployment scripts (e.g. ansible, custom shell deploy)
+- Environment provisioning code
 
-Service repos often delegate deployment to a separate repo. If evidence is **weak/partial**:
+### Not sufficient on its own (do NOT activate)
+
+These belong to `backend` / `systems/<unit>` unless deployment ownership is also evidenced:
+
+- DB migrations
+- Build tooling (Makefile, npm scripts for build/test)
+- Environment variables / `.env.example`
+- Local-development Dockerfile (no orchestration)
+- Local config files
+
+If only these exist → infrastructure layer is **not** activated. Delete the folder and remove from `forge.config.yaml` → `layers_enabled`.
+
+If evidence is **partial** (e.g. partial K8s manifest, deployment script that calls into another repo):
 - Activate with `confidence: medium` or `low`.
-- Add ownership unknowns referencing the gap.
-- Do NOT assume infra ownership.
-
-If evidence is **absent**: delete this folder and remove `infrastructure` from `forge.config.yaml` → `layers_enabled`.
+- Add unknown entries describing the ownership boundary.
+- Do NOT assume infrastructure ownership.
 
 ## Content Policy
 

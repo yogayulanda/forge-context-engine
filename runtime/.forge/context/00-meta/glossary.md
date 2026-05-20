@@ -27,9 +27,14 @@ Canonical definitions for **project/domain-specific** terms that are ambiguous i
 - Only project/domain-specific terms, acronyms, or terms with special meaning in this repo.
 - No general engineering terms.
 - One line per term.
+- **Header-note shortcut:** if all entries share the same `status`/`source`, declare once below and omit from rows.
+
+## Defaults
+
+> All entries below: `status: inferred`, `source: ai` — unless a row overrides explicitly.
 
 ## Entries
 
-| Term | Canonical Definition | Status | Alias |
-|---|---|---|---|
-| — | — | — | — |
+| Term | Canonical Definition | Alias |
+|---|---|---|
+| — | — | — |

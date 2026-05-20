@@ -21,7 +21,12 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 - Never fabricate architecture, APIs, services, databases, integrations, ownership, or business rules.
 - Treat legacy AI artifacts (`.ai/`, `.claude/`, `AGENTS.md`, etc.) as **reference**, not source-of-truth. Repo code wins on conflict.
 - Tag every `unknowns.md` entry with priority: `blocking` · `important` · `informational`.
-- Use `owner: unresolved` (not `TBD`) when owner is undetermined; create one root unknown.
+- Use `owner: unresolved` (not `TBD`) when owner is undetermined; create one root unknown `U-OWN`.
+- **Evidence consistency:** cross-check critical claims (tables, migrations, entities, APIs, workers, integrations, validation rules) against repo before finalizing. If repo has N, context says N.
+- **Drift:** code change at evidence path demotes `confirmed` → `inferred`; refresh and log ambiguity in `unknowns.md`.
+- **No phantom ADRs:** never cite `ADR-NNNN` unless the file exists. Planned ADRs → `assumptions.md`/`unknowns.md`.
+- **Implicit constraints:** during init, scan code for enums, validators, required fields, ID semantics, status fields, retry/idempotency. Place global → `constraints.md`, system-specific → `systems/<name>/system.md`.
+- **Internal table hygiene:** table cells follow same conventions as front-matter (no `TBD`).
 
 ## Notes
 

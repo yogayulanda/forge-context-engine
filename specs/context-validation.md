@@ -3,11 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2026-05-20 |
-| Status | `decision` — awaiting owner confirmation |
+| Status | `decision` — extended after first real-world audit |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 |
+
+> **v1.0 → v1.1 changes:** Added Category J (Evidence Consistency) and Category K (Drift & Phantom Detection). Refined F4 to detect domain-list duplication. Added rules for internal table TBD detection and glossary signal compaction.
 
 ---
 
@@ -108,6 +110,7 @@ Use this as:
 | F4 | No file in `layers/*` contains unit-specific facts (should be in `systems/`) | warning | manual |
 | F5 | No file in `01-core/` contains layer-specific details (should be in `layers/`) | warning | manual |
 | F6 | Inter-system dependencies expressed as `id` references, not content copies | warning | partial |
+| F7 | Producer / source-system / domain enumerations defined once in `01-core/product.md`; other files reference rather than re-list *(v1.1)* | warning | partial |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -144,6 +147,33 @@ Use this as:
 | I5 | `systems[].type` is one of: `service`, `app`, `worker`, `library`, `infra-module`, `platform-component` | error | yes |
 | I6 | `loading.default_mode` references an existing file in `modes/` | error | yes |
 | I7 | `governance.require_evidence_for` contains only valid status values | error | yes |
+
+### Category J — Evidence Consistency *(v1.1)*
+
+| ID | Rule | Severity | Automatable |
+|---|---|---|---|
+| J1 | Database table count claimed in `architecture.md`/`system.md` matches actual migrations/schema files | error | partial (count check) |
+| J2 | Migration filenames cited in context exist in `migrations/` (or equivalent) | error | yes |
+| J3 | Entity/model names cited match actual domain files | error | yes |
+| J4 | Repository names cited match actual repository implementation files | error | yes |
+| J5 | API/RPC names cited match proto files / route registration | error | yes |
+| J6 | Worker/job names cited match actual worker entrypoints | error | yes |
+| J7 | External integrations cited match actual client libraries / config | error | yes |
+| J8 | Validation rules listed in `constraints.md` match actual validators / sentinel checks in code | warning | partial |
+| J9 | Implicit constraints found in code (enums, validators, required fields, ID semantics, currency rules) are reflected in `constraints.md` or `systems/<name>/system.md` | warning | partial |
+
+### Category K — Drift & Phantom Detection *(v1.1)*
+
+| ID | Rule | Severity | Automatable |
+|---|---|---|---|
+| K1 | Every `ADR-NNNN` cited in any context file (esp. `architecture.md`) has a corresponding existing ADR file | error | yes |
+| K2 | "Planned" / "future" ADR references do NOT appear as `evidence` entries | error | yes |
+| K3 | Stale architecture claims (entries pointing to evidence paths that no longer exist) flagged | warning | yes |
+| K4 | Layer activation matches actual repo evidence (no `infrastructure` activation without IaC/deploy evidence) | warning | partial |
+| K5 | No internal table cell contains the deprecated value `TBD` (use `unresolved` for owner, valid status/priority elsewhere) | warning | yes |
+| K6 | Glossary signal compaction: if all rows share `status`/`source`, header-note format is used | info | yes |
+| K7 | Producer/source-system list is canonical in `01-core/product.md`; other files reference, do not duplicate | warning | partial |
+| K8 | `inferred.md` evidence quality: every entry's evidence resolves to a real path/doc | error | yes |
 
 ---
 
@@ -260,7 +290,9 @@ B1 (front-matter exists)
        └── E1–E4 (source rules)
 ```
 
-Run in order: **A → B → C → I → D → E → F → G → H** to avoid cascading false failures.
+Run in order: **A → B → C → I → D → E → F → G → H → J → K** to avoid cascading false failures.
+
+J and K depend on Phases 0.5–6 of init having completed and on D (evidence) being clean — they verify *content correctness* against the repo, while D verifies *metadata correctness*.
 
 ---
 
@@ -343,6 +375,7 @@ ANTI-DUPLICATION
 [ ] F4  layers don't hold unit-specific
 [ ] F5  core doesn't hold layer-specific
 [ ] F6  dependencies by id ref
+[ ] F7  domain enumerations canonical in product.md
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid
@@ -370,4 +403,25 @@ CONFIG CONSISTENCY
 [ ] I5  system types valid
 [ ] I6  default_mode exists
 [ ] I7  governance values valid
+
+EVIDENCE CONSISTENCY (J — v1.1)
+[ ] J1  table count matches migrations
+[ ] J2  cited migrations exist
+[ ] J3  entity names match domain files
+[ ] J4  repository names match impl files
+[ ] J5  API/RPC names match proto/routes
+[ ] J6  worker names match entrypoints
+[ ] J7  external integrations match clients
+[ ] J8  validation rules match validators
+[ ] J9  implicit constraints surfaced
+
+DRIFT & PHANTOM (K — v1.1)
+[ ] K1  every cited ADR exists
+[ ] K2  no planned ADRs cited as evidence
+[ ] K3  no stale architecture claims
+[ ] K4  layer activation matches evidence
+[ ] K5  no internal TBD values in tables
+[ ] K6  glossary signal compaction applied
+[ ] K7  producer list canonical in product.md
+[ ] K8  inferred entries have valid evidence
 ```

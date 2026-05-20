@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context Initialization Protocol |
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-05-20 |
-| Status | `decision` — refined after first real-world test |
+| Status | `decision` — patched after first real-world audit |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.1 |
 
-> **v1.0 → v1.1 changes:** Added Phase 0.5 (legacy AI artifact discovery) and Phase 7 (human confirmation pass). Refined ownership handling, layer activation rules, and unknown priority based on first real-world initialization on `transaction-history-service`.
+> **v1.1 → v1.2 changes:** Added evidence consistency sweep to Phase 1, implicit constraint extraction to Phase 1, drift refresh guidance to Phase 6, and refined infrastructure activation criteria. Aligned with `forge-context-engine` v0.2.1 patch.
 
 ---
 
@@ -166,12 +166,47 @@ Populate `01-core/{product, architecture, principles, constraints}.md` with real
 - Greenfield: Human-stated intent starts at `confirmed`; technical choices at `assumption` until code validates.
 - Nothing auto-promotes to `confirmed` without human action.
 
+### Evidence Consistency Sweep *(v1.2)*
+
+Before exiting Phase 1, AI runs a cross-check pass:
+
+| Area | Verify against |
+|---|---|
+| Database tables | `migrations/*` files / schema dumps |
+| Migrations | Filenames, sequence, content |
+| Entities/models | Domain layer files / ORM models |
+| Repositories | Repository implementation files |
+| APIs / handlers / RPCs | Proto files, route registration |
+| Background workers | Worker entrypoints, schedulers |
+| External integrations | Client libs, dep manifests, integration configs |
+| Validation rules / implicit constraints | Validators, sentinels, enum constraints, required fields, ID semantics, currency rules |
+
+If a context claim does not match the repo (e.g. "3 tables" vs 4 migrations), correct the context. Log root-cause ambiguity in `unknowns.md`.
+
+### Implicit Constraint Extraction *(v1.2)*
+
+While reading code, harvest implicit rules and route them:
+
+| Source pattern | Destination |
+|---|---|
+| Global hard rule (compliance, platform-wide) | `01-core/constraints.md` |
+| Single-unit rule | `systems/<unit>/system.md` |
+| Unclear meaning | `knowledge/unknowns.md` |
+| Weak inference | `knowledge/inferred.md` |
+
+### Phantom ADR Guard *(v1.2)*
+
+`architecture.md` must NOT cite ADR-NNNN entries that do not exist as files. If only ADR-0001 exists, only ADR-0001 may appear with `evidence: { type: adr, ... }`. Planned/anticipated ADRs go to `assumptions.md` with priority `important` or `unknowns.md` — never to `architecture.md` body as evidence.
+
 ### Exit Criteria
 
 - `product.md` has at minimum: product summary, domain, users, scope boundaries.
 - `architecture.md` has at minimum: style, major components, key integrations.
 - `principles.md` and `constraints.md` populated or explicitly marked `status: unknown` with entries in `unknowns.md` explaining why.
 - All `01-core/` files have valid front-matter with correct `status`.
+- Evidence consistency sweep complete; mismatches corrected or logged.
+- Implicit constraints harvested and routed.
+- No phantom ADR references.
 
 ---
 
@@ -337,7 +372,14 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] forge.config.yaml layers_enabled matches actual layers/ folders
 [ ] temp/ is gitignored
 [ ] At least ADR-0001 exists
+[ ] (v1.2) Evidence consistency: table/migration/entity/api counts match repo
+[ ] (v1.2) No phantom ADR references in architecture.md
+[ ] (v1.2) No internal `TBD` table cells (use `unresolved`)
+[ ] (v1.2) Producer/source-system list canonical in product.md
+[ ] (v1.2) Layer activation matches evidence (no infrastructure without IaC/deploy)
 ```
+
+> Full rule list with severity & automatability: `specs/context-validation.md` (Categories A–K).
 
 ### First Commit
 
