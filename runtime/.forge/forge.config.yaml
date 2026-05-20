@@ -1,0 +1,31 @@
+# forge-context-engine — Engine Configuration
+# Bukan file konteks naratif. Diisi saat Context Initialization untuk repo target.
+
+forge_version: "0.5"
+tier: standard  # minimal | standard | advanced
+
+# Hapus layer yang tidak relevan untuk repo target.
+layers_enabled:
+  - backend
+  - frontend
+  - mobile
+  - infrastructure
+  - testing
+
+# Diisi saat init. Format: { name: <unit>, type: service|app|worker|library|infra-module|platform-component }
+systems: []
+
+loading:
+  default_mode: implementation  # planning | implementation | review | testing
+  respect_size_budget: true
+
+size_budget:
+  core_lines: 200
+  layer_lines: 150
+  system_lines: 200
+  mode_lines: 40
+
+governance:
+  staleness_days: 90
+  require_evidence_for: [confirmed, inferred]
+  demote_confirmed_on_evidence_change: true

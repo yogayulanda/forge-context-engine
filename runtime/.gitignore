@@ -1,0 +1,28 @@
+# forge-context-engine runtime — gitignore rules
+
+# Ephemeral scratch (satu sesi, jangan pernah commit)
+.forge/context/temp/
+!.forge/context/temp/.gitkeep
+
+# AI-generated context (default: ignore. Hapus baris ini jika tim ingin commit hasil generate.)
+.forge/context/generated/*
+!.forge/context/generated/.gitkeep
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor swap/backup
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Local cache & logs
+*.log
+*.tmp
+.cache/
