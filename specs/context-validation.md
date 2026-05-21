@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.2 |
-| Date | 2026-05-20 |
+| Version | 1.3 |
+| Date | 2026-05-21 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 |
 
-> **v1.1 → v1.2 changes:** Added Category L (Language & Reference Stability). Extended Category J with rules J10–J14 (validation-layer attribution: required-field mismatch, DB-vs-service distinction, repository fallback, layer attribution, generated-code policy). No new file types or zones.
+> **v1.2 -> v1.3 changes:** Added D8 confidence calibration and F8-F10 deterministic mode schema checks, including numeric-only `token_budget`. No new file types, zones, runtime folders, automation, or tooling.
 
 ---
 
@@ -90,6 +90,7 @@ Use this as:
 | D5 | `evidence[].ref` is a non-empty string (path or URL) | error | yes |
 | D6 | Evidence `ref` pointing to a code path — that path exists in the repo | warning | yes (requires repo access) |
 | D7 | If code at evidence path has changed since `updated` date, `status: confirmed` should demote to `inferred` | warning | yes (requires git history) |
+| D8 | `source: ai` + `status: inferred` defaults to `confidence: medium`; `confidence: high` requires direct deterministic repository evidence | warning | partial |
 
 ### Category E — Source & Write Protection
 
@@ -111,6 +112,9 @@ Use this as:
 | F5 | No file in `01-core/` contains layer-specific details (should be in `layers/`) | warning | manual |
 | F6 | Inter-system dependencies expressed as `id` references, not content copies | warning | partial |
 | F7 | Producer / source-system / domain enumerations defined once in `01-core/product.md`; other files reference rather than re-list *(v1.1)* | warning | partial |
+| F8 | Every `modes/*.md` file exposes Markdown sections `## include`, `## on_demand`, `## exclude`, `## token_budget`, and `## notes` | error | yes |
+| F9 | `modes/*.md` files are context loading deltas, not prose-only narrative instructions | warning | partial |
+| F10 | `modes/*.md` `## token_budget` contains only a decimal integer; labels such as `medium` or `medium-high` are invalid | error | yes |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -380,6 +384,7 @@ EVIDENCE
 [ ] D5  evidence ref non-empty
 [ ] D6  code paths exist
 [ ] D7  stale confirmations flagged
+[ ] D8  AI-inferred high confidence has deterministic evidence
 
 SOURCE PROTECTION
 [ ] E1  human files clean
@@ -395,6 +400,9 @@ ANTI-DUPLICATION
 [ ] F5  core doesn't hold layer-specific
 [ ] F6  dependencies by id ref
 [ ] F7  domain enumerations canonical in product.md
+[ ] F8  modes expose Markdown sections include/on_demand/exclude/token_budget/notes
+[ ] F9  modes are deltas, not prose-only instructions
+[ ] F10 modes token_budget is numeric only
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid

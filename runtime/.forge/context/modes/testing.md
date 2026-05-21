@@ -6,28 +6,32 @@ status: confirmed
 confidence: high
 source: human
 owner: forge-context-engine
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # Mode: Testing
 
-Prepare context for testing work: testing strategy, related systems, assumptions to validate.
-
-## include *(delta above always-loaded core)*
+## include
 
 - `layers/testing`
-- `systems/<related>` — units under test
+- `systems/<related>`
 - `knowledge/assumptions.md`
 
 ## on_demand
 
-- `knowledge/decisions/` — when tests are tied to specific decisions
+- `knowledge/decisions/`
 - `knowledge/inferred.md`
+- `generated/<relevant>`
 
 ## exclude
 
-- `layers/<unrelated>` — layers outside testing focus
+- `systems/<unrelated>`
+- `layers/<unrelated>`
 
 ## token_budget
 
-medium
+6000
+
+## notes
+
+Concise guidance only: test strategy, coverage gaps, and assumption validation.

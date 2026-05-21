@@ -8,7 +8,7 @@ source: human
 evidence:
   - { type: doc, ref: ../../../FORGE-CONTEXT-ARCHITECTURE.md }
 owner: forge-context-engine
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # Context System Conventions
@@ -62,6 +62,39 @@ review_by: YYYY-MM-DD  # optional
 ## Always-Loaded Core
 
 `00-meta/*` + `01-core/*`. Modes **never** re-list core — delta only.
+
+## Mode File Schema
+
+Every `modes/*.md` file MUST expose exactly these Markdown sections after the title, in this order:
+
+| Section | Meaning |
+|---|---|
+| `## include` | Context components normally loaded for this mode. |
+| `## on_demand` | Context components loaded only when relevant. |
+| `## exclude` | Context components never loaded by default. |
+| `## token_budget` | Numeric recommended maximum context budget for this mode. |
+| `## notes` | Concise human/AI guidance only. |
+
+`token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid.
+
+Mode files are machine-resolvable context loading deltas. They MUST NOT re-list `00-meta/*` or `01-core/*` unless explicitly needed, contain domain knowledge, contain workflow prose, contain implementation instructions, or duplicate `conventions.md`.
+
+## Confidence Calibration
+
+Default confidence for `source: ai` + `status: inferred` is `medium`.
+
+Use `confidence: high` only when the claim is directly and deterministically verifiable from repository evidence. Never use `high` merely because the reasoning feels plausible. If human confirmation exists, promote through `knowledge/confirmations.md` instead of inflating confidence.
+
+For brownfield init, unknown ownership, architecture intent, business rules, compliance, and deployment ownership MUST NOT be high confidence unless explicitly evidenced.
+
+Examples:
+
+| Claim type | Confidence |
+|---|---|
+| Direct code evidence, e.g. module name declared in `go.mod` | `high` allowed |
+| Inferred architecture intent from docs/code pattern | `medium` |
+| Ownership inferred from absence of `CODEOWNERS` | `unknown`, not `high` |
+| Deployment ownership not found in repo | `unknown` or `medium`, not `high` |
 
 ## AI Operational Contract (Normative)
 

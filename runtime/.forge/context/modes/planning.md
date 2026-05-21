@@ -6,28 +6,32 @@ status: confirmed
 confidence: high
 source: human
 owner: forge-context-engine
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # Mode: Planning
 
-Prepare context for planning work: map intent, gaps, and assumptions before implementation.
-
-## include *(delta above always-loaded core)*
+## include
 
 - `knowledge/decisions/`
 - `knowledge/assumptions.md`
 - `knowledge/unknowns.md`
-- `layers/*` summaries (README placeholders or relevant summaries)
+- `layers/<related>`
 
 ## on_demand
 
-- `systems/<unit>` — when planning touches a specific unit
+- `systems/<related>`
+- `knowledge/inferred.md`
 
 ## exclude
 
-- `knowledge/inferred.md` *(unless explicitly needed)*
+- `systems/<unrelated>`
+- `layers/<unrelated>`
 
 ## token_budget
 
-medium
+4000
+
+## notes
+
+Concise guidance only: intent mapping, gap discovery, and assumption review.

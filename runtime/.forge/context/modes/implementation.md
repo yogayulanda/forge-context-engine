@@ -6,28 +6,32 @@ status: confirmed
 confidence: high
 source: human
 owner: forge-context-engine
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # Mode: Implementation
 
-Prepare context for implementation work: active layers, related systems, ADRs, relevant inferences.
+## include
 
-## include *(delta above always-loaded core)*
-
-- `layers/<active>` — layers relevant to the task
-- `systems/<related>` — units touched by the task
+- `layers/<related>`
+- `systems/<related>`
 - `knowledge/decisions/`
 - `knowledge/inferred.md`
 
 ## on_demand
 
-- `generated/*` — if code maps or summaries are available
+- `knowledge/assumptions.md`
+- `generated/<relevant>`
 
 ## exclude
 
-- `systems/<unrelated>` — all units outside task scope
+- `systems/<unrelated>`
+- `layers/<unrelated>`
 
 ## token_budget
 
-medium-high
+8000
+
+## notes
+
+Concise guidance only: load task-relevant layers, systems, decisions, and inferences.

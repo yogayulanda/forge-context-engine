@@ -6,37 +6,32 @@ status: confirmed
 confidence: high
 source: human
 owner: forge-context-engine
-updated: 2026-05-20
+updated: 2026-05-21
 ---
 
 # Mode: Review
 
-Prepare context for review work: principles, security, related layers, ADRs as guardrails.
+## include
 
-## include *(delta above always-loaded core)*
-
-- `layers/<related>` — layers from the review area
+- `layers/<related>`
 - `knowledge/decisions/`
 
 ## on_demand
 
-- `layers/security` *(Advanced tier)*
-- `systems/<related>` — when review touches a specific unit
+- `systems/<related>`
 - `knowledge/inferred.md`
-- `01-core/constraints.md` — when review touches validation, security, or compliance code paths
+- `knowledge/assumptions.md`
+- `generated/<relevant>`
 
 ## exclude
 
-- `knowledge/assumptions.md` — review is fact-based, not assumption-based
-
-## audit focus *(v0.2.1)*
-
-When reviewing context (not code), apply:
-- Evidence consistency sweep (J-rules)
-- Phantom ADR check (K1, K2)
-- Validation layer attribution (J10–J13) — required-fields claims must match actual service-layer empty-checks
-- Drift detection (K3) — `evidence: ref` paths still exist and unchanged
+- `systems/<unrelated>`
+- `layers/<unrelated>`
 
 ## token_budget
 
-medium
+6000
+
+## notes
+
+Concise guidance only: review against evidence, decisions, and task-scoped context.

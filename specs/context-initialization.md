@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context Initialization Protocol |
-| Version | 1.2 |
-| Date | 2026-05-20 |
+| Version | 1.3 |
+| Date | 2026-05-21 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.2 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.3 |
 
-> **v1.1 → v1.2 changes:** Added evidence consistency sweep, implicit constraint extraction, validation layer attribution, generated code policy check to Phase 1; drift refresh guidance to Phase 6; refined infrastructure activation criteria. Aligned with `forge-context-engine` v0.2.1 patch.
+> **v1.2 -> v1.3 changes:** Added machine-resolvable Markdown mode schema, numeric-only `token_budget`, and confidence calibration for AI-inferred brownfield context. No new zones, runtime folders, automation, or tooling.
 
 ---
 
@@ -162,11 +162,58 @@ Populate `01-core/{product, architecture, principles, constraints}.md` with real
 | 1.4 | Human confirms intent | `status: confirmed` for intent-level facts |
 | 1.5 | Technical choices not yet validated → `assumptions.md` | Clear ownership assigned |
 
+### Mode Schema Rules (Phase 1)
+
+Mode files under `runtime/.forge/context/modes/` are templates for initialized repos and MUST remain machine-resolvable context loading deltas.
+
+Required Markdown sections after the title, in this order:
+
+```md
+## include
+- <context path or id>
+
+## on_demand
+- <context path or id>
+
+## exclude
+- <context path or glob>
+
+## token_budget
+8000
+
+## notes
+Concise guidance only.
+```
+
+Rules:
+- `include` = context components normally loaded for this mode.
+- `on_demand` = context components loaded only when relevant.
+- `exclude` = context components never loaded by default.
+- `token_budget` = recommended maximum context budget for this mode; value MUST be a decimal integer only.
+- `notes` = concise human/AI guidance only.
+- Modes MUST NOT re-list `00-meta/*` and `01-core/*` unless explicitly needed.
+- Modes MUST NOT contain domain knowledge, workflow prose, implementation instructions, or duplicate `conventions.md`.
+- Token budget labels such as `medium`, `medium-high`, or `large` are invalid; use values such as `4000`, `8000`, or `12000`.
+
 ### Status Rules (Phase 1)
 
 - Brownfield: AI-derived content starts at `inferred` (with evidence) or `assumption` (without).
 - Greenfield: Human-stated intent starts at `confirmed`; technical choices at `assumption` until code validates.
 - Nothing auto-promotes to `confirmed` without human action.
+- Default confidence for `source: ai` + `status: inferred` is `medium`.
+- Use `confidence: high` only when the claim is directly and deterministically verifiable from repository evidence.
+- Never use `confidence: high` merely because the reasoning feels plausible.
+- If human confirmation exists, promote through `knowledge/confirmations.md` instead of inflating confidence.
+- For brownfield init, unknown ownership, architecture intent, business rules, compliance, and deployment ownership stay `medium`, `low`, or `unknown` unless explicitly evidenced.
+
+Examples:
+
+| Claim | Calibration |
+|---|---|
+| `go.mod` declares module name | `confidence: high` allowed |
+| Architecture intent inferred from docs/code pattern | `confidence: medium` |
+| Ownership inferred from missing `CODEOWNERS` | `status: unknown`, not `confidence: high` |
+| Deployment ownership not found in repo | `status: unknown` or `confidence: medium`, not `high` |
 
 ### Evidence Consistency Sweep *(v1.2)*
 
@@ -347,6 +394,7 @@ Populate initial entries in all four knowledge ledgers from discoveries during P
 - Every entry has: ID, owner, created date, status, **priority**.
 - Unknown priority levels: `blocking` · `important` · `informational`.
 - `inferred` entries must have `evidence`.
+- `source: ai` + `status: inferred` entries default to `confidence: medium`; use `high` only for direct deterministic repo evidence.
 - `unknowns` must NOT be guessed — they stay open until resolved.
 - ADR numbering starts at `0001` (template is `0000`).
 - If repo owner is not yet identified, create a **single** root unknown `U-OWN` rather than spreading `owner: TBD` across files.
@@ -405,6 +453,9 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] forge.config.yaml layers_enabled matches actual layers/ folders
 [ ] temp/ is gitignored
 [ ] At least ADR-0001 exists
+[ ] modes/* expose Markdown sections: include/on_demand/exclude/token_budget/notes
+[ ] modes/* token_budget is numeric only
+[ ] source: ai + status: inferred defaults to confidence: medium unless direct deterministic evidence supports high
 [ ] (v1.2) Evidence consistency: table/migration/entity/api counts match repo
 [ ] (v1.2) No phantom ADR references in architecture.md
 [ ] (v1.2) No internal `TBD` table cells (use `unresolved`)
