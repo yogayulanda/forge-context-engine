@@ -19,12 +19,15 @@ Platform context lets Forge reason about a bounded ecosystem spanning multiple r
 
 It exists to capture cross-repo facts that do not belong to any single repo:
 
-- Cross-repo topology.
+- Runtime topology.
+- Shared runtime/platform component adoption.
 - Integration graph.
 - Shared contracts.
 - Ownership map.
 - Global ADRs.
 - Platform-level unknowns, assumptions, and confirmations.
+
+Platform context must distinguish service-to-service runtime topology from source-level or shared-runtime adoption. A dependency on a shared runtime foundation does not imply service-to-service traffic.
 
 Local repo cognition remains owned by each repo's local `.forge/context/`.
 
@@ -58,6 +61,14 @@ Use it when at least two of these are true:
 - Architectural decisions span more than one repo.
 - A change in one repo regularly requires analysis of impact in another repo.
 
+A platform context may also be created as a **pilot** when:
+
+- At least one `deployable-service` consumes one `shared-runtime` or `platform-component`.
+- Evidence is clear from local Forge context and repository code.
+- The platform boundary is explicitly marked `pilot`.
+
+Do not promote a pilot to full platform context until more consumers, runtime edges, ownership, or shared contracts are evidenced.
+
 The boundary must be explicit. One platform context equals one bounded ecosystem.
 
 ---
@@ -70,6 +81,7 @@ Do not create platform context when:
 - Repos only share an organization, language, framework, or deployment platform.
 - Repos are unrelated products with different owners and change cadences.
 - A shared library can be referenced directly from local contexts without platform-level topology.
+- One service consumes one shared runtime but the boundary cannot be marked as a pilot.
 - The goal is to centralize all knowledge for convenience.
 - The required facts already have a clear home in a local repo context.
 
@@ -87,16 +99,92 @@ Rules:
 - A repo may belong to zero, one, or multiple platform contexts when it participates in multiple ecosystems.
 - Shared libraries may be referenced by multiple platform contexts.
 - Shared libraries do not automatically define a platform boundary.
+- Shared runtime components may be referenced by multiple platform contexts without being reduced to utility libraries.
 - Platform contexts may reference each other only by stable ID or repository reference; they do not merge content.
 - If two platform contexts need frequent duplicate topology, the boundary should be reviewed by humans.
 
 Example:
 
-| Repo | Platform context membership |
+| Repo | Roles | Platform context membership |
+|---|---|---|
+| `payments-api` | `deployable-service`, `consumer` | `platform.payments` |
+| `risk-engine` | `deployable-service`, `consumer` | `platform.payments`, `platform.risk` |
+| `go-core` | `shared-runtime`, `platform-component` | referenced by multiple platform contexts; not automatically a runtime node |
+
+---
+
+## 5.1 Ecosystem Types
+
+### Runtime Ecosystem
+
+Repos are connected by service-to-service traffic, events, APIs, queues, or operational workflows.
+
+Runtime ecosystem evidence includes `runtime-calls`, `publishes-event`, `consumes-event`, or `deploys-with` edges between deployable components.
+
+### Shared-Runtime Adoption Ecosystem
+
+Repos are connected because one or more services adopt the same shared runtime/platform foundation.
+
+Shared-runtime adoption may justify a narrow pilot platform context. It must not be over-modeled as full runtime topology. Full platform adoption requires more evidence than one service consuming one shared runtime.
+
+---
+
+## 5.2 Member Role Taxonomy
+
+| Role | Definition |
 |---|---|
-| `payments-api` | `platform.payments` |
-| `risk-engine` | `platform.payments`, `platform.risk` |
-| `go-core` shared library | referenced by `platform.payments`, `platform.risk`; not owner of either platform |
+| `deployable-service` | Repository that builds and runs as a service/process. |
+| `shared-runtime` | Non-deployable foundation component used by services to bootstrap runtime behavior such as server startup, config, logging, DB transaction helpers, migration helpers, cache, messaging/outbox, errors, and observability. |
+| `utility-library` | Smaller reusable helper library without broad runtime responsibility. |
+| `platform-component` | Reusable platform-level component that may be deployable or non-deployable and is shared across services. |
+| `contract-owner` | Repository that owns shared API/event/schema/protobuf/client contracts. |
+| `consumer` | Repository that depends on or uses another repo/component. |
+
+Rules:
+
+- Do not reduce `shared-runtime` components into generic utility libraries.
+- Do not classify non-deployable components as `deployable-service`.
+- A repository may have multiple roles.
+
+Examples:
+
+| Repo | Correct roles |
+|---|---|
+| `go-core` | `shared-runtime`, `platform-component` |
+| `transaction-history-service` | `deployable-service`, `consumer` |
+
+---
+
+## 5.3 Edge Type Taxonomy
+
+| Edge | Definition |
+|---|---|
+| `imports` | Source-level dependency via module/package import. |
+| `uses-runtime` | A service uses a shared runtime/foundation component. |
+| `runtime-calls` | Network/runtime call between deployable components. |
+| `publishes-event` | Produces events/messages. |
+| `consumes-event` | Consumes events/messages. |
+| `owns-contract` | Owns shared API/schema/protobuf/event/client contract. |
+| `generates-client` | Generates or publishes clients from shared contracts. |
+| `deploys-with` | Deployment or runtime environment coupling. |
+
+Rules:
+
+- `imports` and `uses-runtime` are not the same as `runtime-calls`.
+- A shared runtime dependency does not imply service-to-service traffic.
+- Runtime topology must not be inferred from package imports alone.
+
+Example:
+
+```text
+transaction-history-service --imports/uses-runtime--> go-core
+```
+
+Not:
+
+```text
+transaction-history-service --runtime-calls--> go-core
+```
 
 ---
 
@@ -105,10 +193,14 @@ Example:
 Before initializing platform context, collect:
 
 - Platform name and explicit boundary.
+- Ecosystem type: `runtime` or `shared-runtime-adoption`.
+- Boundary maturity: `pilot` or `full`.
 - Member repos and their canonical repository URLs.
+- Member roles for each repo.
 - Local Forge availability for each repo: present, absent, stale, unknown.
 - Primary owners for platform and member repos.
-- Cross-repo integration evidence: APIs, events, queues, schemas, package deps, generated clients, deployment wiring.
+- Cross-repo edge evidence: imports, runtime usage, APIs, events, queues, schemas, package deps, generated clients, deployment wiring.
+- Shared-runtime version evidence where available: module path, required version, replace directive, tag, commit SHA, or local path dependency.
 - Shared contracts and their owning repo.
 - Known global decisions and ADR locations.
 - Known exclusions: repos that must not be considered part of the platform.
@@ -142,9 +234,9 @@ Suggested responsibilities:
 
 | File | Responsibility |
 |---|---|
-| `platform.yaml` | Platform ID, boundary, member repos, excluded repos, local context refs. |
-| `topology.md` | Repo-to-repo shape and dependency direction. |
-| `integrations.md` | Runtime/API/event/data integration graph. |
+| `platform.yaml` | Platform ID, ecosystem type, maturity, boundary, member repos, roles, excluded repos, local context refs. |
+| `topology.md` | Repo-to-repo shape, edge types, and dependency direction. |
+| `integrations.md` | Runtime/API/event/data integration graph; excludes pure source imports unless runtime behavior is evidenced. |
 | `contracts.md` | Shared contracts, schemas, SDKs, generated clients, ownership. |
 | `ownership.md` | Platform and repo ownership map; escalation paths if known. |
 | `decisions/` | Global ADRs that affect multiple repos. |
@@ -210,6 +302,7 @@ local_context: <path-or-ref-to-.forge/context>
 context_id: <local-forge-id>
 evidence_ref: <repo-relative-path>
 commit: <optional-commit-sha>
+roles: [<member-role>]
 ```
 
 Rules:
@@ -217,19 +310,27 @@ Rules:
 - Prefer local Forge `id` references over prose headings.
 - Use repo-relative paths for evidence inside member repos.
 - Include commit SHA when evidence stability matters.
+- Use explicit edge types from the taxonomy.
+- Do not infer `runtime-calls` from `imports` or `uses-runtime`.
 - Link to shared contracts by owning repo plus path.
 - Do not copy large contract bodies into platform context.
 - If a linked repo is unavailable, mark the link `unknown` or `stale`.
+- For `shared-runtime` edges, record version evidence when available: `go.mod` require version, replace directive, commit SHA, tag, local path dependency, and module path.
+- If shared-runtime version evidence is missing, mark it `unknown`; do not infer compatibility guarantees.
 
 Example:
 
 ```yaml
-from: repo.checkout-api
-to: repo.payment-service
-kind: grpc
-contract:
-  repo: payment-service
-  evidence_ref: proto/payment/v1/payment.proto
+from: repo.transaction-history-service
+to: repo.go-core
+edge_types: [imports, uses-runtime]
+version_evidence:
+  module_path: github.com/yogayulanda/go-core
+  require: v0.0.0
+  replace: ../go-core
+evidence:
+  - { repo: transaction-history-service, ref: go.mod }
+  - { repo: transaction-history-service, ref: cmd/server/main.go }
 owner: team.payments
 status: inferred
 confidence: medium
@@ -239,16 +340,21 @@ confidence: medium
 
 ## 11. Platform Initialization Workflow
 
-1. Declare platform boundary and exclusions.
+1. Declare platform boundary, ecosystem type, maturity (`pilot` or `full`), and exclusions.
 2. Register member repos with canonical IDs and URLs.
-3. Check whether each repo has local `.forge/context/`.
-4. Read only enough local context to identify repo role, public interfaces, contracts, ownership, and unknowns.
-5. Scan repository evidence for cross-repo links when local context is missing or stale.
-6. Populate topology, integrations, contracts, ownership, and global decisions.
-7. Route unresolved cross-repo ambiguity to platform `knowledge/unknowns.md`.
-8. Mark AI-derived platform facts as `status: inferred`, `source: ai`, default `confidence: medium`.
-9. Request human confirmation for platform boundary, ownership, and global decisions.
-10. Record confirmations in platform `knowledge/confirmations.md`.
+3. Assign member roles using the role taxonomy.
+4. Check whether each repo has local `.forge/context/`.
+5. Read only enough local context to identify repo role, public interfaces, contracts, ownership, and unknowns.
+6. Classify cross-repo edges using the edge taxonomy.
+7. For shared-runtime edges, capture version evidence.
+8. Scan repository evidence for cross-repo links when local context is missing or stale.
+9. Populate topology, integrations, contracts, ownership, and global decisions.
+10. Route unresolved cross-repo ambiguity to platform `knowledge/unknowns.md`.
+11. Mark AI-derived platform facts as `status: inferred`, `source: ai`, default `confidence: medium`.
+12. Request human confirmation for platform boundary, maturity, ownership, and global decisions.
+13. Record confirmations in platform `knowledge/confirmations.md`.
+
+If the only evidenced relationship is one `deployable-service` consuming one `shared-runtime`, initialize as `pilot` only.
 
 Do not edit member repos during platform initialization unless that is a separate explicit task.
 
@@ -264,7 +370,9 @@ Audit checks:
 - Excluded repos are still intentionally excluded.
 - Cross-repo links still resolve.
 - Contract references still exist at the owning repo.
-- Integration direction and protocol still match repo evidence.
+- Integration direction, edge type, and protocol still match repo evidence.
+- Runtime topology does not contain edges inferred from source imports alone.
+- Shared-runtime version evidence is current or explicitly unknown.
 - Local context conflicts are identified and routed.
 - Ownership map does not invent owners for unresolved repos.
 - Global ADRs cite actual decision files.
@@ -297,6 +405,7 @@ Confidence rules:
 - Default confidence for `source: ai` + `status: inferred` is `medium`.
 - Use `high` only for deterministic evidence, such as an explicit dependency declaration or contract file.
 - Architecture intent, ownership, business process, compliance, and deployment responsibility are not `high` unless explicitly evidenced.
+- Shared-runtime compatibility is not inferred when version evidence is missing.
 - Human confirmation promotes through confirmations, not confidence inflation.
 
 Unknown handling:
@@ -304,6 +413,8 @@ Unknown handling:
 - Platform unknowns must identify affected repos.
 - Ownership unknowns use `owner: unresolved`.
 - Boundary ambiguity is `blocking`.
+- Unknown ecosystem type or maturity is `blocking`.
+- Missing shared-runtime version evidence is `important`.
 - Contract ownership ambiguity is usually `important`.
 - Nice-to-have topology details are `informational`.
 
