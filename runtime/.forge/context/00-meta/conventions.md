@@ -8,7 +8,7 @@ source: human
 evidence:
   - { type: doc, ref: ../../../FORGE-CONTEXT-ARCHITECTURE.md }
 owner: forge-context-engine
-updated: 2026-05-21
+updated: 2026-05-24
 ---
 
 # Context System Conventions
@@ -78,6 +78,12 @@ Every `modes/*.md` file MUST expose exactly these Markdown sections after the ti
 `token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid.
 
 Mode files are machine-resolvable context loading deltas. They MUST NOT re-list `00-meta/*` or `01-core/*` unless explicitly needed, contain domain knowledge, contain workflow prose, contain implementation instructions, or duplicate `conventions.md`.
+
+Planning mode outputs use **Engineering Change Plan (ECP)** terminology.
+
+An ECP is a structured, evidence-based, layer-adaptive engineering planning artifact covering the proposed change, architectural/runtime impact, dependency and contract impact, implementation strategy, risks, validation, and rollback. It is not a product PRD, stakeholder/business proposal, generic brainstorming, implementation code, or architecture rewrite by default.
+
+ECP sections must adapt to active repository layers and task scope. Planning MUST NOT force backend-only sections, deployability assumptions, ownership, contracts, or runtime topology when repository evidence does not support them.
 
 ## Confidence Calibration
 

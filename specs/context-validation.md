@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.3 |
-| Date | 2026-05-21 |
+| Version | 1.4 |
+| Date | 2026-05-24 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 |
 
-> **v1.2 -> v1.3 changes:** Added D8 confidence calibration and F8-F10 deterministic mode schema checks, including numeric-only `token_budget`. No new file types, zones, runtime folders, automation, or tooling.
+> **v1.3 -> v1.4 changes:** Added planning-mode ECP validation expectations for structured engineering output, layer-adaptive planning, evidence boundaries, and scoped on-demand loading. No new file types, zones, runtime folders, automation, or tooling.
 
 ---
 
@@ -115,6 +115,10 @@ Use this as:
 | F8 | Every `modes/*.md` file exposes Markdown sections `## include`, `## on_demand`, `## exclude`, `## token_budget`, and `## notes` | error | yes |
 | F9 | `modes/*.md` files are context loading deltas, not prose-only narrative instructions | warning | partial |
 | F10 | `modes/*.md` `## token_budget` contains only a decimal integer; labels such as `medium` or `medium-high` are invalid | error | yes |
+| F11 | Planning mode uses Engineering Change Plan (ECP) terminology and rejects generic PRD/business prose | warning | manual |
+| F12 | Planning mode is layer-adaptive and does not force backend-specific sections when active layer evidence is non-backend or mixed | warning | manual |
+| F13 | Planning mode preserves evidence/inference/unknown separation and does not infer deployability, ownership, contracts, or runtime topology from imports alone | warning | manual |
+| F14 | Planning mode on-demand loading is scoped to the requested change and does not broadly load unrelated layers/systems by default | warning | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -403,6 +407,10 @@ ANTI-DUPLICATION
 [ ] F8  modes expose Markdown sections include/on_demand/exclude/token_budget/notes
 [ ] F9  modes are deltas, not prose-only instructions
 [ ] F10 modes token_budget is numeric only
+[ ] F11 planning uses ECP, not PRD/business prose
+[ ] F12 planning adapts sections to active layers
+[ ] F13 planning preserves evidence/inference/unknown boundaries
+[ ] F14 planning uses scoped on-demand loading
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid

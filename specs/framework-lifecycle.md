@@ -122,6 +122,9 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `imports != runtime-calls`
 - `shared-runtime != deployable-service`
 - `local-context-first discovery works`
+- `planning-mode emits ECP, not PRD prose`
+- `planning-mode adapts sections to active layers`
+- `planning-mode scopes on-demand loading to the change`
 
 ### Required Evidence
 
@@ -160,6 +163,8 @@ A cognition pattern reaches `cognition-validated` when Forge produces the expect
 - Required evidence shape is documented.
 - The case is repository-neutral enough to test framework cognition.
 - The case has regression value.
+
+For planning-mode benchmarks, expected behavior should verify structured Engineering Change Plan output, layer-adaptive sections, evidence/inference/unknown separation, and rejection of unsupported backend-only or topology assumptions.
 
 ### Non-Claims
 
