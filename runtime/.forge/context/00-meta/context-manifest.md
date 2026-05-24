@@ -48,9 +48,9 @@ Index and routing map for the entire context system. Not a knowledge source.
 |---|---|
 | `layers/<layer>` | Mode referencing that layer |
 | `systems/<unit>` | Mode + task intent on that unit |
-| `knowledge/decisions/` | `implementation`, `review` |
-| `knowledge/assumptions.md`, `unknowns.md` | `planning`, `testing` |
-| `knowledge/inferred.md` | `implementation` |
+| `knowledge/decisions/` | `implementation`, `execute`, `testing`, `review` |
+| `knowledge/assumptions.md`, `unknowns.md` | `planning`, `testing`, on-demand in `implementation`/`execute` |
+| `knowledge/inferred.md` | `implementation`, `execute`, `testing` |
 | `generated/*` | On-demand |
 
 ## Never Auto-Loaded

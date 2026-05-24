@@ -100,8 +100,9 @@ repo-root/
         ├── modes/                   # context loading modes — deklarasi delta pemuatan
         │   ├── planning.md
         │   ├── implementation.md
-        │   ├── review.md
-        │   └── testing.md
+        │   ├── execute.md
+        │   ├── testing.md
+        │   └── review.md
         ├── generated/               # konteks hasil generate AI — dibuat saat dipakai (opsional)
         └── temp/                    # scratch ephemeral — dibuat saat dipakai (gitignored, opsional)
 ```
@@ -130,7 +131,7 @@ Konteks dipisah di sepanjang **dua sumbu ortogonal** — inilah yang mencegah du
 
 ### 3.3 Resolusi tumpang-tindih: Layer vs Mode
 
-`testing`, `security`, `observability` adalah **lapisan** (pengetahuan yang bertahan) → `layers/`. `planning`, `implementation`, `review`, `documentation` adalah **mode pemuatan** (lensa kerja) → `modes/`.
+`testing`, `security`, `observability` adalah **lapisan** (pengetahuan yang bertahan) → `layers/`. `planning`, `implementation`, `execute`, `testing`, `review`, `documentation` adalah **mode pemuatan** (lensa kerja) → `modes/`.
 
 ---
 
@@ -262,7 +263,7 @@ Aturan pemisahan: keadaan 1 & 2 tidak pernah berbagi file (fakta manusia terpisa
 
 ## 7. Context Loading Modes
 
-Sebuah **mode** adalah deklarasi pemuatan konteks: ia menentukan konteks *apa* yang masuk ke window AI untuk satu jenis pekerjaan. Mode **tidak** mengatur perilaku, langkah, atau eksekusi — hanya pemilihan konteks. Nama "mode" lebih natural daripada "profile": AI bekerja dalam "mode planning", "mode review", dst.
+Sebuah **mode** adalah deklarasi pemuatan konteks dan kontrak operasional ringkas: ia menentukan konteks *apa* yang masuk ke window AI untuk satu jenis pekerjaan dan batas perilaku mode tersebut. Nama "mode" lebih natural daripada "profile": AI bekerja dalam "mode planning", "mode review", dst.
 
 ### 7.1 Inti yang selalu termuat — bukan bagian dari mode
 
@@ -292,10 +293,13 @@ Mode tidak pernah mendaftar `00-meta/*` atau `01-core/*` — hanya delta-nya. Ha
 
 | Mode | include (delta di atas inti) |
 |---|---|
-| `planning` | `knowledge/*`, ringkasan `layers/*` |
-| `implementation` | `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
-| `review` | `layers/security` + `layers/<terkait>`, `knowledge/decisions/*` |
-| `testing` | `layers/testing` + `systems/<terkait>`, `knowledge/assumptions` |
+| `planning` | Strategic ECP: `knowledge/*`, ringkasan `layers/*` |
+| `implementation` | Human-reviewable task breakdown: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
+| `execute` | Repository modification from approved tasks: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
+| `testing` | Test strategy/test changes: `layers/testing`, `systems/<terkait>`, `knowledge/assumptions` |
+| `review` | Correctness/risk review: `layers/security` + `layers/<terkait>`, `knowledge/decisions/*` |
+
+Alur operasional baku: `planning -> implementation -> execute -> testing -> review`. Tugas kecil boleh melewati `planning`; `execute` boleh mengerjakan subset tugas yang sudah disetujui; `testing` boleh berjalan mandiri untuk permintaan test-only.
 
 `loading.default_mode` di `forge.config.yaml` menetapkan mode default.
 
@@ -402,7 +406,7 @@ Siklus berbeda per tipe: `temp/*` (satu sesi → dihapus); `generated/*` (sampai
 
 `knowledge/assumptions.md` / `unknowns.md` / `inferred.md` / `confirmations.md` — tabel ledger masing-masing (kolom: lihat §6).
 
-`modes/<mode>.md` — skema §7.2, hanya deklarasi delta, ≤ ~40 baris.
+`modes/<mode>.md` — skema §7.2, deklarasi delta + kontrak operasional ringkas, ≤ ~40 baris.
 
 `CLAUDE.md` — adapter minimal: baca manifest → conventions → muat `00-meta/*` & `01-core/*` → pilih mode → muat delta mode.
 
@@ -412,7 +416,7 @@ Siklus berbeda per tipe: `temp/*` (satu sesi → dihapus); `generated/*` (sampai
 
 ### 14.1 Dibuat sekarang — kerangka fondasi
 
-`.forge/forge.config.yaml`; `00-meta/{context-manifest,conventions,glossary}.md`; `01-core/{product,architecture,principles,constraints}.md` (**template kosong**: heading + front-matter `status: unknown`); `layers/<layer>/README.md` (×5, konten final); `systems/README.md` (placeholder, konten final); `knowledge/decisions/ADR-0000-template.md`; `knowledge/{assumptions,unknowns,inferred,confirmations}.md` (header tabel, tanpa entri); `modes/{planning,implementation,review,testing}.md`; `CLAUDE.md`.
+`.forge/forge.config.yaml`; `00-meta/{context-manifest,conventions,glossary}.md`; `01-core/{product,architecture,principles,constraints}.md` (**template kosong**: heading + front-matter `status: unknown`); `layers/<layer>/README.md` (×5, konten final); `systems/README.md` (placeholder, konten final); `knowledge/decisions/ADR-0000-template.md`; `knowledge/{assumptions,unknowns,inferred,confirmations}.md` (header tabel, tanpa entri); `modes/{planning,implementation,execute,testing,review}.md`; `CLAUDE.md`.
 
 ### 14.2 Dihasilkan saat Context Initialization (fase berikutnya)
 
@@ -428,7 +432,7 @@ Struktur identik di tiga tier; yang berbeda hanya cakupan aktivasi. Naik tier = 
 
 **Minimal (~8 file)** — `forge.config.yaml`; `00-meta/{context-manifest,conventions}.md`; `01-core/{product,architecture}.md`; `knowledge/{decisions/ADR-0000-template.md, assumptions.md, unknowns.md}`; `CLAUDE.md`. Tanpa `layers/`, `systems/`, `modes/` — untuk titik awal/eksperimen.
 
-**Standard (~22–28 file) — rekomendasi** — Minimal + `glossary.md` + `01-core/{principles,constraints}.md` + `layers/<5>/README.md` + `systems/README.md` + `knowledge/{inferred,confirmations}.md` + `modes/<4>`. Repo single-service maupun monorepo memakai tier ini. Pohon penuh → §2.4.
+**Standard (~22–28 file) — rekomendasi** — Minimal + `glossary.md` + `01-core/{principles,constraints}.md` + `layers/<5>/README.md` + `systems/README.md` + `knowledge/{inferred,confirmations}.md` + `modes/<5>`. Repo single-service maupun monorepo memakai tier ini. Pohon penuh → §2.4.
 
 **Advanced (~38+ file)** — Standard + `layers/{observability,security}/README.md` + banyak unit di `systems/` (monorepo) + `modes/{security,documentation}.md` + `00-meta/{lifecycle,agent-contract}.md`.
 
@@ -436,7 +440,7 @@ Struktur identik di tiga tier; yang berbeda hanya cakupan aktivasi. Naik tier = 
 |---|---|---|---|
 | `layers/` | – | 5 README | + observability, security |
 | `systems/` | – | README (unit diisi saat init) | multi-unit (monorepo) |
-| `modes/` | – (muat penuh) | 4 mode | + security, documentation |
+| `modes/` | – (muat penuh) | 5 mode | + security, documentation |
 | Kesiapan agent | – | – | kontrak agent |
 
 ---

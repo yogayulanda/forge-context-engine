@@ -10,33 +10,25 @@ updated: 2026-05-24
 ---
 
 # Mode: Implementation
-
 ## include
-
 - `layers/<related>`
 - `systems/<related>`
 - `knowledge/decisions/`
 - `knowledge/inferred.md`
-
 ## on_demand
-
 - `knowledge/assumptions.md`
 - `generated/<relevant>`
-
 ## exclude
-
 - `systems/<unrelated>`
 - `layers/<unrelated>`
-
 ## token_budget
-
 8000
-
 ## notes
-
-- Execute the requested implementation while preserving repository consistency and existing architecture/runtime constraints.
-- Load only task-relevant layers, systems, decisions, and inferences; use on-demand context only when the change requires it.
-- Keep changes scoped to the request; do not introduce speculative redesign, ownership, topology, contracts, or behavior not supported by evidence.
+- Convert an approved ECP, approved phases, or simple request into a human-reviewable engineering task breakdown.
+- Break work into explicit executable tasks with likely files/components, dependency ordering, migration/runtime sequencing when relevant, validation notes, and rollback visibility.
+- Do not modify code, redesign architecture, repeat full ECP reasoning, or silently redefine approved plans.
+- Load only task-relevant layers, systems, decisions, and inferences; use on-demand context only when task decomposition requires it.
+- Keep task scope bounded; do not introduce speculative redesign, ownership, topology, contracts, or behavior not supported by evidence.
 - Continue on labeled proposed defaults only when low-risk, reversible, and non-authoritative; do not promote them into confirmed architecture/runtime behavior.
 - Never copy raw secrets from configs, env files, logs, fixtures, docs, or generated output into code or Forge context.
-- Report changed areas, loaded context, missing evidence or ambiguity that affected implementation, and whether implementation mode was sufficient.
+- Report task list, likely files/components, dependencies, loaded context, missing evidence or ambiguity, proposed vs confirmed boundaries, and whether implementation mode was sufficient.

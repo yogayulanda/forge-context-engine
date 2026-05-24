@@ -16,7 +16,7 @@ layers_enabled:
 systems: []
 
 loading:
-  default_mode: implementation  # planning | implementation | review | testing
+  default_mode: implementation  # planning | implementation | execute | testing | review
   respect_size_budget: true
 
 size_budget:

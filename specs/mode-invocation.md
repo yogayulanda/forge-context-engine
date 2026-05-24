@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 1.2 |
+| Version | 1.4 |
 | Date | 2026-05-24 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
@@ -13,7 +13,7 @@
 
 ## 0. Purpose
 
-Mode invocation defines how an AI assistant uses Forge mode files during planning, implementation, review, and testing.
+Mode invocation defines how an AI assistant uses Forge mode files during planning, implementation task decomposition, execution, testing, and review.
 
 The protocol ensures:
 - Mode files are operational contracts, not optional hints.
@@ -23,6 +23,8 @@ The protocol ensures:
 - Sensitive values are redacted before output or context write.
 - Runtime repositories receive concise executable rules.
 - Runtime placement stays modular: global files define entry rules, mode files define mode-specific behavior.
+- Human-reviewable execution boundaries exist before AI modifies code.
+- Execution can be deterministic after architecture reasoning, unknown classification, and task decomposition.
 - Framework maintainers have an authoritative protocol for future evolution.
 
 This document does NOT:
@@ -49,6 +51,14 @@ Canonical lifecycle:
 10. Mode sufficiency evaluated.
 
 Mode invocation is successful only when the assistant can explain which context was loaded, which evidence was missing, and whether the selected mode was enough for the task.
+
+Recommended workflow:
+
+```
+planning -> implementation -> execute -> testing -> review
+```
+
+Small/simple tasks may skip planning. Implementation may operate directly on simple requests. Execute may operate on approved task subsets. Testing may operate independently for test-only requests.
 
 ---
 
@@ -109,7 +119,8 @@ Runtime placement follows these boundaries:
 - `runtime/CLAUDE.md` keeps only concise invocation entry behavior.
 - `00-meta/conventions.md` keeps global cognition principles and mode-loading discipline.
 - `modes/<mode>.md` owns mode-specific execution and reporting behavior in `## notes`.
-- Mode-specific planning, implementation, review, and testing behavior should not be duplicated in globally loaded conventions.
+- Mode-specific planning, implementation, execute, testing, and review behavior should not be duplicated in globally loaded conventions.
+- Visible modes remain limited to `planning`, `implementation` (user-facing `implement`), `execute`, `testing`, and `review`.
 
 This placement reduces globally loaded operational text while preserving invocation guarantees.
 
@@ -126,7 +137,7 @@ If a sensitive value is discovered, report only:
 - Security finding status.
 - Rotation recommendation when the value may have been committed, logged, displayed, or copied.
 
-Raw secrets must not be copied into `.forge/context`, inferred knowledge, unknowns, confirmations, decisions, mode files, platform context, audit reports, planning output, review comments, testing notes, or validation-cases.
+Raw secrets must not be copied into `.forge/context`, inferred knowledge, unknowns, confirmations, decisions, mode files, platform context, audit reports, planning output, review comments, verification notes, or validation-cases.
 
 ---
 
@@ -137,12 +148,15 @@ Raw secrets must not be copied into `.forge/context`, inferred knowledge, unknow
 Planning mode produces an Engineering Change Plan (ECP) by default.
 
 Expected behavior:
+- Strategic engineering planning.
 - Architecture and runtime reasoning.
-- Implementation sequencing.
+- Implementation phases.
 - Risk and impact analysis.
 - Dependency, contract, data, and topology checks when evidenced.
 - Validation and rollback planning.
+- WHY and IMPACT explanation.
 - No implementation code by default.
+- No detailed executable coding tasks by default.
 - Safe proposed defaults for low-risk operational choices.
 - Escalation only for blocking decisions.
 - Secret findings redacted and treated as security findings.
@@ -151,20 +165,57 @@ Planning mode must stay layer-adaptive. It must not force backend-only, deployab
 
 ### 6.2 Implementation
 
-Implementation mode executes scoped changes.
+Implementation mode converts an approved ECP/phases or a simple request into a human-reviewable execution plan.
 
 Expected behavior:
-- Implement the requested change.
-- Maintain repository consistency.
-- Align with existing architecture and runtime constraints.
+- Explicit executable engineering task breakdown.
+- Likely files/components impacted.
+- Dependency ordering.
+- Migration/runtime sequencing when relevant.
+- Developer-friendly task structure.
 - Load only task-relevant layers, systems, decisions, and inferred knowledge.
 - Avoid speculative redesign.
 - Keep proposed defaults visible and unconfirmed.
 - Do not copy raw secrets from existing config, env, logs, fixtures, or docs into code or context.
+- Do not directly modify code.
 
-Implementation mode must not expand scope from code execution into architecture redesign unless the user explicitly requests that change. It must not silently promote proposed defaults into confirmed architecture or runtime behavior.
+Implementation mode must not redesign architecture again, repeat full ECP reasoning, or silently redefine approved plans. It creates the human-reviewable execution boundary before code changes.
 
-### 6.3 Review
+### 6.3 Execute
+
+Execute mode performs actual repository modifications.
+
+Expected behavior:
+- Implement approved implementation tasks or approved task subsets.
+- Preserve repository conventions and existing architecture/runtime constraints.
+- Keep changes scoped and minimal.
+- Load only execution-relevant context.
+- Preserve proposed vs confirmed boundaries.
+- Report modified files and verification performed.
+- Run narrow implementation verification when relevant.
+- Do not copy raw secrets from existing config, env, logs, fixtures, or docs into code or context.
+
+Execute mode must not perform major architecture redesign, invent topology/contracts, broad-load unrelated context, silently redefine approved plans, or absorb testing/review responsibilities.
+
+### 6.4 Testing
+
+Testing mode owns testing cognition and test-focused repository changes.
+
+Expected behavior:
+- Unit test strategy and test implementation guidance.
+- Integration testing strategy.
+- Mock, fake, stub, fixture, and test isolation reasoning.
+- Regression validation and coverage reasoning.
+- Operational verification and environment/test dependency considerations.
+- Test placement guidance: colocate unit tests near target packages/files; when no repo convention exists, prefer top-level `testing/integration`, `testing/e2e`, `testing/mocks`, `testing/fixtures`, and `testing/helpers` for non-unit concerns.
+- Existing repository test conventions take precedence over the recommended layout and should be reported when detected.
+- Retry, error, rollback, and proposed-default path validation where relevant.
+- Identification of missing coverage.
+- Test evidence reporting with secret redaction.
+
+Testing mode may create or modify tests when requested. It must not become generic architecture planning, replace review mode, or broadly redesign implementation.
+
+### 6.5 Review
 
 Review mode evaluates correctness and risk.
 
@@ -175,25 +226,18 @@ Expected behavior:
 - Evidence-based critique with explicit uncertainty.
 - Detection of unconfirmed proposed defaults.
 - Detection of accidental promotion from proposed assumption to confirmed behavior.
+- Verification of execute results.
+- Detection of accidental architecture drift.
+- Assessment of test evidence, residual regression risk, and coverage gaps without replacing testing mode.
 - Raw secret exposure in diffs, reports, generated context, or comments is a security finding.
 
 Review mode must not treat unevidenced concerns as confirmed defects.
 
-### 6.4 Testing
+### 6.6 Lower-Cost Execution Philosophy
 
-Testing mode defines or executes validation strategy.
+After architecture reasoning, unknown classification, and task decomposition are complete, execute mode should be more deterministic and less reasoning-heavy. It is suitable in principle for lower-cost execution-oriented models that follow an approved task plan.
 
-Expected behavior:
-- Validation strategy.
-- Coverage reasoning.
-- Rollback and regression analysis.
-- Operational verification.
-- Test evidence reporting.
-- Blocking vs proposed-default path validation where relevant.
-- Visibility checks for unresolved proposed defaults before production finalization.
-- Test evidence must redact credentials, tokens, cookies, URLs with credentials, and private keys.
-
-Testing mode must distinguish tested behavior from inferred confidence.
+This protocol does not add model routing, tool orchestration, automation, runtime executors, or agent services.
 
 ---
 
@@ -263,7 +307,12 @@ The following are invalid mode invocation behavior:
 - Asking broad questionnaires when a minimal decision prompt is enough.
 - Requiring interactive input in automation/non-interactive mode.
 - Generating open-ended architecture option lists instead of bounded decision options.
-- Collapsing planning, implementation, review, and testing into generic reasoning behavior.
+- Collapsing planning, implementation task decomposition, execute, testing, and review into generic reasoning behavior.
+- Allowing planning to collapse into detailed executable task lists.
+- Allowing implementation to directly modify code.
+- Allowing execute to redefine approved architecture or task intent.
+- Allowing execute to absorb testing responsibilities entirely.
+- Allowing review to collapse into testing or replace test strategy/test implementation work.
 - Duplicating mode-specific execution behavior in globally loaded conventions.
 - Replacing repository-owned code/docs/ADRs with Forge-generated cognition.
 - Adding automation/tooling/runtime execution under the guise of protocol compliance.
@@ -278,7 +327,14 @@ Mode invocation validation checks that runtime behavior follows this protocol:
 - `include`, `on_demand`, `exclude`, `token_budget`, and `notes` were considered.
 - Loaded context was scoped to the task.
 - Broad-loading violations were reported or avoided.
-- Planning, implementation, review, and testing retained distinct operational behavior.
+- Planning, implementation, execute, testing, and review retained distinct operational behavior.
+- Visible modes were constrained to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review`.
+- Planning produced strategic ECP/phases without detailed executable coding tasks.
+- Implementation produced executable task structure with likely file/component visibility and dependency ordering.
+- Execute owned actual repository modification behavior and did not silently redefine approved plans.
+- Testing remained visible and distinct from execute/review, with test strategy, test implementation guidance, coverage, mocks/fakes/stubs, and regression validation responsibilities.
+- Review assessed correctness/risk and execute results without replacing testing mode.
+- Architecture reasoning and execution reasoning remained separated.
 - Mode-specific behavior lives in mode files rather than globally loaded conventions.
 - Evidence, inference, and unknown boundaries were preserved.
 - Unknowns were classified as blocking, proposed-default, or informational.

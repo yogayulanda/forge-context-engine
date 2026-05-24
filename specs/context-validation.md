@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.7 |
+| Version | 1.9 |
 | Date | 2026-05-24 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.2 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.4 |
 
-> **v1.6 -> v1.7 changes:** Added global secret-safety and sensitive-value redaction validation expectations. Raw secret exposure is a critical validation failure. No new file types, zones, runtime folders, automation, tooling, or executors.
+> **v1.8 -> v1.9 changes:** Restored testing as a visible first-class mode with distinct testing cognition checks. No automation, tooling, runtime executors, or new folders.
 
 ---
 
@@ -123,7 +123,7 @@ Use this as:
 | F15 | Mode invocation reads `.forge/context/modes/<mode>.md` before loading mode-specific context | warning | manual |
 | F16 | Mode invocation reports loaded context areas/files, including on-demand context loaded and missing evidence | warning | manual |
 | F17 | Mode invocation does not broad-load `.forge/context` by default when the mode delta is sufficient | warning | manual |
-| F18 | Planning, implementation, review, and testing preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
+| F18 | Planning, implementation, execute, testing, and review preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
 | F19 | Mode invocation reports unresolved ambiguity and whether the selected mode was sufficient | warning | manual |
 | F20 | Mode-specific execution behavior lives in `modes/<mode>.md` rather than being duplicated in globally loaded `00-meta/conventions.md` | warning | manual |
 | F21 | Unknown handling distinguishes `blocking`, `proposed-default`, and `informational` behavior | warning | manual |
@@ -132,6 +132,20 @@ Use this as:
 | F24 | Human decision prompts are bounded: recommended plus alternative by default, maximum three options for major architecture tradeoffs | warning | manual |
 | F25 | Planning output discourages excessive architecture-option generation and open-ended brainstorming | warning | manual |
 | F26 | Proposed defaults do not silently become confirmed facts, topology, ownership, contracts, or production runtime behavior | warning | manual |
+| F27 | Visible runtime modes are constrained to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review` | warning | manual |
+| F28 | Planning mode produces strategic ECP/phases and does not collapse into detailed executable coding tasks | warning | manual |
+| F29 | Implementation mode produces executable task structure with likely files/components and dependency ordering, without modifying code | warning | manual |
+| F30 | Execute mode owns actual repository modification behavior and reports modified files clearly | warning | manual |
+| F31 | Execute mode does not silently redefine approved plans, topology, contracts, or architecture | warning | manual |
+| F32 | Architecture reasoning and execution reasoning remain separated by a human-reviewable execution boundary | warning | manual |
+| F33 | Testing mode remains visible and owns unit/integration test strategy, mocks/fakes/stubs, coverage reasoning, regression validation, and operational verification | warning | manual |
+| F34 | Execute mode does not absorb testing responsibilities entirely | warning | manual |
+| F35 | Review mode does not collapse into testing or replace test strategy/test implementation behavior | warning | manual |
+| F36 | Mode responsibilities remain separated across planning, implementation, execute, testing, and review | warning | manual |
+| F37 | Testing mode respects existing repository test placement conventions and does not force the recommended `testing/` layout without evidence | warning | manual |
+| F38 | Unit tests are not placed far from the target package/file without a repository convention or explicit reason | warning | manual |
+| F39 | Integration/e2e tests are not mixed into unit test folders without a repository convention or explicit reason | warning | manual |
+| F40 | Reusable mocks, fakes, stubs, fixtures, and helpers are not scattered without a clear repository convention | warning | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -453,6 +467,20 @@ ANTI-DUPLICATION
 [ ] F24 decision prompts bounded to 2 options by default
 [ ] F25 excessive architecture-option generation discouraged
 [ ] F26 proposed defaults not promoted to confirmed facts
+[ ] F27 visible runtime modes constrained to planning/implement/execute/testing/review
+[ ] F28 planning produces strategic ECP/phases, not detailed coding tasks
+[ ] F29 implementation produces executable task structure without modifying code
+[ ] F30 execute owns repository modification behavior and reports changed files
+[ ] F31 execute does not redefine approved plans or architecture
+[ ] F32 architecture reasoning and execution reasoning remain separated
+[ ] F33 testing remains visible and owns test cognition
+[ ] F34 execute does not absorb testing responsibilities entirely
+[ ] F35 review does not collapse into testing
+[ ] F36 mode responsibilities remain separated
+[ ] F37 testing mode respects existing repo test placement convention
+[ ] F38 unit tests not placed far from target package without reason
+[ ] F39 integration/e2e tests not mixed into unit folders without reason
+[ ] F40 reusable mocks/fixtures/helpers follow a clear convention
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid

@@ -193,7 +193,9 @@ Rules:
 - `token_budget` = recommended maximum context budget for this mode; value MUST be a decimal integer only.
 - `notes` = concise human/AI guidance only.
 - Modes MUST NOT re-list `00-meta/*` and `01-core/*` unless explicitly needed.
-- Modes MUST NOT contain domain knowledge, workflow prose, implementation instructions, or duplicate `conventions.md`.
+- Modes MUST NOT contain domain knowledge, large workflow playbooks, repository-specific implementation instructions, or duplicate `conventions.md`.
+- Visible modes are limited to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review`.
+- Planning must stay strategic; implementation must produce human-reviewable executable task structure; execute owns actual repository modification behavior; testing owns test strategy/test changes; review owns correctness/risk validation.
 - Token budget labels such as `medium`, `medium-high`, or `large` are invalid; use values such as `4000`, `8000`, or `12000`.
 
 ### Status Rules (Phase 1)
@@ -458,6 +460,10 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] At least ADR-0001 exists
 [ ] modes/* expose Markdown sections: include/on_demand/exclude/token_budget/notes
 [ ] modes/* token_budget is numeric only
+[ ] visible modes constrained to planning/implement/execute/testing/review
+[ ] implementation mode produces task breakdowns without code modification
+[ ] execute mode owns repository modification behavior
+[ ] testing mode owns test cognition and remains distinct from execute/review
 [ ] secret safety: no raw secrets copied into context, ledgers, reports, or validation evidence
 [ ] source: ai + status: inferred defaults to confidence: medium unless direct deterministic evidence supports high
 [ ] (v1.2) Evidence consistency: table/migration/entity/api counts match repo

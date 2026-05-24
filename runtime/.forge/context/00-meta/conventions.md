@@ -83,6 +83,10 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 
 - Modes are loading deltas on top of always-loaded core.
 - Mode files are authoritative for mode-specific execution behavior.
+- Visible modes are limited to `planning`, `implementation` (invoked as implement), `execute`, `testing`, and `review`.
+- `planning` owns strategic ECP reasoning; `implementation` owns human-reviewable task decomposition; `execute` owns repository modification; `testing` owns testing strategy/test changes; `review` owns correctness and risk review.
+- Keep testing distinct from execute and review: execute modifies implementation, testing reasons about tests/coverage/verification, review evaluates correctness and risk.
+- Test placement is convention-sensitive: unit tests are usually colocated, while non-unit tests may use a top-level `testing/` structure; testing mode owns detailed placement guidance.
 - Load only context required by the task; do not broad-load `.forge/context` by default.
 - Preserve evidence, inference, and unknown boundaries.
 - Report loaded context, missing evidence, unresolved ambiguity, and mode sufficiency according to the selected mode.

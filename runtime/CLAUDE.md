@@ -42,8 +42,10 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 ## Mode Invocation Entry
 
 - When a Forge mode is requested, read `.forge/context/modes/<mode>.md` first.
+- Visible modes: `planning`, `implement` (`implementation.md`), `execute`, `testing`, `review`.
 - Follow that mode's `include`, `on_demand`, `exclude`, `token_budget`, and `notes`.
 - Load scoped context only; do not broad-load `.forge/context` by default.
+- Keep planning, task decomposition, code execution, testing, and review separate.
 
 ## Notes
 

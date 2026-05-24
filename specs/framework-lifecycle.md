@@ -125,6 +125,10 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `planning-mode emits ECP, not PRD prose`
 - `planning-mode adapts sections to active layers`
 - `planning-mode scopes on-demand loading to the change`
+- `implementation-mode emits executable task breakdown, not code changes`
+- `execute-mode modifies repositories only from approved tasks`
+- `testing-mode owns test strategy, mocks/fakes/stubs, coverage, and regression validation`
+- `review-mode validates execute results without replacing testing mode`
 
 ### Required Evidence
 
@@ -164,7 +168,7 @@ A cognition pattern reaches `cognition-validated` when Forge produces the expect
 - The case is repository-neutral enough to test framework cognition.
 - The case has regression value.
 
-For planning-mode benchmarks, expected behavior should verify structured Engineering Change Plan output, layer-adaptive sections, evidence/inference/unknown separation, and rejection of unsupported backend-only or topology assumptions.
+For mode benchmarks, expected behavior should verify structured Engineering Change Plan output, layer-adaptive sections, evidence/inference/unknown separation, implementation task decomposition, execute-mode repository modification boundaries, testing-mode cognition boundaries, review-mode risk validation, and rejection of unsupported backend-only or topology assumptions.
 
 ### Non-Claims
 
