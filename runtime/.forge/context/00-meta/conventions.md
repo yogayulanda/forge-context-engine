@@ -73,17 +73,49 @@ Every `modes/*.md` file MUST expose exactly these Markdown sections after the ti
 | `## on_demand` | Context components loaded only when relevant. |
 | `## exclude` | Context components never loaded by default. |
 | `## token_budget` | Numeric recommended maximum context budget for this mode. |
-| `## notes` | Concise human/AI guidance only. |
+| `## notes` | Concise mode-specific execution and reporting guidance. |
 
 `token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid.
 
-Mode files are machine-resolvable context loading deltas. They MUST NOT re-list `00-meta/*` or `01-core/*` unless explicitly needed, contain domain knowledge, contain workflow prose, contain implementation instructions, or duplicate `conventions.md`.
+Mode files are machine-resolvable context loading deltas and the authority for mode-specific execution behavior. They MUST NOT re-list `00-meta/*` or `01-core/*` unless explicitly needed, contain domain knowledge, or duplicate `conventions.md`.
 
-Planning mode outputs use **Engineering Change Plan (ECP)** terminology.
+## Mode Invocation
 
-An ECP is a structured, evidence-based, layer-adaptive engineering planning artifact covering the proposed change, architectural/runtime impact, dependency and contract impact, implementation strategy, risks, validation, and rollback. It is not a product PRD, stakeholder/business proposal, generic brainstorming, implementation code, or architecture rewrite by default.
+- Modes are loading deltas on top of always-loaded core.
+- Mode files are authoritative for mode-specific execution behavior.
+- Load only context required by the task; do not broad-load `.forge/context` by default.
+- Preserve evidence, inference, and unknown boundaries.
+- Report loaded context, missing evidence, unresolved ambiguity, and mode sufficiency according to the selected mode.
+- Runtime-managed cognition lives under `.forge/context`; repository-owned cognition remains in application code, repository docs, ADRs, and human confirmations.
 
-ECP sections must adapt to active repository layers and task scope. Planning MUST NOT force backend-only sections, deployability assumptions, ownership, contracts, or runtime topology when repository evidence does not support them.
+## Unknown Decision Semantics
+
+Unknowns are classified as:
+
+| Classification | Meaning | Runtime behavior |
+|---|---|---|
+| `blocking` | Cannot safely continue without an authoritative decision | Interactive: ask the minimum decision question. Automation: emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION`. |
+| `proposed-default` | Low-risk, conventional, reversible, non-authoritative operational choice | AI may continue, but must label the value `proposed`, `not confirmed`, and record why it is safe. |
+| `informational` | Useful uncertainty that does not affect safe continuation | Record only; do not interrupt workflow. |
+
+Proposed defaults never become confirmed facts without human confirmation. Blocking applies to authoritative contracts, ownership/SLA/compliance, destructive migration approval, security policy, production topology, retry/DLQ semantics, and event schema authority.
+
+Human decision prompts must be decision-oriented: recommended safest option plus one viable alternative by default; use a third option only for major architecture tradeoffs.
+
+## Secret Safety
+
+Forge must never print, copy, summarize, or expose raw secrets discovered during init, audit, planning, implementation, review, testing, migration, or platform discovery.
+
+Sensitive values include API keys, access tokens, refresh tokens, passwords, private keys, JWTs, session cookies, webhook secrets, database URLs with credentials, Kafka/SASL credentials, cloud credentials, and OAuth client secrets.
+
+When a secret is detected:
+
+- Redact the raw value before output or context write.
+- Report only secret type, file path, line/reference when available, and safe masked preview such as `<REDACTED_SECRET>`, `<REDACTED_PRIVATE_KEY>`, or `****a91f`.
+- Do not copy the raw value into `.forge/context`, `knowledge/inferred.md`, `knowledge/unknowns.md`, `knowledge/confirmations.md`, decisions, modes, reports, validation-cases, or platform context.
+- Classify it as a security finding.
+- Recommend rotation if the secret may have been committed, logged, displayed, copied, or otherwise exposed.
+- Preserve enough evidence for remediation without revealing the value.
 
 ## Confidence Calibration
 
@@ -106,18 +138,19 @@ Examples:
 
 1. AI does not self-promote status — **propose only**.
 2. AI does not present `inferred`/`assumption` as fact.
-3. On encountering `unknown`, AI stops & asks or records it — **guessing forbidden**.
+3. On encountering `unknown`, AI classifies it as `blocking`, `proposed-default`, or `informational`; guessing confirmed facts is forbidden.
 4. New inferences go to `knowledge/inferred.md` or `generated/`, never to `source: human` files.
 5. Without `evidence`, max status is `assumption`.
 6. AI does not fabricate architecture, APIs, services, databases, integrations, ownership, or business rules.
 7. Treat legacy AI artifacts (`.ai/`, `.claude/`, `AGENTS.md`, etc.) as **reference**, not source-of-truth. Repo code wins on conflict.
-8. Tag every `unknowns.md` entry with priority: `blocking` · `important` · `informational`.
+8. Tag every `unknowns.md` entry with classification: `blocking` / `proposed-default` / `informational`.
 9. Use `owner: unresolved` (not `TBD`) when owner is undetermined; create one root unknown `U-OWN`.
 10. **Evidence Consistency** — before finalizing context, cross-check critical claims against repo evidence (tables, migrations, entities, repositories, APIs/handlers, workers, integrations, validation rules). If repo shows N items, context must say N — not approximate.
 11. **Drift Detection** — when repo evidence changes after context was written, mark affected entries as stale, refresh from current code, log unresolved ambiguity in `unknowns.md`.
 12. **No Phantom ADRs** — never list `ADR-NNNN` in `architecture.md` (or anywhere as cited evidence) unless the file actually exists. Planned ADRs go to `assumptions.md` or `unknowns.md`.
 13. **Implicit Constraint Extraction** — during init, scan code for implicit constraints (enum values, validation rules, required fields, ID semantics, currency/amount rules, status fields, retry/idempotency). Global rules → `constraints.md`. System-specific → `systems/<name>/system.md`. Ambiguous → `unknowns.md`. Weak inference → `inferred.md`.
-14. **Internal Table Hygiene** — markdown table cells follow the same conventions as front-matter. Owner cells use `unresolved`, never `TBD`. Status/priority cells use the canonical vocabulary.
+14. **Internal Table Hygiene** — markdown table cells follow the same conventions as front-matter. Owner cells use `unresolved`, never `TBD`. Status/classification cells use the canonical vocabulary.
+15. **Secret Safety** — raw secrets are never displayed, copied, summarized, or stored; report redacted evidence only and classify discoveries as security findings.
 
 ## Status Promotion
 
@@ -204,17 +237,17 @@ When initializing on a repo that already has AI/context artifacts (`.ai/`, `.cla
 - Useful legacy content is re-expressed in correct zones with proper `status` + `evidence` (citing the legacy file).
 - Never copy legacy content verbatim into `01-core/`/`layers/`/`systems/` without re-validating against code.
 
-## Unknown Priority Classification
+## Unknown Classification
 
-Each entry in `knowledge/unknowns.md` carries a priority field:
+Each entry in `knowledge/unknowns.md` carries a classification field:
 
-| Priority | Meaning | Trigger |
+| Classification | Meaning | Trigger |
 |---|---|---|
-| `blocking` | Init or work cannot proceed without resolution | Missing constraint, undefined ownership for critical decision |
-| `important` | Should be resolved within current sprint/cycle | Architectural ambiguity, incomplete contract |
-| `informational` | Nice to know; resolve when convenient | Minor naming clarification, optional integration detail |
+| `blocking` | Work cannot safely continue without resolution | Authoritative contract, ownership/SLA/compliance, destructive migration, security, production topology, retry/DLQ, event schema authority |
+| `proposed-default` | Work may continue using a labeled safe default | Topic/package/handler/feature-flag/internal routing naming or other low-risk reversible operational choice |
+| `informational` | Work may continue without a default | Optional optimization, future topology possibility, non-critical ambiguity |
 
-AI sorts unknowns by priority during planning mode. Blocking unknowns must be surfaced before any implementation starts.
+AI sorts unknowns by classification during planning mode. Blocking unknowns must be surfaced before implementation or release. Proposed defaults must remain explicitly `proposed` and `not confirmed`.
 
 ## Glossary Signal Rule
 

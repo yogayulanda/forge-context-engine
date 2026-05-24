@@ -33,8 +33,10 @@ updated: 2026-05-24
 4000
 
 ## notes
-
 - Output an Engineering Change Plan (ECP): evidence-based, layer-adaptive engineering planning covering proposed change, architecture/runtime impact, dependency/contract impact, implementation strategy, risks, unknowns, validation, and rollback.
-- ECP is not brainstorming, PRD/business prose, implementation code, or architecture rewrite by default.
+- ECP is not brainstorming, PRD/business prose, implementation code, or architecture rewrite; sequence implementation without writing code unless explicitly requested.
 - Adapt sections to evidence: backend transactions/data/contracts; frontend UX/routes/components/state/accessibility/performance/analytics; infrastructure deployment/environment/reliability/security.
+- Prefer safe proposed defaults for low-risk operational choices; escalate only blocking decisions and keep prompts to recommended plus alternative.
+- Redact secret values in ECPs and report secret discoveries only as security findings with type/path/line/masked preview.
+- Include impact/risk analysis, validation approach, rollback path, loaded context, missing evidence, unresolved ambiguity, and whether planning mode was sufficient.
 - Separate evidence, inference, and unknowns; do not invent topology, ownership, contracts, deployability, or runtime relationships from imports alone; load extra context only for the scoped change.

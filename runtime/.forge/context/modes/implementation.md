@@ -6,7 +6,7 @@ status: confirmed
 confidence: high
 source: human
 owner: forge-context-engine
-updated: 2026-05-21
+updated: 2026-05-24
 ---
 
 # Mode: Implementation
@@ -34,4 +34,9 @@ updated: 2026-05-21
 
 ## notes
 
-Concise guidance only: load task-relevant layers, systems, decisions, and inferences.
+- Execute the requested implementation while preserving repository consistency and existing architecture/runtime constraints.
+- Load only task-relevant layers, systems, decisions, and inferences; use on-demand context only when the change requires it.
+- Keep changes scoped to the request; do not introduce speculative redesign, ownership, topology, contracts, or behavior not supported by evidence.
+- Continue on labeled proposed defaults only when low-risk, reversible, and non-authoritative; do not promote them into confirmed architecture/runtime behavior.
+- Never copy raw secrets from configs, env files, logs, fixtures, docs, or generated output into code or Forge context.
+- Report changed areas, loaded context, missing evidence or ambiguity that affected implementation, and whether implementation mode was sufficient.

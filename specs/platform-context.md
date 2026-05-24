@@ -207,6 +207,8 @@ Before initializing platform context, collect:
 
 If local repo evidence is inaccessible, mark affected platform claims as `unknown` or `inferred`; do not guess.
 
+Never collect or copy raw secrets into platform context. If cross-repo evidence contains credentials, tokens, cookies, private keys, database URLs with credentials, Kafka/SASL credentials, cloud credentials, or OAuth client secrets, record only secret type, repo/file path, line/reference when available, masked preview, and security finding status.
+
 ---
 
 ## 7. Suggested Structure
@@ -314,6 +316,7 @@ Rules:
 - Do not infer `runtime-calls` from `imports` or `uses-runtime`.
 - Link to shared contracts by owning repo plus path.
 - Do not copy large contract bodies into platform context.
+- Do not copy raw secrets, credential-bearing URLs, tokens, cookies, or private keys into platform context.
 - If a linked repo is unavailable, mark the link `unknown` or `stale`.
 - For `shared-runtime` edges, record version evidence when available: `go.mod` require version, replace directive, commit SHA, tag, local path dependency, and module path.
 - If shared-runtime version evidence is missing, mark it `unknown`; do not infer compatibility guarantees.
@@ -348,7 +351,7 @@ confidence: medium
 6. Classify cross-repo edges using the edge taxonomy.
 7. For shared-runtime edges, capture version evidence.
 8. Scan repository evidence for cross-repo links when local context is missing or stale.
-9. Populate topology, integrations, contracts, ownership, and global decisions.
+9. Populate topology, integrations, contracts, ownership, and global decisions using redacted evidence only.
 10. Route unresolved cross-repo ambiguity to platform `knowledge/unknowns.md`.
 11. Mark AI-derived platform facts as `status: inferred`, `source: ai`, default `confidence: medium`.
 12. Request human confirmation for platform boundary, maturity, ownership, and global decisions.
@@ -367,6 +370,7 @@ Audit platform context when member repos change, integrations change, ownership 
 Audit checks:
 
 - Member repo list still matches the platform boundary.
+- No raw secrets appear in platform context, audit reports, validation-cases, confirmations, decisions, inferred knowledge, or unknowns.
 - Excluded repos are still intentionally excluded.
 - Cross-repo links still resolve.
 - Contract references still exist at the owning repo.
@@ -414,8 +418,8 @@ Unknown handling:
 - Ownership unknowns use `owner: unresolved`.
 - Boundary ambiguity is `blocking`.
 - Unknown ecosystem type or maturity is `blocking`.
-- Missing shared-runtime version evidence is `important`.
-- Contract ownership ambiguity is usually `important`.
+- Missing shared-runtime version evidence is `informational` unless it blocks a release or compatibility decision.
+- Contract ownership ambiguity is `blocking` when authoritative contract decisions are required; otherwise `informational`.
 - Nice-to-have topology details are `informational`.
 
 ---

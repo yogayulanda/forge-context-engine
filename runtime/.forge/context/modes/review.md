@@ -6,7 +6,7 @@ status: confirmed
 confidence: high
 source: human
 owner: forge-context-engine
-updated: 2026-05-21
+updated: 2026-05-24
 ---
 
 # Mode: Review
@@ -34,4 +34,9 @@ updated: 2026-05-21
 
 ## notes
 
-Concise guidance only: review against evidence, decisions, and task-scoped context.
+- Review correctness, regressions, risks, and consistency against evidence, decisions, and task-scoped context.
+- Check topology, runtime behavior, data flow, contracts, and layer/system boundaries only when relevant evidence is loaded.
+- Lead with evidence-based critique; keep unevidenced concerns as uncertainty, not confirmed defects.
+- Identify unconfirmed proposed defaults and flag any accidental promotion of proposed assumptions into confirmed behavior.
+- Treat raw secret exposure in diffs, reports, generated context, or comments as a security finding requiring redaction.
+- Report reviewed areas, loaded context, missing evidence or ambiguity, risk severity, and whether review mode was sufficient.

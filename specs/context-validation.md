@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.4 |
+| Version | 1.7 |
 | Date | 2026-05-24 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.2 |
 
-> **v1.3 -> v1.4 changes:** Added planning-mode ECP validation expectations for structured engineering output, layer-adaptive planning, evidence boundaries, and scoped on-demand loading. No new file types, zones, runtime folders, automation, or tooling.
+> **v1.6 -> v1.7 changes:** Added global secret-safety and sensitive-value redaction validation expectations. Raw secret exposure is a critical validation failure. No new file types, zones, runtime folders, automation, tooling, or executors.
 
 ---
 
@@ -32,6 +32,7 @@ Use this as:
 
 | Level | Meaning | Action on Fail |
 |---|---|---|
+| `critical` | Security exposure or irreversible safety violation. | Stop, redact, rotate if exposed, and fix before any report or commit. |
 | `error` | Invariant violation. Context system is broken. | Must fix before commit. |
 | `warning` | Soft violation. System works but is degrading. | Fix within current sprint/session. |
 | `info` | Suggestion. System works, quality can improve. | Fix when convenient. |
@@ -113,19 +114,31 @@ Use this as:
 | F6 | Inter-system dependencies expressed as `id` references, not content copies | warning | partial |
 | F7 | Producer / source-system / domain enumerations defined once in `01-core/product.md`; other files reference rather than re-list *(v1.1)* | warning | partial |
 | F8 | Every `modes/*.md` file exposes Markdown sections `## include`, `## on_demand`, `## exclude`, `## token_budget`, and `## notes` | error | yes |
-| F9 | `modes/*.md` files are context loading deltas, not prose-only narrative instructions | warning | partial |
+| F9 | `modes/*.md` files remain context loading deltas with concise operational notes, not domain knowledge or prose-only narratives | warning | partial |
 | F10 | `modes/*.md` `## token_budget` contains only a decimal integer; labels such as `medium` or `medium-high` are invalid | error | yes |
 | F11 | Planning mode uses Engineering Change Plan (ECP) terminology and rejects generic PRD/business prose | warning | manual |
 | F12 | Planning mode is layer-adaptive and does not force backend-specific sections when active layer evidence is non-backend or mixed | warning | manual |
 | F13 | Planning mode preserves evidence/inference/unknown separation and does not infer deployability, ownership, contracts, or runtime topology from imports alone | warning | manual |
 | F14 | Planning mode on-demand loading is scoped to the requested change and does not broadly load unrelated layers/systems by default | warning | manual |
+| F15 | Mode invocation reads `.forge/context/modes/<mode>.md` before loading mode-specific context | warning | manual |
+| F16 | Mode invocation reports loaded context areas/files, including on-demand context loaded and missing evidence | warning | manual |
+| F17 | Mode invocation does not broad-load `.forge/context` by default when the mode delta is sufficient | warning | manual |
+| F18 | Planning, implementation, review, and testing preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
+| F19 | Mode invocation reports unresolved ambiguity and whether the selected mode was sufficient | warning | manual |
+| F20 | Mode-specific execution behavior lives in `modes/<mode>.md` rather than being duplicated in globally loaded `00-meta/conventions.md` | warning | manual |
+| F21 | Unknown handling distinguishes `blocking`, `proposed-default`, and `informational` behavior | warning | manual |
+| F22 | Proposed defaults are explicitly labeled `proposed` and `not confirmed`, with reason and confirmation boundary when needed | warning | manual |
+| F23 | Automation/non-interactive behavior emits `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` for blocking unknowns instead of requiring interactive questions | warning | manual |
+| F24 | Human decision prompts are bounded: recommended plus alternative by default, maximum three options for major architecture tradeoffs | warning | manual |
+| F25 | Planning output discourages excessive architecture-option generation and open-ended brainstorming | warning | manual |
+| F26 | Proposed defaults do not silently become confirmed facts, topology, ownership, contracts, or production runtime behavior | warning | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
 | ID | Rule | Severity | Automatable |
 |---|---|---|---|
 | G1 | Every entry in `assumptions.md` has: ID, owner, created date, status | error | yes |
-| G2 | Every entry in `unknowns.md` has: ID, owner, created date, status | error | yes |
+| G2 | Every entry in `unknowns.md` has: ID, owner, created date, status, classification | error | yes |
 | G3 | Every entry in `inferred.md` has: ID, evidence, owner, created date, status | error | yes |
 | G4 | Every entry in `confirmations.md` has: date, target ID, transition, confirmer | error | yes |
 | G5 | `confirmations.md` target IDs reference existing `id` values in the system | warning | yes |
@@ -202,6 +215,17 @@ Use this as:
 | L7 | No quoted translated headings used as primary reference (e.g. citing `"Sumber Data"` or `"Data Sources"` directly) | warning | partial |
 | L8 | Anchor links use stable slugs (`#producers`), not language-dependent ones | info | yes |
 
+### Category M — Secret Safety & Redaction *(v1.7)*
+
+| ID | Rule | Severity | Automatable |
+|---|---|---|---|
+| M1 | Generated context, reports, plans, reviews, tests, migrations, validation-cases, and platform context contain no raw secrets | critical | partial |
+| M2 | Secret findings report only secret type, file path, line/reference when available, and safe masked preview | critical | manual |
+| M3 | Raw secrets are not copied into `knowledge/inferred.md`, `knowledge/unknowns.md`, `knowledge/confirmations.md`, decisions, modes, or generated context | critical | partial |
+| M4 | Discovered secrets are classified as security findings | error | manual |
+| M5 | Rotation is recommended when a secret may have been committed, logged, displayed, copied, or otherwise exposed | warning | manual |
+| M6 | Database URLs with credentials, Kafka/SASL credentials, cloud credentials, OAuth client secrets, JWTs, cookies, private keys, tokens, and passwords are redacted before output | critical | partial |
+
 ---
 
 ## 3. Validation Execution Modes
@@ -237,6 +261,7 @@ specs/VALIDATION-SPEC.md. Report: rule ID, pass/fail, file path, details.
 forge validate              # full validation
 forge validate --fix        # auto-fix where possible (e.g., registry sync)
 forge validate --category A # single category
+forge validate --severity critical  # critical findings only
 forge validate --severity error  # errors only
 forge validate --ci         # exit code 1 on any error (CI integration)
 ```
@@ -277,6 +302,9 @@ Date: YYYY-MM-DD
 Repo: <repo-name>
 Tier: <standard|minimal|advanced>
 
+CRITICAL (stop and remediate):
+  [M1] generated/report.md — raw secret exposure detected; redact and rotate if exposed
+
 ERRORS (must fix):
   [A7] layers_enabled contains "mobile" but layers/mobile/ not found
   [D1] systems/payment/system.md — status: confirmed but evidence is empty
@@ -290,6 +318,7 @@ INFO:
 
 SUMMARY:
   Total files checked: 24
+  Critical: 1
   Errors: 2
   Warnings: 2
   Info: 1
@@ -317,7 +346,7 @@ B1 (front-matter exists)
        └── E1–E4 (source rules)
 ```
 
-Run in order: **A → B → C → I → D → E → F → G → H → J → K → L** to avoid cascading false failures.
+Run in order: **M → A → B → C → I → D → E → F → G → H → J → K → L** to avoid cascading false failures and prevent raw secret propagation.
 
 J, K, and L depend on Phases 0.5–6 of init having completed and on D (evidence) being clean — they verify *content correctness* and *language/reference quality*, while D verifies *metadata correctness*.
 
@@ -342,6 +371,7 @@ J, K, and L depend on Phases 0.5–6 of init having completed and on D (evidence
 |---|---|
 | `FORGE-CONTEXT-ARCHITECTURE.md` §16 | Source of invariant definitions — this spec formalizes them |
 | `CONTEXT-INITIALIZATION-PROTOCOL.md` §9 | Init Phase 6 uses this spec as acceptance criteria |
+| `specs/mode-invocation.md` | Source of mode invocation lifecycle and runtime behavior expectations |
 | Future `TOOLING-SPEC.md` | `forge validate` CLI implements this spec programmatically |
 | Future CI pipeline | Uses `forge validate --ci` as gate |
 
@@ -411,10 +441,22 @@ ANTI-DUPLICATION
 [ ] F12 planning adapts sections to active layers
 [ ] F13 planning preserves evidence/inference/unknown boundaries
 [ ] F14 planning uses scoped on-demand loading
+[ ] F15 mode file read before mode-specific loading
+[ ] F16 loaded context and missing evidence reported
+[ ] F17 no broad-loading by default
+[ ] F18 mode distinctions preserved
+[ ] F19 ambiguity and mode sufficiency reported
+[ ] F20 mode-specific behavior lives in mode files, not global conventions
+[ ] F21 unknowns classified blocking/proposed-default/informational
+[ ] F22 proposed defaults labeled and bounded
+[ ] F23 automation emits blocking status, not interactive questions
+[ ] F24 decision prompts bounded to 2 options by default
+[ ] F25 excessive architecture-option generation discouraged
+[ ] F26 proposed defaults not promoted to confirmed facts
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid
-[ ] G2  unknowns entries valid
+[ ] G2  unknowns entries include classification
 [ ] G3  inferred entries valid
 [ ] G4  confirmations entries valid
 [ ] G5  confirmation targets exist
@@ -475,4 +517,12 @@ LANGUAGE & REFERENCE STABILITY (L — v1.2)
 [ ] L6  cross-refs prefer id/path over heading text
 [ ] L7  no quoted translated heading citations
 [ ] L8  stable anchor slugs
+
+SECRET SAFETY & REDACTION (M — v1.7)
+[ ] M1  no raw secrets in generated context or reports
+[ ] M2  secret findings use type/path/line/masked preview only
+[ ] M3  no raw secrets copied into knowledge, decisions, modes, or generated context
+[ ] M4  discovered secrets classified as security findings
+[ ] M5  rotation recommended when exposure is possible
+[ ] M6  credentials/tokens/private keys/cookies/passwords redacted before output
 ```

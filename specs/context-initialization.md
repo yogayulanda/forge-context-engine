@@ -116,9 +116,10 @@ Each discovered artifact gets one classification:
 
 1. **Repo code wins on conflict.** If legacy doc says X but code shows Y, code is truth.
 2. **Never copy verbatim** into `01-core/`/`layers/`/`systems/`. Re-express with proper `status` + `evidence`.
-3. **Conflicts → `unknowns.md`** with priority `important` (or `blocking` for security/data integrity).
-4. **Cite legacy as evidence** with `evidence: [{ type: doc, ref: .ai/architecture.md }]` when content is reused.
-5. Legacy artifacts may **stay in place** during transition. They are reference, not source-of-truth.
+3. **Conflicts -> `unknowns.md`** with classification `informational` or `blocking` for security/data integrity.
+4. **Secret safety**: never copy raw secrets from legacy artifacts, `.env`, logs, config, docs, fixtures, or generated files into Forge context or reports.
+5. **Cite legacy as evidence** with `evidence: [{ type: doc, ref: .ai/architecture.md }]` when content is reused.
+6. Legacy artifacts may **stay in place** during transition. They are reference, not source-of-truth.
 
 ### Output
 
@@ -272,10 +273,11 @@ While reading code, harvest implicit rules and route them:
 | Single-unit rule | `systems/<unit>/system.md` |
 | Unclear meaning | `knowledge/unknowns.md` |
 | Weak inference | `knowledge/inferred.md` |
+| Secret or credential value | Do not store value; record redacted security finding only |
 
 ### Phantom ADR Guard *(v1.2)*
 
-`architecture.md` must NOT cite ADR-NNNN entries that do not exist as files. If only ADR-0001 exists, only ADR-0001 may appear with `evidence: { type: adr, ... }`. Planned/anticipated ADRs go to `assumptions.md` with priority `important` or `unknowns.md` — never to `architecture.md` body as evidence.
+`architecture.md` must NOT cite ADR-NNNN entries that do not exist as files. If only ADR-0001 exists, only ADR-0001 may appear with `evidence: { type: adr, ... }`. Planned/anticipated ADRs go to `assumptions.md` or `unknowns.md` with classification `informational` unless they block safe execution; never to `architecture.md` body as evidence.
 
 ### Exit Criteria
 
@@ -391,9 +393,10 @@ Populate initial entries in all four knowledge ledgers from discoveries during P
 
 ### Rules
 
-- Every entry has: ID, owner, created date, status, **priority**.
-- Unknown priority levels: `blocking` · `important` · `informational`.
+- Every unknown entry has: ID, owner, created date, status, **classification**.
+- Unknown classification values: `blocking`, `proposed-default`, `informational`.
 - `inferred` entries must have `evidence`.
+- Raw secrets must not appear in any ledger; secret findings use type, file path, line/reference when available, and masked preview only.
 - `source: ai` + `status: inferred` entries default to `confidence: medium`; use `high` only for direct deterministic repo evidence.
 - `unknowns` must NOT be guessed — they stay open until resolved.
 - ADR numbering starts at `0001` (template is `0000`).
@@ -455,6 +458,7 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] At least ADR-0001 exists
 [ ] modes/* expose Markdown sections: include/on_demand/exclude/token_budget/notes
 [ ] modes/* token_budget is numeric only
+[ ] secret safety: no raw secrets copied into context, ledgers, reports, or validation evidence
 [ ] source: ai + status: inferred defaults to confidence: medium unless direct deterministic evidence supports high
 [ ] (v1.2) Evidence consistency: table/migration/entity/api counts match repo
 [ ] (v1.2) No phantom ADR references in architecture.md
@@ -495,7 +499,7 @@ Surface critical inferred knowledge and high-priority unknowns to the human owne
 | Step | Action |
 |---|---|
 | 7.1 | AI generates a confirmation summary (max ~30 items) |
-| 7.2 | Summary groups items into: **critical inferred** (high-confidence facts ready to promote), **blocking unknowns**, **important unknowns** |
+| 7.2 | Summary groups items into: **critical inferred** (high-confidence facts ready to promote), **blocking unknowns**, **proposed defaults**, **informational unknowns** |
 | 7.3 | Human reviews each item: confirm / reject / defer |
 | 7.4 | Confirmed items → `status: confirmed` + entry in `knowledge/confirmations.md` |
 | 7.5 | Rejected items → demote to `assumption` or move to `unknowns.md` |
@@ -746,7 +750,7 @@ PHASE 1–3 — POPULATION
 □ systems/ — system.md created for each unit
 
 PHASE 4 — KNOWLEDGE LEDGERS
-□ knowledge/unknowns.md — all gaps recorded with priority (blocking/important/informational)
+□ knowledge/unknowns.md — all gaps recorded with classification (blocking/proposed-default/informational)
 □ knowledge/assumptions.md — all unverified beliefs recorded
 □ knowledge/inferred.md — all AI inferences recorded with evidence
 □ knowledge/decisions/ADR-0001 — architecture adoption recorded
@@ -785,9 +789,10 @@ Distilled from initialization on `transaction-history-service` (2026-05-20). The
 1. **Always run Phase 0.5** (legacy artifact discovery) before Phase 1 on brownfield repos.
 2. **Conditional layer activation** — never auto-include layers without evidence.
 3. **Single-root unknown for ownership** — never spread `owner: TBD` across files.
-4. **Priority on every unknown entry** — blocking/important/informational.
+4. **Classification on every unknown entry** — blocking/proposed-default/informational.
 5. **Phase 7 confirmation pass** before declaring init complete.
 6. **README = TOC only** — content lives in `<layer>.md`.
+7. **Secret redaction** — report secret type/path/line/masked preview only and recommend rotation when exposure is possible.
 
 ### Behaviors to Avoid
 

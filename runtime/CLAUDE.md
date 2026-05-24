@@ -14,13 +14,15 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 ## AI Operational Rules (Summary)
 
 - Never guess. `unknown` is a mandatory destination, not a guess.
+- Classify unknowns as `blocking`, `proposed-default`, or `informational`; automation must emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` instead of asking interactive questions.
+- Never print, copy, summarize, or store raw secrets. Redact sensitive values before any output or Forge context write.
 - Never write to `source: human` files. Inferences go to `knowledge/inferred.md` or `generated/`.
 - Never self-promote `status`. Propose only; promotion to `confirmed` requires entry in `knowledge/confirmations.md`.
 - Without `evidence`, max status is `assumption`.
 - When task conflicts with `01-core/constraints.md`, stop and flag.
 - Never fabricate architecture, APIs, services, databases, integrations, ownership, or business rules.
 - Treat legacy AI artifacts (`.ai/`, `.claude/`, `AGENTS.md`, etc.) as **reference**, not source-of-truth. Repo code wins on conflict.
-- Tag every `unknowns.md` entry with priority: `blocking` · `important` · `informational`.
+- Tag every `unknowns.md` entry with classification: `blocking` / `proposed-default` / `informational`.
 - Use `owner: unresolved` (not `TBD`) when owner is undetermined; create one root unknown `U-OWN`.
 - **Evidence consistency:** cross-check critical claims (tables, migrations, entities, APIs, workers, integrations, validation rules) against repo before finalizing. If repo has N, context says N.
 - **Drift:** code change at evidence path demotes `confirmed` → `inferred`; refresh and log ambiguity in `unknowns.md`.
@@ -30,6 +32,18 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 - **Internal table hygiene:** table cells follow same conventions as front-matter (no `TBD`).
 - **Language consistency:** one dominant natural language per repo (chosen at init). Never translate identifiers (table names, enum values, RPC names, etc.). No mixed-language sentences in narrative content.
 - **Reference stability:** prefer `id`/file references over translated heading text. Citing `core.product` is stable; citing `"Data Sources" section` is fragile.
+
+## Secret Safety Entry
+
+- Report discovered secrets only as type, file path, line/reference when available, and safe masked preview such as `<REDACTED_SECRET>` or `****a91f`.
+- Do not copy secrets into `.forge/context`, reports, plans, reviews, tests, migrations, validation-cases, decisions, confirmations, unknowns, inferred knowledge, or platform context.
+- Classify discovered secrets as security findings and recommend rotation if they may have been committed or exposed.
+
+## Mode Invocation Entry
+
+- When a Forge mode is requested, read `.forge/context/modes/<mode>.md` first.
+- Follow that mode's `include`, `on_demand`, `exclude`, `token_budget`, and `notes`.
+- Load scoped context only; do not broad-load `.forge/context` by default.
 
 ## Notes
 
