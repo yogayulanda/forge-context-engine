@@ -29,6 +29,7 @@ updated: 2026-05-24
 - Do not replace testing mode; reference test evidence when assessing regression risk and coverage gaps.
 - Check topology, runtime behavior, data flow, contracts, and layer/system boundaries only when relevant evidence is loaded.
 - Lead with evidence-based critique; keep unevidenced concerns as uncertainty, not confirmed defects.
+- If `runtime.non_interactive: false`, ask review-scope clarification only when necessary; if `true`, emit a review ambiguity report.
 - Identify unconfirmed proposed defaults and flag any accidental promotion of proposed assumptions into confirmed behavior.
 - Treat raw secret exposure in diffs, reports, generated context, or comments as a security finding requiring redaction.
 - Report reviewed areas, loaded context, missing evidence or ambiguity, risk severity, and whether review mode was sufficient.

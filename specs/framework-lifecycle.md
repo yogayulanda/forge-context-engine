@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Forge Framework Lifecycle Specification |
-| Version | 1.0 |
-| Date | 2026-05-24 |
+| Version | 1.1 |
+| Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Framework-level cognition maturity states |
-| Dependency | `specs/context-initialization.md`, `specs/context-validation.md` |
+| Dependency | `specs/context-initialization.md`, `specs/context-validation.md`, `specs/mode-invocation.md` |
 
 ---
 
@@ -25,7 +25,7 @@ It defines:
 This document does NOT:
 - Implement tooling or automation.
 - Redesign the existing Forge structure.
-- Add runtime behavior.
+- Add runtime executors, orchestration, agents, or services.
 - Define repository-specific context content.
 - Treat repository count or file count as maturity.
 
@@ -129,6 +129,7 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `execute-mode modifies repositories only from approved tasks`
 - `testing-mode owns test strategy, mocks/fakes/stubs, coverage, and regression validation`
 - `review-mode validates execute results without replacing testing mode`
+- `runtime.non_interactive` controls interaction behavior without rewriting repository cognition
 
 ### Required Evidence
 

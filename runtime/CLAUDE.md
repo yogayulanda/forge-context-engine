@@ -4,7 +4,7 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 
 ## Bootstrap Sequence
 
-1. Read `.forge/forge.config.yaml` — tier, active layers, systems, default mode.
+1. Read `.forge/forge.config.yaml` — tier, active layers, systems, default mode, `runtime.non_interactive`.
 2. Read `.forge/context/00-meta/context-manifest.md` — index & loading rules.
 3. Obey `.forge/context/00-meta/conventions.md` — AI operational contract (normative).
 4. Always load: `00-meta/*` + `01-core/*`.
@@ -14,7 +14,9 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 ## AI Operational Rules (Summary)
 
 - Never guess. `unknown` is a mandatory destination, not a guess.
-- Classify unknowns as `blocking`, `proposed-default`, or `informational`; automation must emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` instead of asking interactive questions.
+- `runtime.non_interactive: false` is the default: ask concise clarification questions for blocking decisions, then continue after human confirmation.
+- `runtime.non_interactive: true`: never ask interactive questions; emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` and continue only with allowed proposed defaults.
+- Classify unknowns as `blocking`, `proposed-default`, or `informational`.
 - Never print, copy, summarize, or store raw secrets. Redact sensitive values before any output or Forge context write.
 - Never write to `source: human` files. Inferences go to `knowledge/inferred.md` or `generated/`.
 - Never self-promote `status`. Propose only; promotion to `confirmed` requires entry in `knowledge/confirmations.md`.
@@ -46,6 +48,7 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 - Follow that mode's `include`, `on_demand`, `exclude`, `token_budget`, and `notes`.
 - Load scoped context only; do not broad-load `.forge/context` by default.
 - Keep planning, task decomposition, code execution, testing, and review separate.
+- Apply `runtime.non_interactive` consistently across all modes; changing it never rewrites repository cognition.
 
 ## Notes
 

@@ -30,6 +30,7 @@ updated: 2026-05-24
 - If no convention exists, colocate unit tests near target packages/files and place non-unit tests under `testing/integration`, `testing/e2e`, `testing/mocks`, `testing/fixtures`, or `testing/helpers` as appropriate.
 - Keep unit, integration, e2e, mocks, fakes, stubs, fixtures, and helpers distinct; avoid mixing unrelated test concerns in one folder without reason.
 - Reason about test isolation, mocks/fakes/stubs, fixtures, helpers, test dependencies, retry/error paths, rollback paths, and missing coverage.
+- If `runtime.non_interactive: false`, ask unresolved validation expectations only when needed; if `true`, emit an unresolved validation report.
 - Do not become generic architecture planning, review mode, or broad implementation redesign.
 - Redact credentials, tokens, cookies, private keys, and credential-bearing URLs from test evidence and validation notes.
 - Report test strategy or test changes, loaded context, missing evidence or ambiguity, commands run or skipped, and whether testing mode was sufficient.

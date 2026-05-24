@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 1.4 |
-| Date | 2026-05-24 |
+| Version | 1.5 |
+| Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
 | Dependency | `runtime/CLAUDE.md`, `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `specs/context-validation.md` |
@@ -18,6 +18,7 @@ Mode invocation defines how an AI assistant uses Forge mode files during plannin
 The protocol ensures:
 - Mode files are operational contracts, not optional hints.
 - Context loading remains scoped and delta-based.
+- `runtime.non_interactive` controls interactive vs automation-safe behavior globally.
 - Evidence, inference, proposed-default, and unknown boundaries survive task execution.
 - Unknowns are classified into blocking, proposed-default, or informational behavior.
 - Sensitive values are redacted before output or context write.
@@ -30,6 +31,7 @@ The protocol ensures:
 This document does NOT:
 - Redesign Forge architecture.
 - Add automation, tooling, agents, executors, or runtime services.
+- Introduce any other interaction or workflow flag.
 - Replace mode file schema rules.
 - Define repository-specific domain content.
 
@@ -42,13 +44,14 @@ Canonical lifecycle:
 1. Requested mode identified.
 2. Mode file read first from `.forge/context/modes/<mode>.md`.
 3. `include`, `on_demand`, `exclude`, `token_budget`, and `notes` parsed.
-4. Scoped context loaded according to the mode delta.
-5. Task executed according to mode behavior.
-6. Evidence / inference / proposed-default / unknown boundaries preserved.
-7. Unknowns classified by operational impact.
-8. Loaded context reported.
-9. Missing evidence and unresolved ambiguity reported.
-10. Mode sufficiency evaluated.
+4. `runtime.non_interactive` read from `.forge/forge.config.yaml`.
+5. Scoped context loaded according to the mode delta.
+6. Task executed according to mode behavior and runtime interaction behavior.
+7. Evidence / inference / proposed-default / unknown boundaries preserved.
+8. Unknowns classified by operational impact.
+9. Loaded context reported.
+10. Missing evidence and unresolved ambiguity reported.
+11. Mode sufficiency evaluated.
 
 Mode invocation is successful only when the assistant can explain which context was loaded, which evidence was missing, and whether the selected mode was enough for the task.
 
@@ -69,6 +72,8 @@ All modes follow these rules:
 - Read the requested mode file before loading mode-specific context.
 - Treat always-loaded core as already available: `00-meta/*` and `01-core/*`.
 - Treat mode files as loading deltas on top of core.
+- Treat `runtime.non_interactive: false` as the interactive default.
+- Treat `runtime.non_interactive: true` as automation-safe behavior.
 - Load `include` entries normally when relevant to the task.
 - Load `on_demand` entries only when task scope requires them.
 - Do not load `exclude` entries unless the user explicitly changes scope.
@@ -86,6 +91,13 @@ All modes follow these rules:
 
 ## 3. Unknown Classification and Human Decision Protocol
 
+Forge uses exactly one runtime flag for interaction behavior: `runtime.non_interactive`.
+
+| Value | Behavior |
+|---|---|
+| `false` | Interactive-first default. Forge may ask concise clarification questions for blocking decisions and continues after human confirmation. |
+| `true` | Non-interactive automation-safe behavior. Forge must not ask conversational questions and must emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` for blocking decisions. |
+
 Forge classifies unknowns by operational impact:
 
 | Classification | Continue? | Behavior |
@@ -98,7 +110,9 @@ Blocking unknowns include event schema authority, retry/DLQ semantics, ownership
 
 Interactive prompts must be concise and decision-oriented: recommended safest/production-ready option plus one viable alternative by default. Use a maximum of three options only for major architecture tradeoffs.
 
-Automation/non-interactive mode must not require human input. When blocking unknowns exist, emit the blocking status and include a recommended option plus an alternative when useful.
+Non-interactive mode must not require human input. When blocking unknowns exist, emit the blocking status and include a recommended option plus an alternative when useful.
+
+Changing `runtime.non_interactive` never re-initializes context, rewrites repository cognition, invalidates assumptions, modifies inferred knowledge, or rewrites systems, layers, or core files.
 
 ### 3.1 Proposed Default Semantics
 
@@ -163,6 +177,10 @@ Expected behavior:
 
 Planning mode must stay layer-adaptive. It must not force backend-only, deployability, ownership, contract, or runtime topology assumptions without evidence.
 
+Interaction behavior:
+- Interactive default: ask unresolved architecture or governance decisions early.
+- Non-interactive: emit a planning blocked report and continue only with allowed proposed defaults.
+
 ### 6.2 Implementation
 
 Implementation mode converts an approved ECP/phases or a simple request into a human-reviewable execution plan.
@@ -181,6 +199,10 @@ Expected behavior:
 
 Implementation mode must not redesign architecture again, repeat full ECP reasoning, or silently redefine approved plans. It creates the human-reviewable execution boundary before code changes.
 
+Interaction behavior:
+- Interactive default: ask execution-blocking decisions before the final execution-ready task breakdown.
+- Non-interactive: emit a blocked implementation report and continue only with allowed proposed defaults.
+
 ### 6.3 Execute
 
 Execute mode performs actual repository modifications.
@@ -196,6 +218,10 @@ Expected behavior:
 - Do not copy raw secrets from existing config, env, logs, fixtures, or docs into code or context.
 
 Execute mode must not perform major architecture redesign, invent topology/contracts, broad-load unrelated context, silently redefine approved plans, or absorb testing/review responsibilities.
+
+Interaction behavior:
+- Interactive default: ask confirmation before dangerous, destructive, or runtime-impacting changes.
+- Non-interactive: stop safely and emit a blocked report.
 
 ### 6.4 Testing
 
@@ -215,6 +241,10 @@ Expected behavior:
 
 Testing mode may create or modify tests when requested. It must not become generic architecture planning, replace review mode, or broadly redesign implementation.
 
+Interaction behavior:
+- Interactive default: ask unresolved validation expectations only when needed.
+- Non-interactive: emit an unresolved validation report and continue only with allowed proposed defaults.
+
 ### 6.5 Review
 
 Review mode evaluates correctness and risk.
@@ -232,6 +262,10 @@ Expected behavior:
 - Raw secret exposure in diffs, reports, generated context, or comments is a security finding.
 
 Review mode must not treat unevidenced concerns as confirmed defects.
+
+Interaction behavior:
+- Interactive default: ask review-scope clarification only when necessary.
+- Non-interactive: emit a review ambiguity report.
 
 ### 6.6 Lower-Cost Execution Philosophy
 
@@ -316,6 +350,7 @@ The following are invalid mode invocation behavior:
 - Duplicating mode-specific execution behavior in globally loaded conventions.
 - Replacing repository-owned code/docs/ADRs with Forge-generated cognition.
 - Adding automation/tooling/runtime execution under the guise of protocol compliance.
+- Introducing any conflicting interaction or workflow flag.
 
 ---
 
@@ -339,7 +374,12 @@ Mode invocation validation checks that runtime behavior follows this protocol:
 - Evidence, inference, and unknown boundaries were preserved.
 - Unknowns were classified as blocking, proposed-default, or informational.
 - Proposed defaults were explicitly labeled and not promoted to confirmed facts.
-- Automation behavior used blocking status output instead of interactive questions.
+- Non-interactive behavior used blocking status output instead of interactive questions.
+- `runtime.non_interactive` existed, was boolean, and defaulted to `false`.
+- No conflicting interaction flags existed.
+- Interactive default behavior used ask-first clarification for blocking decisions.
+- Non-interactive behavior avoided conversational questions.
+- Changing runtime interaction behavior did not require context re-init or repository cognition rewrite.
 - Human decision prompts followed option-count discipline.
 - Raw secret exposure was absent from generated context and reports.
 - Secret findings were redacted, classified as security findings, and included rotation guidance when exposure was possible.

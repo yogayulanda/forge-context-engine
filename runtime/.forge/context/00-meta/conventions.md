@@ -92,6 +92,19 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 - Report loaded context, missing evidence, unresolved ambiguity, and mode sufficiency according to the selected mode.
 - Runtime-managed cognition lives under `.forge/context`; repository-owned cognition remains in application code, repository docs, ADRs, and human confirmations.
 
+## Runtime Interaction Behavior
+
+Forge uses one runtime flag: `runtime.non_interactive`.
+
+| Value | Behavior |
+|---|---|
+| `false` | Default interactive behavior. Ask concise clarification questions for blocking decisions, governance uncertainty, missing contract authority, ambiguous runtime behavior, or dangerous/destructive execution; continue after human confirmation. |
+| `true` | Automation-safe behavior. Do not ask conversational questions; emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION`; continue only with allowed proposed defaults. |
+
+Interactive prompts should offer the recommended option plus one alternative by default; use a third option only for major architecture tradeoffs. Avoid repetitive clarification loops and broad questionnaires.
+
+Changing `runtime.non_interactive` is runtime-managed operational behavior only. It must not re-init context, rewrite knowledge, invalidate assumptions, modify inferred context, or rewrite systems, layers, or core cognition files.
+
 ## Unknown Decision Semantics
 
 Unknowns are classified as:

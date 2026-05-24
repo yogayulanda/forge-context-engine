@@ -19,6 +19,9 @@ loading:
   default_mode: implementation  # planning | implementation | execute | testing | review
   respect_size_budget: true
 
+runtime:
+  non_interactive: false
+
 size_budget:
   core_lines: 200
   layer_lines: 150

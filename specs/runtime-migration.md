@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Forge Runtime Migration Protocol Specification |
-| Version | 1.0 |
-| Date | 2026-05-24 |
+| Version | 1.1 |
+| Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Safe adoption of newer Forge runtime behavior by initialized repositories |
 | Dependency | `specs/context-validation.md`, `specs/framework-lifecycle.md` |
@@ -47,11 +47,13 @@ Examples:
 - `.forge/context/00-meta/conventions.md`
 - `CLAUDE.md`
 - Optional runtime/config metadata when schema-compatible
+- `.forge/forge.config.yaml` runtime behavior keys, including `runtime.non_interactive`
 
 Purpose:
 - Operational behavior.
 - Loading strategy.
 - Runtime semantics.
+- Interactive vs non-interactive workflow behavior.
 - Framework conventions.
 - AI operational contract updates.
 
@@ -100,6 +102,7 @@ Runtime migration must be narrow. A repository that needs full context reconstru
 Runtime migration must:
 - Preserve local evidence.
 - Preserve inferred, assumption, confirmation, and unknown boundaries.
+- Preserve repository cognition when changing `runtime.non_interactive`; it controls operational interaction only.
 - Preserve secret-safety boundaries: raw secrets must not be printed, copied, summarized, or migrated into runtime-managed files.
 - Preserve audit/history semantics.
 - Preserve repository topology reasoning.
@@ -109,11 +112,13 @@ Runtime migration must:
 - Keep mode files as loading deltas.
 - Preserve canonical mode schema: `include`, `on_demand`, `exclude`, `token_budget`, `notes`.
 - Preserve numeric-only `token_budget`.
+- Use only `runtime.non_interactive` for interaction behavior; do not add alternate or overlapping flags.
 
 Runtime migration must not:
 - Re-run initialization.
 - Regenerate repository context.
 - Overwrite repository-owned cognition.
+- Rewrite knowledge, invalidate assumptions, modify inferred context, or rewrite systems, layers, or core files because interaction behavior changed.
 - Rewrite repository decisions.
 - Promote inferred knowledge automatically.
 - Modify architecture or runtime semantics without evidence.
@@ -136,6 +141,8 @@ After runtime migration:
 | Mode schema | Every mode file exposes `## include`, `## on_demand`, `## exclude`, `## token_budget`, `## notes` |
 | Token budget | `token_budget` contains only a decimal integer |
 | Runtime parity | Refreshed runtime-managed files match the selected runtime source |
+| Interaction flag | `runtime.non_interactive` exists, is boolean, and defaults to `false` in runtime templates |
+| Conflicting flags | No alternate or overlapping interaction/workflow flags exist |
 | Repository cognition | Repository-owned cognition files are unchanged unless explicitly and separately approved |
 | Application code | No application code changed |
 | Folder structure | No runtime, context, tooling, or application folder redesign occurred |
@@ -154,6 +161,7 @@ Re-audit is required when runtime migration introduces material semantic change,
 - Topology reasoning rules changed.
 - Validation rules changed materially.
 - Operational cognition behavior changed materially.
+- Runtime interaction behavior changed materially.
 - Mode loading behavior changed materially.
 - AI hallucination boundaries changed materially.
 
@@ -186,6 +194,7 @@ These are future compatibility directions only. This specification does not impl
 
 A runtime migration is complete when:
 - Required runtime-managed files are refreshed from the selected runtime source.
+- Existing repositories may adopt `runtime.non_interactive` by refreshing runtime-managed files only.
 - Repository-owned cognition files are preserved.
 - Validation expectations pass.
 - Any required re-audit is recorded or completed.

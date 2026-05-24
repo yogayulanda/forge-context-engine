@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 1.9 |
-| Date | 2026-05-24 |
+| Version | 2.0 |
+| Date | 2026-05-25 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.4 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.5 |
 
-> **v1.8 -> v1.9 changes:** Restored testing as a visible first-class mode with distinct testing cognition checks. No automation, tooling, runtime executors, or new folders.
+> **v1.9 -> v2.0 changes:** Added single-flag interaction validation for `runtime.non_interactive`. No automation, tooling, runtime executors, or new folders.
 
 ---
 
@@ -128,8 +128,8 @@ Use this as:
 | F20 | Mode-specific execution behavior lives in `modes/<mode>.md` rather than being duplicated in globally loaded `00-meta/conventions.md` | warning | manual |
 | F21 | Unknown handling distinguishes `blocking`, `proposed-default`, and `informational` behavior | warning | manual |
 | F22 | Proposed defaults are explicitly labeled `proposed` and `not confirmed`, with reason and confirmation boundary when needed | warning | manual |
-| F23 | Automation/non-interactive behavior emits `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` for blocking unknowns instead of requiring interactive questions | warning | manual |
-| F24 | Human decision prompts are bounded: recommended plus alternative by default, maximum three options for major architecture tradeoffs | warning | manual |
+| F23 | `runtime.non_interactive: true` emits `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` for blocking unknowns instead of requiring interactive questions | warning | manual |
+| F24 | `runtime.non_interactive: false` remains interactive-first and uses ask-first clarification for blocking decisions | warning | manual |
 | F25 | Planning output discourages excessive architecture-option generation and open-ended brainstorming | warning | manual |
 | F26 | Proposed defaults do not silently become confirmed facts, topology, ownership, contracts, or production runtime behavior | warning | manual |
 | F27 | Visible runtime modes are constrained to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review` | warning | manual |
@@ -146,6 +146,7 @@ Use this as:
 | F38 | Unit tests are not placed far from the target package/file without a repository convention or explicit reason | warning | manual |
 | F39 | Integration/e2e tests are not mixed into unit test folders without a repository convention or explicit reason | warning | manual |
 | F40 | Reusable mocks, fakes, stubs, fixtures, and helpers are not scattered without a clear repository convention | warning | manual |
+| F41 | Human decision prompts are bounded: recommended plus alternative by default, maximum three options for major architecture tradeoffs | warning | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -182,6 +183,8 @@ Use this as:
 | I5 | `systems[].type` is one of: `service`, `app`, `worker`, `library`, `infra-module`, `platform-component` | error | yes |
 | I6 | `loading.default_mode` references an existing file in `modes/` | error | yes |
 | I7 | `governance.require_evidence_for` contains only valid status values | error | yes |
+| I8 | `runtime.non_interactive` exists and is boolean, defaulting to `false` in runtime templates | error | yes |
+| I9 | No conflicting interaction or workflow flags exist | error | yes |
 
 ### Category J — Evidence Consistency *(v1.1, extended v1.2)*
 
@@ -463,8 +466,8 @@ ANTI-DUPLICATION
 [ ] F20 mode-specific behavior lives in mode files, not global conventions
 [ ] F21 unknowns classified blocking/proposed-default/informational
 [ ] F22 proposed defaults labeled and bounded
-[ ] F23 automation emits blocking status, not interactive questions
-[ ] F24 decision prompts bounded to 2 options by default
+[ ] F23 runtime.non_interactive true emits blocking status, not interactive questions
+[ ] F24 runtime.non_interactive false remains interactive-first
 [ ] F25 excessive architecture-option generation discouraged
 [ ] F26 proposed defaults not promoted to confirmed facts
 [ ] F27 visible runtime modes constrained to planning/implement/execute/testing/review
@@ -481,6 +484,7 @@ ANTI-DUPLICATION
 [ ] F38 unit tests not placed far from target package without reason
 [ ] F39 integration/e2e tests not mixed into unit folders without reason
 [ ] F40 reusable mocks/fixtures/helpers follow a clear convention
+[ ] F41 decision prompts bounded to 2 options by default
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid
@@ -508,6 +512,8 @@ CONFIG CONSISTENCY
 [ ] I5  system types valid
 [ ] I6  default_mode exists
 [ ] I7  governance values valid
+[ ] I8  runtime.non_interactive exists, boolean, default false in templates
+[ ] I9  no conflicting interaction or workflow flags
 
 EVIDENCE CONSISTENCY (J — v1.1+v1.2)
 [ ] J1  table count matches migrations
