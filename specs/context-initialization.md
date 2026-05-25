@@ -781,7 +781,7 @@ PHASE 7 — CONFIRMATION PASS
 
 ## Appendix C — Operational Recommendations (After First Real-World Validation)
 
-Distilled from initialization on `transaction-history-service` (2026-05-20). These are operational defaults — not architectural changes.
+Distilled from an initial brownfield service validation pass. These are operational defaults — not architectural changes.
 
 ### What Worked Well
 

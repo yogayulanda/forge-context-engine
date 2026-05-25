@@ -179,3 +179,15 @@ Good refinements:
 Avoid changes that add theoretical architecture, broad automation semantics, hidden state, or new lifecycle concepts without repeated evidence from real projects.
 
 The standard for Forge evolution is simple: make real engineering work clearer, safer, and easier to review while preserving bounded cognition.
+
+## Security
+
+Please report security concerns privately. Do not post production credentials, customer data, tokens, or sensitive incident details in public issues.
+
+See [SECURITY.md](SECURITY.md).
+
+## License
+
+Forge Context Engine is licensed under the Apache License 2.0.
+
+See [LICENSE](LICENSE).

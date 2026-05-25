@@ -13,9 +13,21 @@ Thumbs.db
 # Local
 *.log
 *.tmp
+*.bak
+*.orig
 .cache/
+.env
+.env.*
+!.env.example
+scratch/
+tmp/
+logs/
 
-# Runtime temp (inside runtime/)
+# Forge generated/temp context
+.forge/context/temp/
+!.forge/context/temp/.gitkeep
+.forge/context/generated/*
+!.forge/context/generated/.gitkeep
 runtime/.forge/context/temp/
 !runtime/.forge/context/temp/.gitkeep
 runtime/.forge/context/generated/*

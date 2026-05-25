@@ -150,8 +150,8 @@ Examples:
 
 | Repo | Correct roles |
 |---|---|
-| `go-core` | `shared-runtime`, `platform-component` |
-| `transaction-history-service` | `deployable-service`, `consumer` |
+| `shared-runtime-core` | `shared-runtime`, `platform-component` |
+| `example-service` | `deployable-service`, `consumer` |
 
 ---
 
@@ -177,13 +177,13 @@ Rules:
 Example:
 
 ```text
-transaction-history-service --imports/uses-runtime--> go-core
+example-service --imports/uses-runtime--> shared-runtime-core
 ```
 
 Not:
 
 ```text
-transaction-history-service --runtime-calls--> go-core
+example-service --runtime-calls--> shared-runtime-core
 ```
 
 ---
@@ -324,17 +324,17 @@ Rules:
 Example:
 
 ```yaml
-from: repo.transaction-history-service
-to: repo.go-core
+from: repo.example-service
+to: repo.shared-runtime-core
 edge_types: [imports, uses-runtime]
 version_evidence:
-  module_path: github.com/yogayulanda/go-core
+  module_path: github.com/example/shared-runtime-core
   require: v0.0.0
-  replace: ../go-core
+  replace: ../shared-runtime-core
 evidence:
-  - { repo: transaction-history-service, ref: go.mod }
-  - { repo: transaction-history-service, ref: cmd/server/main.go }
-owner: team.payments
+  - { repo: example-service, ref: go.mod }
+  - { repo: example-service, ref: cmd/server/main.go }
+owner: team.platform
 status: inferred
 confidence: medium
 ```

@@ -60,13 +60,13 @@ These are future directions only. They do not change the v1 baseline and should 
 
 ## Recommended Git Baseline
 
-Suggested tag:
+Recommended tag:
 
 ```text
-forge-v1.0.0-baseline
+v1.0.0
 ```
 
-Suggested baseline branch:
+Recommended baseline branch:
 
 ```text
 baseline/forge-v1
