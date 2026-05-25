@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 1.5 |
+| Version | 1.9 |
 | Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
@@ -42,16 +42,17 @@ This document does NOT:
 Canonical lifecycle:
 
 1. Requested mode identified.
-2. Mode file read first from `.forge/context/modes/<mode>.md`.
-3. `include`, `on_demand`, `exclude`, `token_budget`, and `notes` parsed.
-4. `runtime.non_interactive` read from `.forge/forge.config.yaml`.
-5. Scoped context loaded according to the mode delta.
-6. Task executed according to mode behavior and runtime interaction behavior.
-7. Evidence / inference / proposed-default / unknown boundaries preserved.
-8. Unknowns classified by operational impact.
-9. Loaded context reported.
-10. Missing evidence and unresolved ambiguity reported.
-11. Mode sufficiency evaluated.
+2. `.forge/forge.config.yaml` read first.
+3. `runtime.non_interactive` detected and applied.
+4. Mode file read from `.forge/context/modes/<mode>.md`.
+5. `include`, `on_demand`, `exclude`, `token_budget`, and `notes` parsed.
+6. Scoped context loaded according to the mode delta.
+7. Task executed according to mode behavior and runtime interaction behavior.
+8. Evidence / inference / proposed-default / unknown boundaries preserved.
+9. Unknowns classified by operational impact.
+10. Loaded context reported.
+11. Missing evidence and unresolved ambiguity reported.
+12. Mode sufficiency evaluated.
 
 Mode invocation is successful only when the assistant can explain which context was loaded, which evidence was missing, and whether the selected mode was enough for the task.
 
@@ -69,7 +70,9 @@ Small/simple tasks may skip planning. Implementation may operate directly on sim
 
 All modes follow these rules:
 
-- Read the requested mode file before loading mode-specific context.
+- Read `.forge/forge.config.yaml` before reading the requested mode file.
+- Detect and apply `runtime.non_interactive` without requiring the user to mention it.
+- Then read the requested mode file before loading mode-specific context.
 - Treat always-loaded core as already available: `00-meta/*` and `01-core/*`.
 - Treat mode files as loading deltas on top of core.
 - Treat `runtime.non_interactive: false` as the interactive default.
@@ -186,11 +189,13 @@ Interaction behavior:
 Implementation mode converts an approved ECP/phases or a simple request into a human-reviewable execution plan.
 
 Expected behavior:
-- Explicit executable engineering task breakdown.
-- Likely files/components impacted.
-- Dependency ordering.
-- Migration/runtime sequencing when relevant.
-- Developer-friendly task structure.
+- Clarification phase before execution-ready phase when blocking decisions exist.
+- Explicit executable engineering task breakdown only after blockers are resolved.
+- Likely files/components impacted after blockers are resolved.
+- Dependency ordering after blockers are resolved.
+- Migration/runtime sequencing when relevant after blockers are resolved.
+- Developer-friendly task structure after blockers are resolved.
+- Required readiness status: `NEEDS_CONFIRMATION`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION`.
 - Load only task-relevant layers, systems, decisions, and inferred knowledge.
 - Avoid speculative redesign.
 - Keep proposed defaults visible and unconfirmed.
@@ -200,8 +205,18 @@ Expected behavior:
 Implementation mode must not redesign architecture again, repeat full ECP reasoning, or silently redefine approved plans. It creates the human-reviewable execution boundary before code changes.
 
 Interaction behavior:
-- Interactive default: ask execution-blocking decisions before the final execution-ready task breakdown.
-- Non-interactive: emit a blocked implementation report and continue only with allowed proposed defaults.
+- Interactive default: if blocking decisions affect runtime behavior, contracts/schema, DLQ/replay, idempotency, security/compliance, ownership/governance, destructive boundaries, acceptance criteria, or rollback, stop before the final breakdown and output `NEEDS_CONFIRMATION`.
+- Interactive confirmation must use CLI-friendly numbered choices: decision title, Recommended option with reason, Alternative option with tradeoff, and reply instructions (`1 = Recommended`, `2 = Alternative`, `custom = provide explicit value`).
+- Use 2 options by default; use a third option only for major architecture tradeoffs.
+- Interactive implementation mode must wait for human answers before emitting final executable tasks, allowed file modifications, acceptance criteria, or executor instructions.
+- Non-interactive: do not ask questions; emit `BLOCKED`, `NEEDS_CONFIRMATION`, or `NEEDS_REVIEW` and continue only with allowed proposed defaults.
+
+Readiness semantics:
+- `NEEDS_CONFIRMATION`: blocking decisions or required execution values are missing.
+- `READY_FOR_PARTIAL_EXECUTION`: only safe scaffolding or proposed-default work can proceed; production/final behavior remains blocked.
+- `READY_FOR_EXECUTION`: all required execution values are concrete enough for lower-reasoning execution.
+- For execution-sensitive changes, include `Execution Values` before `READY_FOR_EXECUTION`.
+- Do not use `READY_FOR_EXECUTION` when values are assumed, provided later, unknown, missing contract details, or production behavior remains pending confirmation.
 
 ### 6.3 Execute
 
@@ -329,6 +344,10 @@ The report may be concise in normal runtime use. Maintainer-facing validation ma
 The following are invalid mode invocation behavior:
 
 - Ignoring the requested mode file.
+- Invoking a mode without first reading `.forge/forge.config.yaml`.
+- Failing to detect, report, or apply `runtime.non_interactive`.
+- Emitting automation-style blocked reports in interactive repositories instead of ask-first clarification.
+- Asking conversational clarification questions in non-interactive repositories.
 - Loading broad `.forge/context` by default.
 - Treating modes as optional suggestions.
 - Treating `on_demand` entries as unconditional defaults.
@@ -343,6 +362,11 @@ The following are invalid mode invocation behavior:
 - Generating open-ended architecture option lists instead of bounded decision options.
 - Collapsing planning, implementation task decomposition, execute, testing, and review into generic reasoning behavior.
 - Allowing planning to collapse into detailed executable task lists.
+- Allowing implementation mode in interactive repositories to emit final executable tasks while critical blockers remain unresolved.
+- Allowing implementation mode to hide blocking decisions at the end of a full breakdown.
+- Allowing interactive implementation confirmation without `NEEDS_CONFIRMATION`, Recommended/Alternative choices, or clear numbered reply instructions.
+- Marking implementation output `READY_FOR_EXECUTION` while required execution values are conditional, unavailable, unresolved, or pending confirmation.
+- Emitting final executor instructions without concrete execution values for execution-sensitive changes.
 - Allowing implementation to directly modify code.
 - Allowing execute to redefine approved architecture or task intent.
 - Allowing execute to absorb testing responsibilities entirely.
@@ -358,6 +382,8 @@ The following are invalid mode invocation behavior:
 
 Mode invocation validation checks that runtime behavior follows this protocol:
 
+- `.forge/forge.config.yaml` was read before the requested mode file.
+- `runtime.non_interactive` was detected, reported, and applied.
 - The requested mode file was read before mode-specific context loading.
 - `include`, `on_demand`, `exclude`, `token_budget`, and `notes` were considered.
 - Loaded context was scoped to the task.
@@ -365,7 +391,8 @@ Mode invocation validation checks that runtime behavior follows this protocol:
 - Planning, implementation, execute, testing, and review retained distinct operational behavior.
 - Visible modes were constrained to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review`.
 - Planning produced strategic ECP/phases without detailed executable coding tasks.
-- Implementation produced executable task structure with likely file/component visibility and dependency ordering.
+- Implementation used clarification phase before execution-ready phase when blocking decisions were present.
+- Implementation produced executable task structure with likely file/component visibility and dependency ordering only after critical blockers were resolved.
 - Execute owned actual repository modification behavior and did not silently redefine approved plans.
 - Testing remained visible and distinct from execute/review, with test strategy, test implementation guidance, coverage, mocks/fakes/stubs, and regression validation responsibilities.
 - Review assessed correctness/risk and execute results without replacing testing mode.
@@ -377,8 +404,15 @@ Mode invocation validation checks that runtime behavior follows this protocol:
 - Non-interactive behavior used blocking status output instead of interactive questions.
 - `runtime.non_interactive` existed, was boolean, and defaulted to `false`.
 - No conflicting interaction flags existed.
-- Interactive default behavior used ask-first clarification for blocking decisions.
-- Non-interactive behavior avoided conversational questions.
+- Interactive repositories used ask-first clarification for blocking decisions instead of automation-style blocked reports.
+- Non-interactive repositories avoided conversational questions and emitted `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` when blocked.
+- Interactive implementation mode did not emit final executable tasks, allowed file modifications, acceptance criteria, or executor instructions while critical blockers remained unresolved.
+- Interactive implementation mode did not bury blockers at the end of a full breakdown.
+- Interactive implementation confirmation used `NEEDS_CONFIRMATION`, Recommended and Alternative choices, reasons/tradeoffs, and clear reply instructions.
+- Interactive implementation confirmation used 2 options by default and at most 3 for major architecture tradeoffs.
+- Implementation output included one readiness status: `NEEDS_CONFIRMATION`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION`.
+- `READY_FOR_EXECUTION` appeared only with concrete required execution values and no conditional/unavailable value language.
+- Execution-sensitive `READY_FOR_EXECUTION` output included an `Execution Values` section before final executor instructions.
 - Changing runtime interaction behavior did not require context re-init or repository cognition rewrite.
 - Human decision prompts followed option-count discipline.
 - Raw secret exposure was absent from generated context and reports.

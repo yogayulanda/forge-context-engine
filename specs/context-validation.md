@@ -3,13 +3,13 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 2.0 |
+| Version | 2.4 |
 | Date | 2026-05-25 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.5 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.9 |
 
-> **v1.9 -> v2.0 changes:** Added single-flag interaction validation for `runtime.non_interactive`. No automation, tooling, runtime executors, or new folders.
+> **v2.3 -> v2.4 changes:** Implementation readiness statuses and `Execution Values` gating prevent unsafe `READY_FOR_EXECUTION`. No tooling, automation, runtime executors, or new folders.
 
 ---
 
@@ -120,7 +120,7 @@ Use this as:
 | F12 | Planning mode is layer-adaptive and does not force backend-specific sections when active layer evidence is non-backend or mixed | warning | manual |
 | F13 | Planning mode preserves evidence/inference/unknown separation and does not infer deployability, ownership, contracts, or runtime topology from imports alone | warning | manual |
 | F14 | Planning mode on-demand loading is scoped to the requested change and does not broadly load unrelated layers/systems by default | warning | manual |
-| F15 | Mode invocation reads `.forge/context/modes/<mode>.md` before loading mode-specific context | warning | manual |
+| F15 | Mode invocation reads `.forge/forge.config.yaml` before `.forge/context/modes/<mode>.md` | warning | manual |
 | F16 | Mode invocation reports loaded context areas/files, including on-demand context loaded and missing evidence | warning | manual |
 | F17 | Mode invocation does not broad-load `.forge/context` by default when the mode delta is sufficient | warning | manual |
 | F18 | Planning, implementation, execute, testing, and review preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
@@ -134,7 +134,7 @@ Use this as:
 | F26 | Proposed defaults do not silently become confirmed facts, topology, ownership, contracts, or production runtime behavior | warning | manual |
 | F27 | Visible runtime modes are constrained to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review` | warning | manual |
 | F28 | Planning mode produces strategic ECP/phases and does not collapse into detailed executable coding tasks | warning | manual |
-| F29 | Implementation mode produces executable task structure with likely files/components and dependency ordering, without modifying code | warning | manual |
+| F29 | Implementation mode produces executable task structure with likely files/components and dependency ordering only after critical blockers are resolved, without modifying code | warning | manual |
 | F30 | Execute mode owns actual repository modification behavior and reports modified files clearly | warning | manual |
 | F31 | Execute mode does not silently redefine approved plans, topology, contracts, or architecture | warning | manual |
 | F32 | Architecture reasoning and execution reasoning remain separated by a human-reviewable execution boundary | warning | manual |
@@ -147,6 +147,21 @@ Use this as:
 | F39 | Integration/e2e tests are not mixed into unit test folders without a repository convention or explicit reason | warning | manual |
 | F40 | Reusable mocks, fakes, stubs, fixtures, and helpers are not scattered without a clear repository convention | warning | manual |
 | F41 | Human decision prompts are bounded: recommended plus alternative by default, maximum three options for major architecture tradeoffs | warning | manual |
+| F42 | `runtime.non_interactive` is detected, reported, and applied during every mode invocation without requiring prompt mention | warning | manual |
+| F43 | Interactive repositories do not emit automation-style blocked reports when ask-first clarification is required | warning | manual |
+| F44 | Non-interactive repositories do not ask conversational clarification questions | warning | manual |
+| F45 | Interactive implementation mode stops before final breakdown when blocking decisions affect runtime behavior, contracts/schema, DLQ/replay, idempotency, security/compliance, ownership/governance, destructive boundaries, acceptance criteria, or rollback | warning | manual |
+| F46 | Interactive implementation mode asks concise Recommended/Alternative clarification questions before execution-ready tasks | warning | manual |
+| F47 | Interactive implementation mode does not hide blockers at the end of a full breakdown | warning | manual |
+| F48 | Final executable tasks, allowed file modifications, acceptance criteria, and executor instructions are not emitted while critical blockers remain unresolved | warning | manual |
+| F49 | Non-interactive implementation mode emits `BLOCKED`, `NEEDS_CONFIRMATION`, or `NEEDS_REVIEW` instead of conversational questions | warning | manual |
+| F50 | Interactive implementation confirmation starts with `NEEDS_CONFIRMATION` | warning | manual |
+| F51 | Interactive implementation confirmation includes decision title, Recommended option with reason, Alternative option with tradeoff, and clear reply instructions | warning | manual |
+| F52 | Interactive implementation confirmation uses 2 options by default and at most 3 only for major architecture tradeoffs | warning | manual |
+| F53 | Implementation output includes exactly one readiness status: `NEEDS_CONFIRMATION`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION` | warning | manual |
+| F54 | `READY_FOR_EXECUTION` is not used with conditional language such as assumed values, values provided later, unknown topics/schema/groups/DLQ, unknown duplicate policy, missing contract details, or pending production confirmation | error | manual |
+| F55 | Execution-sensitive `READY_FOR_EXECUTION` output includes concrete `Execution Values` before executor instructions | error | manual |
+| F56 | Final executor instructions do not contain unresolved required execution values | error | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -458,7 +473,7 @@ ANTI-DUPLICATION
 [ ] F12 planning adapts sections to active layers
 [ ] F13 planning preserves evidence/inference/unknown boundaries
 [ ] F14 planning uses scoped on-demand loading
-[ ] F15 mode file read before mode-specific loading
+[ ] F15 forge.config.yaml read before mode file
 [ ] F16 loaded context and missing evidence reported
 [ ] F17 no broad-loading by default
 [ ] F18 mode distinctions preserved
@@ -472,7 +487,7 @@ ANTI-DUPLICATION
 [ ] F26 proposed defaults not promoted to confirmed facts
 [ ] F27 visible runtime modes constrained to planning/implement/execute/testing/review
 [ ] F28 planning produces strategic ECP/phases, not detailed coding tasks
-[ ] F29 implementation produces executable task structure without modifying code
+[ ] F29 implementation produces executable task structure only after critical blockers are resolved
 [ ] F30 execute owns repository modification behavior and reports changed files
 [ ] F31 execute does not redefine approved plans or architecture
 [ ] F32 architecture reasoning and execution reasoning remain separated
@@ -485,6 +500,21 @@ ANTI-DUPLICATION
 [ ] F39 integration/e2e tests not mixed into unit folders without reason
 [ ] F40 reusable mocks/fixtures/helpers follow a clear convention
 [ ] F41 decision prompts bounded to 2 options by default
+[ ] F42 runtime.non_interactive detected/reported/applied without prompt mention
+[ ] F43 interactive repos use ask-first behavior, not automation blocked reports
+[ ] F44 non-interactive repos do not ask conversational questions
+[ ] F45 interactive implementation stops before final breakdown on critical blockers
+[ ] F46 interactive implementation asks concise Recommended/Alternative questions first
+[ ] F47 interactive implementation does not bury blockers at the end
+[ ] F48 final executable tasks are not emitted while critical blockers remain unresolved
+[ ] F49 non-interactive implementation emits blocking status, not questions
+[ ] F50 interactive implementation confirmation starts with NEEDS_CONFIRMATION
+[ ] F51 interactive implementation confirmation includes Recommended/Alternative and reply instructions
+[ ] F52 interactive implementation confirmation uses 2 options by default, max 3 for major tradeoffs
+[ ] F53 implementation output includes exactly one readiness status
+[ ] F54 READY_FOR_EXECUTION has no conditional or unresolved required values
+[ ] F55 execution-sensitive READY_FOR_EXECUTION includes concrete Execution Values
+[ ] F56 final executor instructions contain no unresolved required execution values
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid

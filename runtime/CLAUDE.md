@@ -43,7 +43,9 @@ Thin adapter for AI assistants. This file stores **no context** — it points to
 
 ## Mode Invocation Entry
 
-- When a Forge mode is requested, read `.forge/context/modes/<mode>.md` first.
+- When a Forge mode is requested, read `.forge/forge.config.yaml` first and detect `runtime.non_interactive`.
+- Apply interactive or non-interactive behavior from config before mode execution.
+- Then read `.forge/context/modes/<mode>.md`.
 - Visible modes: `planning`, `implement` (`implementation.md`), `execute`, `testing`, `review`.
 - Follow that mode's `include`, `on_demand`, `exclude`, `token_budget`, and `notes`.
 - Load scoped context only; do not broad-load `.forge/context` by default.

@@ -82,6 +82,7 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 ## Mode Invocation
 
 - Modes are loading deltas on top of always-loaded core.
+- Read `.forge/forge.config.yaml` before mode execution and apply `runtime.non_interactive`.
 - Mode files are authoritative for mode-specific execution behavior.
 - Visible modes are limited to `planning`, `implementation` (invoked as implement), `execute`, `testing`, and `review`.
 - `planning` owns strategic ECP reasoning; `implementation` owns human-reviewable task decomposition; `execute` owns repository modification; `testing` owns testing strategy/test changes; `review` owns correctness and risk review.
