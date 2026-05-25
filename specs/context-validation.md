@@ -3,13 +3,22 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 2.4 |
+| Version | 3.5 |
 | Date | 2026-05-25 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 §16 · `specs/mode-invocation.md` v1.9 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.0 · `specs/artifact-lifecycle.md` v1.0 |
 
-> **v2.3 -> v2.4 changes:** Implementation readiness statuses and `Execution Values` gating prevent unsafe `READY_FOR_EXECUTION`. No tooling, automation, runtime executors, or new folders.
+> **v2.5 -> v2.6 changes:** Human UX refinement for mode outputs: concise operational wording, quieter runtime internals, clearer confirmation prompts, grouped file-change reporting, and execute reports focused on result/validation/rollback. No lifecycle redesign, tooling, automation, runtime executors, orchestration, or new folders.
+> **v2.6 -> v2.7 changes:** Implementation readiness now requires deterministic task cards for `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION`, with explicit dependencies, guardrails, acceptance criteria, validation expectations, and blocker gates. No tooling, orchestration, agents, schedulers, workflow engines, DAGs, Jira integration, or story points.
+> **v2.7 -> v2.8 changes:** Execute reports require explicit result status, responsibility-grouped files, visible validation failures, operational rollback, unchanged-boundary reporting, reviewer focus, hidden-change checks, and quiet internals. No lifecycle redesign, tooling, orchestration, agents, deploy workflow, or runtime executor changes.
+> **v2.8 -> v2.9 changes:** Runtime validation now requires prerequisite checks, standardized execute/testing/review statuses, formal partial/blocking/not-validated semantics, separated validation reporting, explicit manual actions, and invalid-output rules for hidden success. No orchestration, deploy workflow, CI pipeline logic, agents, or workflow engines.
+> **v2.9 -> v3.0 changes:** Testing mode now requires structured testing sections, scope categories, contract-aware validation, runtime-sensitive retry/DLQ/idempotency coverage, manual vs automated separation, and reviewer-visible coverage gaps. No CI/CD orchestration, deploy workflow, test runner, agent, or workflow engine added.
+> **v3.0 -> v3.1 changes:** Review mode now requires MR-oriented result/readiness semantics, severity-grouped evidence-based findings, architecture/contract and safety checks, reviewer focus, and invalid-output rules for generic audit/test-plan/task-list drift. No lifecycle redesign, tooling, orchestration, deploy workflow, agents, CI/CD, or runtime executors.
+> **v3.1 -> v3.2 changes:** Consolidates status vocabulary, section names, and mode-boundary validation so implementation, execute, testing, and review use one operational language. Removes legacy review-needed blocking language. No lifecycle redesign, new modes, tooling, orchestration, agents, deploy workflow, CI/CD, workflow engines, or runtime executors.
+> **v3.2 -> v3.3 changes:** Adds bounded lifecycle artifact validation for ECP, Execution Contract, Execute Result, Testing Result, Review Result, Incident, and Refactor artifacts. No orchestration, agents, workflow engines, DAG systems, CI/CD, deploy workflow, runtime executors, persistent AI memory, or knowledge graphs.
+> **v3.3 -> v3.4 changes:** Adds bounded runtime profile, decision authority, decision risk, `NEEDS_HUMAN_APPROVAL`, and automation-safe decision trace validation. No agents, orchestration, workflow engines, DAG systems, schedulers, triggers, CI/CD behavior, deploy workflow, runtime executors, or autonomous loops.
+> **v3.4 -> v3.5 changes:** Adds future-safe intelligence and governance validation for scoped loading, `CONTEXT_BUDGET_LIMITED`, drift, cross-repo awareness, incident/refactor cause/risk semantics, and fintech-grade governance signals. No tooling, RAG, vector DB, knowledge graph, orchestration, agents, deploy workflow, CI/CD behavior, runtime executors, or autonomous loops.
 
 ---
 
@@ -121,47 +130,119 @@ Use this as:
 | F13 | Planning mode preserves evidence/inference/unknown separation and does not infer deployability, ownership, contracts, or runtime topology from imports alone | warning | manual |
 | F14 | Planning mode on-demand loading is scoped to the requested change and does not broadly load unrelated layers/systems by default | warning | manual |
 | F15 | Mode invocation reads `.forge/forge.config.yaml` before `.forge/context/modes/<mode>.md` | warning | manual |
-| F16 | Mode invocation reports loaded context areas/files, including on-demand context loaded and missing evidence | warning | manual |
+| F16 | Mode invocation keeps context-loading details concise in normal output and reports missing evidence that affects the task | warning | manual |
 | F17 | Mode invocation does not broad-load `.forge/context` by default when the mode delta is sufficient | warning | manual |
-| F18 | Planning, implementation, execute, testing, and review preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
-| F19 | Mode invocation reports unresolved ambiguity and whether the selected mode was sufficient | warning | manual |
+| F18 | Ask, planning, implementation, execute, testing, review, incident, and refactor preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
+| F19 | Mode invocation reports unresolved ambiguity and only highlights mode insufficiency when it affects the task | warning | manual |
 | F20 | Mode-specific execution behavior lives in `modes/<mode>.md` rather than being duplicated in globally loaded `00-meta/conventions.md` | warning | manual |
 | F21 | Unknown handling distinguishes `blocking`, `proposed-default`, and `informational` behavior | warning | manual |
 | F22 | Proposed defaults are explicitly labeled `proposed` and `not confirmed`, with reason and confirmation boundary when needed | warning | manual |
-| F23 | `runtime.non_interactive: true` emits `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION` for blocking unknowns instead of requiring interactive questions | warning | manual |
+| F23 | `runtime.non_interactive: true` emits the selected mode's allowed blocking/readiness status instead of requiring interactive questions | warning | manual |
 | F24 | `runtime.non_interactive: false` remains interactive-first and uses ask-first clarification for blocking decisions | warning | manual |
 | F25 | Planning output discourages excessive architecture-option generation and open-ended brainstorming | warning | manual |
 | F26 | Proposed defaults do not silently become confirmed facts, topology, ownership, contracts, or production runtime behavior | warning | manual |
-| F27 | Visible runtime modes are constrained to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review` | warning | manual |
+| F27 | Visible runtime modes are constrained to `ask`, `planning`, `implementation`/`implement`, `execute`, `testing`, `review`, `incident`, and `refactor` | warning | manual |
 | F28 | Planning mode produces strategic ECP/phases and does not collapse into detailed executable coding tasks | warning | manual |
 | F29 | Implementation mode produces executable task structure with likely files/components and dependency ordering only after critical blockers are resolved, without modifying code | warning | manual |
-| F30 | Execute mode owns actual repository modification behavior and reports modified files clearly | warning | manual |
+| F30 | Execute mode owns actual repository modification behavior and reports modified files grouped by responsibility | warning | manual |
 | F31 | Execute mode does not silently redefine approved plans, topology, contracts, or architecture | warning | manual |
 | F32 | Architecture reasoning and execution reasoning remain separated by a human-reviewable execution boundary | warning | manual |
 | F33 | Testing mode remains visible and owns unit/integration test strategy, mocks/fakes/stubs, coverage reasoning, regression validation, and operational verification | warning | manual |
 | F34 | Execute mode does not absorb testing responsibilities entirely | warning | manual |
 | F35 | Review mode does not collapse into testing or replace test strategy/test implementation behavior | warning | manual |
-| F36 | Mode responsibilities remain separated across planning, implementation, execute, testing, and review | warning | manual |
+| F36 | Mode responsibilities remain separated across ask, planning, implementation, execute, testing, review, incident, and refactor | warning | manual |
 | F37 | Testing mode respects existing repository test placement conventions and does not force the recommended `testing/` layout without evidence | warning | manual |
 | F38 | Unit tests are not placed far from the target package/file without a repository convention or explicit reason | warning | manual |
 | F39 | Integration/e2e tests are not mixed into unit test folders without a repository convention or explicit reason | warning | manual |
 | F40 | Reusable mocks, fakes, stubs, fixtures, and helpers are not scattered without a clear repository convention | warning | manual |
 | F41 | Human decision prompts are bounded: recommended plus alternative by default, maximum three options for major architecture tradeoffs | warning | manual |
-| F42 | `runtime.non_interactive` is detected, reported, and applied during every mode invocation without requiring prompt mention | warning | manual |
+| F42 | `runtime.non_interactive` is detected and applied during every mode invocation without requiring prompt mention; normal output does not dump runtime internals | warning | manual |
 | F43 | Interactive repositories do not emit automation-style blocked reports when ask-first clarification is required | warning | manual |
 | F44 | Non-interactive repositories do not ask conversational clarification questions | warning | manual |
 | F45 | Interactive implementation mode stops before final breakdown when blocking decisions affect runtime behavior, contracts/schema, DLQ/replay, idempotency, security/compliance, ownership/governance, destructive boundaries, acceptance criteria, or rollback | warning | manual |
 | F46 | Interactive implementation mode asks concise Recommended/Alternative clarification questions before execution-ready tasks | warning | manual |
 | F47 | Interactive implementation mode does not hide blockers at the end of a full breakdown | warning | manual |
 | F48 | Final executable tasks, allowed file modifications, acceptance criteria, and executor instructions are not emitted while critical blockers remain unresolved | warning | manual |
-| F49 | Non-interactive implementation mode emits `BLOCKED`, `NEEDS_CONFIRMATION`, or `NEEDS_REVIEW` instead of conversational questions | warning | manual |
+| F49 | Non-interactive implementation mode emits `NEEDS_CONFIRMATION` when required execution values are missing, `NEEDS_HUMAN_APPROVAL` for HIGH-risk decisions, or `READY_FOR_PARTIAL_EXECUTION` only when safe proposed-default work can proceed | warning | manual |
 | F50 | Interactive implementation confirmation starts with `NEEDS_CONFIRMATION` | warning | manual |
-| F51 | Interactive implementation confirmation includes decision title, Recommended option with reason, Alternative option with tradeoff, and clear reply instructions | warning | manual |
+| F51 | Interactive implementation confirmation includes blocker title, practical why-it-matters explanation, Recommended option with reason, Alternative option with tradeoff, and clear reply instructions | warning | manual |
 | F52 | Interactive implementation confirmation uses 2 options by default and at most 3 only for major architecture tradeoffs | warning | manual |
-| F53 | Implementation output includes exactly one readiness status: `NEEDS_CONFIRMATION`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION` | warning | manual |
+| F53 | Implementation output includes exactly one readiness status: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION` | warning | manual |
 | F54 | `READY_FOR_EXECUTION` is not used with conditional language such as assumed values, values provided later, unknown topics/schema/groups/DLQ, unknown duplicate policy, missing contract details, or pending production confirmation | error | manual |
-| F55 | Execution-sensitive `READY_FOR_EXECUTION` output includes concrete `Execution Values` before executor instructions | error | manual |
+| F55 | Execution-sensitive `READY_FOR_EXECUTION` output includes concrete execution values before executor instructions | error | manual |
 | F56 | Final executor instructions do not contain unresolved required execution values | error | manual |
+| F57 | Ask mode answers lightweight repo-understanding questions without planning, mutation, redesign, or broad audit | warning | manual |
+| F58 | Incident mode diagnoses bugs/issues/incidents without speculative redesign | warning | manual |
+| F59 | Refactor mode remains bounded, conservative, and behavior-preserving without architecture rewrite or paradigm migration | warning | manual |
+| F60 | Normal interactive mode output avoids large runtime/internal dumps and audit/RFC-style narrative when concise operational structure is enough | warning | manual |
+| F61 | Execute output prioritizes result, implemented changes, validation, not-validated items, manual checks, rollback, intentionally unchanged scope, reviewer focus, and hidden-change checks | warning | manual |
+| F62 | Human-facing section names are scannable and operational, e.g. `Yang berhasil diubah`, `File yang berubah`, `Validasi`, `Yang belum tervalidasi`, `Yang masih perlu dicek manual`, `Cara rollback perubahan ini`, `Yang sengaja tidak diubah`, `Reviewer perlu fokus ke`, and `Hidden change check` | warning | manual |
+| F63 | `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` implementation output includes task cards instead of document-style breakdowns | error | manual |
+| F64 | Every implementation task card includes Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation | error | manual |
+| F65 | Task card priority uses only `P0`, `P1`, `P2`, or `P3`; impact uses only `HIGH`, `MEDIUM`, or `LOW`; dependencies reference task IDs or `none` | error | manual |
+| F66 | Risky implementation tasks include explicit `Do Not Change` guardrails for runtime, data, contract, security, broad refactor, or destructive boundaries | error | manual |
+| F67 | Multi-step implementation output includes Dependency Order and Parallelization Notes using task IDs | error | manual |
+| F68 | Final executable task cards are not emitted while critical blockers remain unresolved, including non-interactive blocked reports | error | manual |
+| F69 | Implementation task cards remain output structure only and do not introduce tooling, orchestration, agents, schedulers, workflow engines, DAG systems, Jira integration, story points, or sprint planning | error | manual |
+| F70 | Execute output starts with `Execution Result` and one clear status: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED` | error | manual |
+| F71 | Execute changed files are grouped by responsibility: Runtime / Bootstrap, Adapter / Handler, Service / Domain, Persistence, Config / Docs, or Tests | error | manual |
+| F72 | Failed, skipped, partial, or not-run validation is highlighted in `Validasi` with command, result, reason, and remaining unvalidated scope | error | manual |
+| F73 | Runtime-impacting execute output includes operational rollback guidance such as disable flag, revert config, keep fallback path, or replay if needed | error | manual |
+| F74 | Risky execute output reports intentionally unchanged boundaries such as database schema, service topology, handler/persistence boundary, fallback path, or shared contract scope | error | manual |
+| F75 | Non-trivial execute output includes `Reviewer perlu fokus ke` covering relevant risks such as idempotency, retry vs DLQ, lifecycle/shutdown, secret-safe logging, or boundary preservation | warning | manual |
+| F76 | Execute output includes `Hidden change check` for unexpected database schema, deployment pipeline, shared runtime contract, and unrelated context/runtime changes | warning | manual |
+| F77 | Normal interactive execute output does not expose excessive runtime interaction mode, bootstrap, loaded-context, lifecycle, or debug details unless audit/debug mode is requested | warning | manual |
+| F78 | Execute output does not use `SUCCESS` unless implementation scope completed and reliable validation evidence exists for the executed scope | error | manual |
+| F79 | Execute output uses `PARTIAL_SUCCESS` when implementation is partial or validation is incomplete, and explains which scope remains incomplete | error | manual |
+| F80 | Execute output uses `BLOCKED_BY_ENVIRONMENT` for missing tooling/runtime/infra and `BLOCKED` for contract/runtime/approval blockers | error | manual |
+| F81 | Execute output uses `NOT_VALIDATED` when code changed but no reliable validation executed | error | manual |
+| F82 | Testing output uses one status only: `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN` | error | manual |
+| F83 | Review output uses one status only: `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, or `PARTIAL_REVIEW` | error | manual |
+| F84 | Runtime/tooling prerequisite checks are reported before validation/testing execution when commands depend on tools or infra | error | manual |
+| F85 | Validation sections separate prerequisites checked, executed commands, failures, checks that could not run, remaining unvalidated scope, and manual actions | error | manual |
+| F86 | Environment/tooling failures are not mixed into generic `validation failed` prose or reported as implementation failures | error | manual |
+| F87 | Output does not imply fully validated, production-ready, or test-passed unless direct validation evidence exists | critical | manual |
+| F88 | Manual actions are explicit and operational, e.g. rerun tests after toolchain availability or start required broker/database infra | warning | manual |
+| F89 | Execute/testing/review ownership remains distinct: execute may run lightweight validation, testing owns structured validation, review owns correctness/risk assessment | warning | manual |
+| F90 | Testing output uses required sections: `Testing Result`, `Scope yang divalidasi`, `Automated validation`, `Environment/runtime blockers`, `Yang belum tervalidasi`, `Yang masih perlu dicek manual`, `Reviewer perlu fokus ke`, and `Risk summary` | error | manual |
+| F91 | Testing scope is grouped by relevant category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation | error | manual |
+| F92 | Testing output separates automated checks, manual validation, infra-dependent validation, and production-like verification | error | manual |
+| F93 | Testing validates the confirmed execution contract where possible, including approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations | error | manual |
+| F94 | Event-driven or runtime-sensitive testing explicitly addresses retryable failure, non-retryable failure, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant | error | manual |
+| F95 | Environment/runtime blockers are surfaced directly and not buried inside prose | error | manual |
+| F96 | Testing output highlights unvalidated risk areas, missing coverage, risky runtime assumptions, and runtime-sensitive behavior not verified | warning | manual |
+| F97 | Testing output does not collapse into review/governance language or generic QA-document prose | warning | manual |
+| F98 | Review output uses required sections in order: `Review Result`, `MR readiness`, `Critical findings`, `Major findings`, `Minor findings`, `Info / observations`, `Reviewer perlu fokus ke`, `Yang belum tervalidasi`, `Rollback / safety notes`, and `Suggested next action` | error | manual |
+| F99 | Review output states one MR readiness result: `MR-ready`, `not MR-ready`, `MR-ready with accepted risk`, or `cannot determine` | error | manual |
+| F100 | Review findings are grouped by severity: `CRITICAL`, `MAJOR`, `MINOR`, and `INFO` | error | manual |
+| F101 | Each `CRITICAL` or `MAJOR` review finding includes affected file/area, what is wrong, why it matters, and suggested fix | error | manual |
+| F102 | Non-trivial review checks architecture/contract drift: execution contract adherence, confirmed boundary preservation, no hidden topology redesign, no service/repository boundary bypass, and no unapproved contract/schema change | error | manual |
+| F103 | Review checks relevant safety areas: secret/raw payload logging, PII exposure, retry/DLQ correctness, idempotency correctness, rollback readiness, and validation honesty | error | manual |
+| F104 | Review highlights testing gaps as review findings or coverage gaps without becoming a full testing mode report or test plan | warning | manual |
+| F105 | Review output stays concise and MR-oriented, not a generic audit/report, planning narrative, or implementation task list | warning | manual |
+| F106 | Runtime profile semantics are bounded to `local`, `automation`, and reserved `ci`; `ci` does not introduce CI/CD, deploy, pipeline, trigger, or executor behavior | error | manual |
+| F107 | `runtime.non_interactive` remains the controlling interaction flag; `runtime.profile` is metadata and no overlapping interaction flags are introduced | error | manual |
+| F108 | Profile/non-interactive conflicts are reported clearly before mode work | error | manual |
+| F109 | Automation-safe behavior emits structured `NEEDS_CONFIRMATION`, `BLOCKED`, or `NEEDS_HUMAN_APPROVAL` and does not ask conversational questions | error | manual |
+| F110 | HIGH-risk decisions are never auto-approved by AI or orchestrator and require human confirmation | critical | manual |
+| F111 | Orchestrator authority is used only when `runtime.decision_authority: orchestrator` is explicitly configured and only for MEDIUM-risk operational defaults | critical | manual |
+| F112 | Automation-selected LOW defaults and orchestrator-selected MEDIUM decisions include decision trace: decision, selected option, authority used, risk level, reason, and affected tasks/artifacts | error | manual |
+| F113 | Automation semantics do not imply agents, orchestration, workflow engines, DAGs, schedulers, triggers, auto-retry loops, CI/CD, deploy/release automation, runtime executors, or autonomous multi-step chaining | critical | manual |
+| F114 | `NEEDS_HUMAN_APPROVAL` is used for HIGH-risk security/compliance, PII/secrets, financial correctness, destructive migration, production topology, contract authority, or rollback-risky decisions | error | manual |
+| F115 | Mode invocation treats `token_budget` as a target operating range and uses `CONTEXT_BUDGET_LIMITED` when required evidence may exceed normal scoped budget | warning | manual |
+| F116 | Mode output does not encourage broad-loading all of `.forge/context` by default or treat broad loading as the normal answer to uncertainty | error | manual |
+| F117 | Artifact/context drift is reported with `DRIFT_DETECTED`, `DRIFT_RISK`, or `NO_DRIFT_FOUND` when material to the task | warning | manual |
+| F118 | Stale artifacts, stale generated context, or old assumptions never override current code/repository evidence | critical | manual |
+| F119 | Cross-repo behavior, ownership, runtime topology, and contracts are not assumed without evidence from the referenced repo or authoritative source | error | manual |
+| F120 | Incident mode distinguishes symptoms from causes, uses `LIKELY_CAUSE`, `POSSIBLE_CAUSE`, or `NEEDS_MORE_EVIDENCE`, and includes confidence when discussing cause | error | manual |
+| F121 | Incident mode does not claim root cause without direct supporting evidence | critical | manual |
+| F122 | Refactor mode classifies risk as `LOW`, `MEDIUM`, or `HIGH`, and HIGH-risk refactors require a planning/implementation path before execution | error | manual |
+| F123 | Refactor mode does not present architecture rewrite, paradigm migration, or broad redesign as a normal refactor | error | manual |
+| F124 | Fintech HIGH-risk governance decisions require human approval and are not auto-approved by AI or orchestrator | critical | manual |
+| F125 | Governance output remains concise, risk-focused, operational, and evidence-based instead of becoming generic audit bureaucracy | warning | manual |
+| F126 | Payment, balance, ledger, settlement, reconciliation, or transaction correctness is never classified as LOW risk | critical | manual |
+| F127 | Governance-sensitive output never logs, persists, quotes, or copies raw secrets or raw PII | critical | manual |
+| F128 | Intelligence/governance semantics do not add tooling, RAG, vector search, knowledge graphs, persistent AI memory, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops | critical | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -200,6 +281,10 @@ Use this as:
 | I7 | `governance.require_evidence_for` contains only valid status values | error | yes |
 | I8 | `runtime.non_interactive` exists and is boolean, defaulting to `false` in runtime templates | error | yes |
 | I9 | No conflicting interaction or workflow flags exist | error | yes |
+| I10 | `runtime.profile`, when present, is one of `local`, `automation`, or reserved `ci` | error | yes |
+| I11 | Runtime template defaults to `runtime.profile: local` and `runtime.non_interactive: false` | error | yes |
+| I12 | `runtime.decision_authority`, when present, is one of `ai`, `orchestrator`, or `human`; default template uses `ai` | error | yes |
+| I13 | `runtime.profile: local` with `runtime.non_interactive: true`, or `runtime.profile: automation` with `runtime.non_interactive: false`, is reported as an explicit config conflict | warning | partial |
 
 ### Category J — Evidence Consistency *(v1.1, extended v1.2)*
 
@@ -258,13 +343,28 @@ Use this as:
 | M5 | Rotation is recommended when a secret may have been committed, logged, displayed, copied, or otherwise exposed | warning | manual |
 | M6 | Database URLs with credentials, Kafka/SASL credentials, cloud credentials, OAuth client secrets, JWTs, cookies, private keys, tokens, and passwords are redacted before output | critical | partial |
 
+### Category N — Lifecycle Artifact Boundaries *(v3.3)*
+
+| ID | Rule | Severity | Automatable |
+|---|---|---|---|
+| N1 | Persisted lifecycle artifacts live under `.forge/context/generated/artifacts/` or are explicitly identified as external handoff artifacts | warning | partial |
+| N2 | Lifecycle artifacts are treated as supporting continuity helpers, never source of truth over repository code, docs, ADRs, or human confirmations | critical | manual |
+| N3 | Artifact types are limited to ECP, Execution Contract, Execute Result, Testing Result, Review Result, Incident, and Refactor | error | manual |
+| N4 | Artifact ownership is clear from `produced_by_mode` or equivalent mode-owned section | error | partial |
+| N5 | Artifact links are shallow trace references only and do not imply orchestration, workflow, DAG, scheduler, dependency-management, execution-trigger, or agent-memory semantics | critical | manual |
+| N6 | Artifacts do not contain hidden chain-of-thought, raw secrets, unnecessary conversation history, generic long-form summaries, or autonomous memory structures | critical | partial |
+| N7 | Artifacts remain concise, human-readable, append-friendly, replaceable, discardable, and reviewable in diffs | warning | manual |
+| N8 | Artifact status and revision references are operational and do not promote artifact volume into lifecycle maturity | warning | manual |
+| N9 | Artifact conflicts with repository evidence are surfaced as stale, partial, or superseded; repository evidence wins | error | manual |
+| N10 | Ask mode does not create lifecycle artifacts by default and references artifacts only when relevant to a lightweight question | warning | manual |
+
 ---
 
 ## 3. Validation Execution Modes
 
 ### 3.1 Manual Checklist (Current Phase)
 
-Walk through each category (A–I) sequentially. Use the table format:
+Walk through each category sequentially. Use the table format:
 
 ```
 [ ] A1 — forge.config.yaml exists and valid
@@ -295,7 +395,7 @@ forge validate --fix        # auto-fix where possible (e.g., registry sync)
 forge validate --category A # single category
 forge validate --severity critical  # critical findings only
 forge validate --severity error  # errors only
-forge validate --ci         # exit code 1 on any error (CI integration)
+forge validate --ci         # future reserved validation profile; no CI pipeline behavior is defined here
 ```
 
 > Note: CLI spec is in the future tooling phase. This document only defines the RULES to be implemented.
@@ -378,7 +478,7 @@ B1 (front-matter exists)
        └── E1–E4 (source rules)
 ```
 
-Run in order: **M → A → B → C → I → D → E → F → G → H → J → K → L** to avoid cascading false failures and prevent raw secret propagation.
+Run in order: **M -> A -> B -> C -> I -> D -> E -> F -> G -> H -> J -> K -> L -> N** to avoid cascading false failures and prevent raw secret propagation.
 
 J, K, and L depend on Phases 0.5–6 of init having completed and on D (evidence) being clean — they verify *content correctness* and *language/reference quality*, while D verifies *metadata correctness*.
 
@@ -404,8 +504,9 @@ J, K, and L depend on Phases 0.5–6 of init having completed and on D (evidence
 | `FORGE-CONTEXT-ARCHITECTURE.md` §16 | Source of invariant definitions — this spec formalizes them |
 | `CONTEXT-INITIALIZATION-PROTOCOL.md` §9 | Init Phase 6 uses this spec as acceptance criteria |
 | `specs/mode-invocation.md` | Source of mode invocation lifecycle and runtime behavior expectations |
+| `specs/artifact-lifecycle.md` | Source of bounded lifecycle artifact semantics and invalid artifact boundaries |
 | Future `TOOLING-SPEC.md` | `forge validate` CLI implements this spec programmatically |
-| Future CI pipeline | Uses `forge validate --ci` as gate |
+| Future automation/CI integration | May use validation results later; this spec defines rules only, not pipeline, deploy, trigger, or executor behavior |
 
 ---
 
@@ -474,21 +575,21 @@ ANTI-DUPLICATION
 [ ] F13 planning preserves evidence/inference/unknown boundaries
 [ ] F14 planning uses scoped on-demand loading
 [ ] F15 forge.config.yaml read before mode file
-[ ] F16 loaded context and missing evidence reported
+[ ] F16 context-loading detail concise; missing evidence reported
 [ ] F17 no broad-loading by default
 [ ] F18 mode distinctions preserved
-[ ] F19 ambiguity and mode sufficiency reported
+[ ] F19 ambiguity reported; mode insufficiency highlighted only when relevant
 [ ] F20 mode-specific behavior lives in mode files, not global conventions
 [ ] F21 unknowns classified blocking/proposed-default/informational
 [ ] F22 proposed defaults labeled and bounded
-[ ] F23 runtime.non_interactive true emits blocking status, not interactive questions
+[ ] F23 runtime.non_interactive true emits mode-allowed blocking/readiness status, not interactive questions
 [ ] F24 runtime.non_interactive false remains interactive-first
 [ ] F25 excessive architecture-option generation discouraged
 [ ] F26 proposed defaults not promoted to confirmed facts
-[ ] F27 visible runtime modes constrained to planning/implement/execute/testing/review
+[ ] F27 visible runtime modes constrained to ask/planning/implement/execute/testing/review/incident/refactor
 [ ] F28 planning produces strategic ECP/phases, not detailed coding tasks
 [ ] F29 implementation produces executable task structure only after critical blockers are resolved
-[ ] F30 execute owns repository modification behavior and reports changed files
+[ ] F30 execute owns repository modification behavior and groups changed files by responsibility
 [ ] F31 execute does not redefine approved plans or architecture
 [ ] F32 architecture reasoning and execution reasoning remain separated
 [ ] F33 testing remains visible and owns test cognition
@@ -500,21 +601,93 @@ ANTI-DUPLICATION
 [ ] F39 integration/e2e tests not mixed into unit folders without reason
 [ ] F40 reusable mocks/fixtures/helpers follow a clear convention
 [ ] F41 decision prompts bounded to 2 options by default
-[ ] F42 runtime.non_interactive detected/reported/applied without prompt mention
+[ ] F42 runtime.non_interactive detected/applied without prompt mention; internals not dumped
 [ ] F43 interactive repos use ask-first behavior, not automation blocked reports
 [ ] F44 non-interactive repos do not ask conversational questions
 [ ] F45 interactive implementation stops before final breakdown on critical blockers
 [ ] F46 interactive implementation asks concise Recommended/Alternative questions first
 [ ] F47 interactive implementation does not bury blockers at the end
 [ ] F48 final executable tasks are not emitted while critical blockers remain unresolved
-[ ] F49 non-interactive implementation emits blocking status, not questions
+[ ] F49 non-interactive implementation emits NEEDS_CONFIRMATION or safe READY_FOR_PARTIAL_EXECUTION, not questions
 [ ] F50 interactive implementation confirmation starts with NEEDS_CONFIRMATION
-[ ] F51 interactive implementation confirmation includes Recommended/Alternative and reply instructions
+[ ] F51 interactive implementation confirmation includes blocker, why it matters, Recommended/Alternative, and reply instructions
 [ ] F52 interactive implementation confirmation uses 2 options by default, max 3 for major tradeoffs
 [ ] F53 implementation output includes exactly one readiness status
 [ ] F54 READY_FOR_EXECUTION has no conditional or unresolved required values
-[ ] F55 execution-sensitive READY_FOR_EXECUTION includes concrete Execution Values
+[ ] F55 execution-sensitive READY_FOR_EXECUTION includes concrete execution values
 [ ] F56 final executor instructions contain no unresolved required execution values
+[ ] F57 ask answers lightweight repo-understanding questions only
+[ ] F58 incident diagnoses without speculative redesign
+[ ] F59 refactor remains bounded and behavior-preserving
+[ ] F60 normal interactive output avoids runtime/internal dumps and RFC/audit narrative
+[ ] F61 execute output prioritizes result, changes, validation, manual checks, rollback, unchanged scope, reviewer focus, hidden-change checks
+[ ] F62 section names are scannable and operational
+[ ] F63 ready/partial implementation output uses task cards
+[ ] F64 task cards include required fields
+[ ] F65 task card priority, impact, and dependencies use allowed values
+[ ] F66 risky task cards include Do Not Change guardrails
+[ ] F67 multi-step output includes Dependency Order and Parallelization Notes
+[ ] F68 executable task cards are not emitted while critical blockers remain
+[ ] F69 task cards do not introduce tooling/orchestration/agents/workflows
+[ ] F70 execute output starts with Execution Result and clear status
+[ ] F71 execute changed files are grouped by responsibility
+[ ] F72 failed/skipped/partial validation is highlighted with command, result, reason, and unvalidated scope
+[ ] F73 runtime-impacting execute output includes operational rollback guidance
+[ ] F74 risky execute output reports intentionally unchanged boundaries
+[ ] F75 non-trivial execute output includes Reviewer perlu fokus ke
+[ ] F76 execute output includes Hidden change check
+[ ] F77 normal execute output avoids excessive runtime/debug/loading internals
+[ ] F78 execute SUCCESS requires reliable validation evidence
+[ ] F79 partial implementation or incomplete validation uses PARTIAL_SUCCESS with remaining scope
+[ ] F80 environment blockers and contract/runtime blockers are classified separately
+[ ] F81 code changes without reliable validation use NOT_VALIDATED
+[ ] F82 testing output uses PASSED/FAILED/PARTIAL/BLOCKED_BY_ENVIRONMENT/NOT_RUN
+[ ] F83 review output uses APPROVED/NEEDS_CHANGES/BLOCKED/PARTIAL_REVIEW
+[ ] F84 prerequisite checks are reported before tool/infra-dependent validation
+[ ] F85 validation reporting separates executed, failed, could-not-run, unvalidated, and manual action
+[ ] F86 environment/tooling failures are not described as implementation failures
+[ ] F87 no fully-validated, production-ready, or test-passed claim without evidence
+[ ] F88 manual actions are explicit and operational
+[ ] F89 execute/testing/review validation ownership remains distinct
+[ ] F90 testing output uses required testing sections
+[ ] F91 testing scope is grouped by unit/integration/e2e/smoke/rollback/migration/runtime/contract category
+[ ] F92 automated, manual, infra-dependent, and production-like validation are separated
+[ ] F93 testing validates the confirmed execution contract where possible
+[ ] F94 runtime-sensitive testing covers retry/DLQ/idempotency/replay when relevant
+[ ] F95 environment/runtime blockers are surfaced directly
+[ ] F96 unvalidated risks, missing coverage, and risky runtime assumptions are visible
+[ ] F97 testing stays out of generic QA prose and review/governance critique
+[ ] F98 review output uses required MR-review sections
+[ ] F99 review states clear MR readiness
+[ ] F100 review findings grouped by CRITICAL/MAJOR/MINOR/INFO
+[ ] F101 critical/major review findings include evidence, impact, and suggested fix
+[ ] F102 non-trivial review checks architecture/contract drift
+[ ] F103 review checks relevant safety areas
+[ ] F104 review testing gaps do not become full test plans
+[ ] F105 review stays concise, MR-oriented, and not audit/task-list prose
+[ ] F106 runtime profile remains local/automation/reserved-ci only
+[ ] F107 runtime.non_interactive remains controlling interaction flag
+[ ] F108 profile/non_interactive conflicts are reported
+[ ] F109 automation-safe behavior uses structured status, not questions
+[ ] F110 HIGH-risk decisions are not auto-approved
+[ ] F111 orchestrator authority requires explicit config
+[ ] F112 automation/orchestrator decisions include decision trace
+[ ] F113 automation semantics do not imply agents/orchestration/workflows
+[ ] F114 NEEDS_HUMAN_APPROVAL used for HIGH-risk decisions
+[ ] F115 CONTEXT_BUDGET_LIMITED used when required evidence exceeds normal scoped budget
+[ ] F116 broad context loading is not encouraged by default
+[ ] F117 drift statuses reported when material
+[ ] F118 stale artifacts/context never override current repo evidence
+[ ] F119 cross-repo behavior is not assumed without evidence
+[ ] F120 incident cause status and confidence are present
+[ ] F121 incident root cause is not claimed without evidence
+[ ] F122 refactor risk is classified and HIGH risk requires a planning/implementation path
+[ ] F123 architecture rewrite is not presented as normal refactor
+[ ] F124 fintech HIGH-risk governance decisions are not auto-approved
+[ ] F125 governance output stays concise, operational, and evidence-based
+[ ] F126 payment/transaction correctness is never LOW risk
+[ ] F127 raw secrets/PII are not logged, persisted, quoted, or copied
+[ ] F128 intelligence/governance semantics do not add tooling/RAG/vector DB/knowledge graph/orchestration/agents/runtime behavior
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid
@@ -544,6 +717,10 @@ CONFIG CONSISTENCY
 [ ] I7  governance values valid
 [ ] I8  runtime.non_interactive exists, boolean, default false in templates
 [ ] I9  no conflicting interaction or workflow flags
+[ ] I10 runtime.profile valid if present
+[ ] I11 runtime template defaults to profile local and non_interactive false
+[ ] I12 runtime.decision_authority valid if present
+[ ] I13 profile/non_interactive conflicts reported
 
 EVIDENCE CONSISTENCY (J — v1.1+v1.2)
 [ ] J1  table count matches migrations
@@ -589,4 +766,16 @@ SECRET SAFETY & REDACTION (M — v1.7)
 [ ] M4  discovered secrets classified as security findings
 [ ] M5  rotation recommended when exposure is possible
 [ ] M6  credentials/tokens/private keys/cookies/passwords redacted before output
+
+LIFECYCLE ARTIFACT BOUNDARIES (N - v3.3)
+[ ] N1  persisted artifacts live under generated/artifacts or are explicitly external
+[ ] N2  artifacts never override repository truth
+[ ] N3  artifact types are limited to mode-owned lifecycle artifacts
+[ ] N4  artifact ownership is clear
+[ ] N5  artifact links do not imply orchestration/workflow/DAG semantics
+[ ] N6  no chain-of-thought, raw secrets, conversational history, long summaries, or autonomous memory structures
+[ ] N7  artifacts remain concise, human-readable, append-friendly, replaceable, and reviewable
+[ ] N8  artifact revisions do not promote volume into maturity
+[ ] N9  artifact conflicts defer to repository evidence
+[ ] N10 ask does not create lifecycle artifacts by default
 ```

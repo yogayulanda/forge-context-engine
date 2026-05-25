@@ -5,10 +5,10 @@ type: mode
 status: confirmed
 confidence: high
 source: human
+evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-24
+updated: 2026-05-25
 ---
-
 # Mode: Testing
 ## include
 - `layers/testing`
@@ -25,12 +25,15 @@ updated: 2026-05-24
 ## token_budget
 6000
 ## notes
-- Define or implement task-scoped unit, integration, regression, coverage, and operational verification tests.
-- Follow existing repo test placement conventions when clear; report the detected convention instead of forcing a new layout.
-- If no convention exists, colocate unit tests near target packages/files and place non-unit tests under `testing/integration`, `testing/e2e`, `testing/mocks`, `testing/fixtures`, or `testing/helpers` as appropriate.
-- Keep unit, integration, e2e, mocks, fakes, stubs, fixtures, and helpers distinct; avoid mixing unrelated test concerns in one folder without reason.
-- Reason about test isolation, mocks/fakes/stubs, fixtures, helpers, test dependencies, retry/error paths, rollback paths, and missing coverage.
-- If `runtime.non_interactive: false`, ask unresolved validation expectations only when needed; if `true`, emit an unresolved validation report.
-- Do not become generic architecture planning, review mode, or broad implementation redesign.
-- Redact credentials, tokens, cookies, private keys, and credential-bearing URLs from test evidence and validation notes.
-- Report test strategy or test changes, loaded context, missing evidence or ambiguity, commands run or skipped, and whether testing mode was sufficient.
+- Own structured validation after execute; execute may do lightweight checks, review evaluates correctness/risk/governance; `Testing Result` must use one status only: `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN`.
+- When persistence helps continuity, write or reference a Testing Result Artifact with validated scope, blockers, automated/manual validation, coverage gaps, and runtime-sensitive validation.
+- Output sections: `Testing Result`, `Scope yang divalidasi`, `Automated validation`, `Environment/runtime blockers`, `Yang belum tervalidasi`, `Yang masih perlu dicek manual`, `Reviewer perlu fokus ke`, and `Risk summary`.
+- Group scope by relevant category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation; omit irrelevant groups, but do not flatten everything into one list.
+- Trace validation to the confirmed execution contract where possible: approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations.
+- For event-driven or runtime-sensitive flows, explicitly cover retryable failure, non-retryable failure, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
+- Report `CONTEXT_BUDGET_LIMITED` with missing evidence and affected validation scope, drift status, cross-repo evidence gaps, and fintech-sensitive validation gaps; payment/transaction correctness is never LOW risk.
+- Separate automated/manual/infra-dependent/production-like validation; follow existing test placement and keep test types/assets distinct.
+- If `runtime.non_interactive: false`, ask unresolved validation expectations only when needed; if `true`, emit an unresolved validation report; do not become planning, review, or redesign.
+- Check validation prerequisites and distinguish implementation failure, validation failure, tooling blocker, infra unavailable, and runtime dependency unavailable.
+- Use `PASSED` only when selected validation ran and passed; use `PARTIAL` for incomplete required coverage; use `BLOCKED_BY_ENVIRONMENT` for unavailable tooling/infra; use `NOT_RUN` when no reliable validation ran.
+- Highlight unvalidated risks, risky runtime assumptions, runtime-sensitive behavior not verified, and explicit manual actions; redact secrets and never imply full validation without evidence.

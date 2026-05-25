@@ -4,8 +4,8 @@
 |---|---|
 | Dokumen | Desain Fondasi Context Engineering |
 | Fase | Fase 1 — Desain Struktur (BUKAN implementasi) |
-| Versi | 0.5 (Draft Desain) |
-| Tanggal | 2026-05-20 |
+| Versi | 0.8 (Draft Desain) |
+| Tanggal | 2026-05-25 |
 | Status | `decision` — menunggu konfirmasi pemilik |
 | Bahasa | Bahasa Indonesia |
 | Cakupan tooling | Agnostik tooling, kompatibel Claude |
@@ -28,6 +28,10 @@ Keputusan struktural inti:
 6. **Enam keadaan pengetahuan dipisah tegas** — fakta-manusia, inferensi-AI, asumsi, unknown, keputusan, konfirmasi.
 7. **Context loading modes** — `modes/` mendeklarasikan *delta* konteks yang dimuat per jenis pekerjaan, di atas inti yang selalu termuat.
 8. **Token-efficient by design** — selective loading; tanpa duplikasi lintas zona; konten unit dihasilkan saat init.
+9. **Artifact lifecycle minimal** — artifact mode-handoff berada di `generated/artifacts/`, kecil, dapat dibuang, dan tidak pernah mengalahkan source of truth repository.
+10. **Runtime profile bounded** — `runtime.profile` membedakan local vs automation-safe, tetapi `runtime.non_interactive` tetap flag kontrol interaksi tunggal.
+11. **Future intelligence semantics** — scoped loading lebih cerdas, drift terdeteksi, awareness lintas-repo dibatasi evidence, tanpa RAG/vector DB/knowledge graph/memory persisten.
+12. **Fintech-grade governance ringan** — sinyal risiko PII/secrets, financial correctness, idempotency, retry/replay, rollback, transaction consistency, auditability, observability, dan blast radius tanpa birokrasi audit.
 
 Dokumen ini **tidak** membuat file/folder apa pun. Ia cetak biru. Pembuatan struktur nyata adalah fase berikutnya (Context Initialization).
 
@@ -47,6 +51,11 @@ Dokumen ini **tidak** membuat file/folder apa pun. Ia cetak biru. Pembuatan stru
 | Production-Grade Thinking | `owner`, `updated`, `review_by`; manifest dapat divalidasi. |
 | Token Efficiency | Selective loading; tanpa duplikasi lintas `core`/`layers`/`systems`. |
 | Output Style | Minim file, tanpa duplikasi, tanpa folder spekulatif. |
+| Pragmatic Engineering | AI mengikuti gaya repo yang ada, memakai nama natural, dan menghindari abstraksi yang tidak diperlukan. |
+| Bounded Artifact Continuity | Artifact membantu kontinuitas antar-mode/sesi tanpa menjadi memory system, workflow engine, atau source of truth. |
+| Automation-Safe Boundaries | Automation hanya memakai status, risk level, authority, dan decision trace; bukan agent, scheduler, DAG, CI/CD, deploy, atau executor. |
+| Evidence-Scoped Intelligence | Konteks dimuat berdasarkan relevansi tugas; evidence langsung mengalahkan konteks luas. |
+| Governance as Risk Signal | Governance muncul sebagai sinyal risiko operasional, bukan checklist compliance generik. |
 
 ---
 
@@ -98,12 +107,16 @@ repo-root/
         │   ├── inferred.md
         │   └── confirmations.md
         ├── modes/                   # context loading modes — deklarasi delta pemuatan
+        │   ├── ask.md
         │   ├── planning.md
         │   ├── implementation.md
         │   ├── execute.md
         │   ├── testing.md
-        │   └── review.md
+        │   ├── review.md
+        │   ├── incident.md
+        │   └── refactor.md
         ├── generated/               # konteks hasil generate AI — dibuat saat dipakai (opsional)
+        │   └── artifacts/           # artifact lifecycle mode-handoff — dibuat saat dipakai
         └── temp/                    # scratch ephemeral — dibuat saat dipakai (gitignored, opsional)
 ```
 
@@ -122,7 +135,7 @@ Konteks dipisah di sepanjang **dua sumbu ortogonal** — inilah yang mencegah du
 | Layer | `layers/` | Konteks horizontal per peran engineering (§4) |
 | System | `systems/` | Konteks vertikal per unit implementasi nyata (§4) |
 | Knowledge / Ledger | `knowledge/` | Enam keadaan pengetahuan (§6) |
-| Generated | `generated/` | Konteks hasil AI, dapat diregenerasi |
+| Generated | `generated/` | Konteks hasil AI, dapat diregenerasi; `generated/artifacts/` menyimpan artifact lifecycle bila perlu |
 | Temporary | `temp/` | Scratch satu sesi |
 
 ### 3.2 Sumbu B — Loading Mode (kapan konteks dimuat)
@@ -131,7 +144,7 @@ Konteks dipisah di sepanjang **dua sumbu ortogonal** — inilah yang mencegah du
 
 ### 3.3 Resolusi tumpang-tindih: Layer vs Mode
 
-`testing`, `security`, `observability` adalah **lapisan** (pengetahuan yang bertahan) → `layers/`. `planning`, `implementation`, `execute`, `testing`, `review`, `documentation` adalah **mode pemuatan** (lensa kerja) → `modes/`.
+`testing`, `security`, `observability` adalah **lapisan** (pengetahuan yang bertahan) → `layers/`. `ask`, `planning`, `implementation`, `execute`, `testing`, `review`, `incident`, `refactor` adalah **mode pemuatan** (lensa kerja) → `modes/`.
 
 ---
 
@@ -257,13 +270,17 @@ Enam keadaan pengetahuan **tidak boleh tercampur**. Tiap keadaan punya lokasi, `
 
 Aturan pemisahan: keadaan 1 & 2 tidak pernah berbagi file (fakta manusia terpisah fisik dari inferensi AI yang dikarantina); `source` menandai penulis, `status` menandai keandalan; AI tidak menulis ke file `source: human`; promosi melintasi keadaan harus tercatat; unknown adalah tujuan wajib, bukan tebakan.
 
-**Batas source-of-truth:** kode adalah sumber kebenaran untuk fakta implementasi (`layers/`/`systems/` ber-`inferred` adalah tampilan ter-cache); `knowledge/decisions/` adalah sumber kebenaran untuk intent; `generated/` tidak pernah otoritatif. Konteks adalah lapisan turunan; AI mengonsumsinya, tidak pernah diam-diam menimpa sumbernya.
+**Batas source-of-truth:** kode adalah sumber kebenaran untuk fakta implementasi (`layers/`/`systems/` ber-`inferred` adalah tampilan ter-cache); `knowledge/decisions/` adalah sumber kebenaran untuk intent; `generated/` dan artifact lifecycle tidak pernah otoritatif. Konteks adalah lapisan turunan; AI mengonsumsinya, tidak pernah diam-diam menimpa sumbernya.
 
 ---
 
 ## 7. Context Loading Modes
 
 Sebuah **mode** adalah deklarasi pemuatan konteks dan kontrak operasional ringkas: ia menentukan konteks *apa* yang masuk ke window AI untuk satu jenis pekerjaan dan batas perilaku mode tersebut. Nama "mode" lebih natural daripada "profile": AI bekerja dalam "mode planning", "mode review", dst.
+
+Output mode harus terasa seperti komunikasi kerja engineering: ringkas, mudah discan, blocker terlihat jelas, hasil/validasi/rollback mudah ditemukan. Detail internal seperti urutan bootstrap, mode file yang dibaca, atau dump loading context tidak ditonjolkan dalam penggunaan interaktif normal; cukup sebut `Scoped context loaded` bila berguna.
+
+Mode yang menghasilkan atau menilai kode harus menjaga gaya implementasi tetap natural: baca kode sekitar lebih dulu, ikuti konvensi repository, pilih nama yang operasional dan familiar, pertahankan alur eksplisit, dan hindari abstraksi spekulatif. Perbaikan gaya boleh dilakukan bila minimal dan aman, tetapi bukan alasan untuk rewrite arsitektur, migrasi paradigma, atau refactor massal di luar tugas.
 
 ### 7.1 Inti yang selalu termuat — bukan bagian dari mode
 
@@ -284,7 +301,7 @@ title: Mode — Review
 ## include         → konteks DELTA yang dimuat, DI ATAS inti yang selalu termuat
 ## on_demand       → dimuat hanya bila direferensikan
 ## exclude         → pengecualian eksplisit (menang atas include)
-## token_budget    → batas estimasi token
+## token_budget    → target rentang konteks
 ```
 
 Mode tidak pernah mendaftar `00-meta/*` atau `01-core/*` — hanya delta-nya. Hanya deklarasi, ≤ ~40 baris.
@@ -293,15 +310,74 @@ Mode tidak pernah mendaftar `00-meta/*` atau `01-core/*` — hanya delta-nya. Ha
 
 | Mode | include (delta di atas inti) |
 |---|---|
+| `ask` | Lightweight repo understanding: `layers/<terkait>`, `systems/<terkait>`, `inferred` |
 | `planning` | Strategic ECP: `knowledge/*`, ringkasan `layers/*` |
 | `implementation` | Human-reviewable task breakdown: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
 | `execute` | Repository modification from approved tasks: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
-| `testing` | Test strategy/test changes: `layers/testing`, `systems/<terkait>`, `knowledge/assumptions` |
+| `testing` | Structured validation/test changes: `layers/testing`, `systems/<terkait>`, `knowledge/assumptions` |
 | `review` | Correctness/risk review: `layers/security` + `layers/<terkait>`, `knowledge/decisions/*` |
+| `incident` | Bug/issue diagnosis: affected systems/layers, logs/configs/contracts on demand |
+| `refactor` | Conservative behavior-preserving debt work: related systems/layers, decisions, tests/call sites on demand |
 
-Alur operasional baku: `planning -> implementation -> execute -> testing -> review`. Tugas kecil boleh melewati `planning`; `execute` boleh mengerjakan subset tugas yang sudah disetujui; `testing` boleh berjalan mandiri untuk permintaan test-only.
+Alur operasional baku: `planning -> implementation -> execute -> testing -> review`. `ask`, `incident`, dan `refactor` adalah mode masuk operasional, bukan tahap wajib lifecycle. Tugas kecil boleh melewati `planning`; `execute` boleh mengerjakan subset tugas yang sudah disetujui; `testing` boleh berjalan mandiri untuk permintaan test-only.
+
+Mode `testing` memisahkan hasil, scope tervalidasi, automated validation, manual validation, environment/runtime blockers, coverage gap, reviewer focus, dan risk summary. Scope testing dikelompokkan secara operasional (unit, integration, e2e, smoke, rollback, migration, runtime validation, contract validation) dan tidak boleh menyiratkan validasi penuh tanpa evidence.
+
+Mode `review` berperilaku seperti review MR senior: status jelas, kesiapan MR eksplisit, temuan dikelompokkan `CRITICAL`/`MAJOR`/`MINOR`/`INFO`, temuan besar wajib berbasis evidence, dan fokus reviewer menyorot risiko kontrak, boundary, safety, rollback, serta validasi tanpa berubah menjadi testing mode.
 
 `loading.default_mode` di `forge.config.yaml` menetapkan mode default.
+
+### 7.4 Intelligence & governance semantics
+
+Forge boleh berkembang menuju kecerdasan yang lebih matang, tetapi tetap semantik dan non-invasive.
+
+**Smarter scoped loading** berarti AI memuat konteks berdasarkan relevansi tugas, mengutamakan evidence langsung, dan tidak memuat seluruh `.forge/context` secara default. `token_budget` adalah target rentang operasi, bukan hard cap buta dan bukan alasan untuk melewati evidence penting. Jika evidence yang diperlukan melebihi budget scoped normal, AI melaporkan `CONTEXT_BUDGET_LIMITED`, menyebut evidence yang kurang, dampak ke kesimpulan, dan ekspansi konteks terarah yang dibutuhkan. Broad-load-everything tetap dilarang sebagai default.
+
+**Drift detection** berarti AI mendeteksi asumsi basi, keputusan lama, konteks yang bertentangan dengan kode, artifact yang bertentangan dengan evidence repo, atau artifact generated yang lebih tua dari realitas kode. Status yang dipakai: `DRIFT_DETECTED`, `DRIFT_RISK`, `NO_DRIFT_FOUND`. Pelaporan drift harus tenang dan operasional: apa yang berbeda, evidence mana yang lebih baru, dan keputusan apa yang terdampak. Jika drift terjadi, kode/repo evidence terkini menang; artifact lama hanya boleh menjadi catatan historis.
+
+**Cross-repo awareness** hanya awareness, bukan orchestration. Forge boleh mengidentifikasi repo eksternal/shared yang dirujuk, melaporkan ketidakpastian ownership/contract, dan membandingkan kontrak hanya bila evidence tersedia. Forge tidak boleh otomatis memodifikasi banyak repo, mengasumsikan runtime behavior repo lain, atau membuat workflow lintas-repo.
+
+**Incident intelligence** fokus pada diagnosis, blast radius, mitigasi, rollback, dan next checks. Mode incident membedakan gejala vs penyebab, memakai `LIKELY_CAUSE`, `POSSIBLE_CAUSE`, atau `NEEDS_MORE_EVIDENCE`, dan menyertakan confidence. Root cause tidak boleh diklaim tanpa evidence.
+
+**Refactor intelligence** mengidentifikasi technical debt secara aman, memprioritaskan perbaikan rendah risiko, mempertahankan behavior, dan menghindari architecture rewrite. Risiko refactor diklasifikasikan `LOW`, `MEDIUM`, atau `HIGH`; refactor HIGH butuh jalur planning/implementation lebih dulu.
+
+**Fintech-grade governance** adalah sinyal risiko operasional untuk area relevan: PII/sensitive data, secrets/credentials, financial correctness, idempotency, retry safety, replay safety, rollback safety, transaction consistency, auditability, observability, dan blast radius. HIGH-risk governance issue membutuhkan approval manusia. Secret/PII mentah tidak boleh dilog atau disimpan. Payment/transaction correctness tidak pernah dianggap LOW risk. Output governance harus ringkas, evidence-based, dan operasional, bukan esai compliance.
+
+### 7.5 Runtime profile & decision authority
+
+Forge mendukung profile runtime ringan:
+
+| Profile | Makna |
+|---|---|
+| `local` | Default human-in-the-loop; interaktif, ringkas, boleh bertanya klarifikasi. |
+| `automation` | Non-interactive-safe; tidak bertanya conversational, mengeluarkan status terstruktur dan required decisions. |
+| `ci` | Reserved untuk masa depan; tidak menambah CI/CD, pipeline, deploy, trigger, atau executor behavior. |
+
+`runtime.non_interactive` tetap flag kontrol perilaku. `local` mengimplikasikan `false` kecuali dioverride eksplisit; `automation` mengimplikasikan `true` kecuali dioverride eksplisit. Konflik harus dilaporkan jelas.
+
+Decision authority dibatasi ke `ai`, `orchestrator`, dan `human`. AI hanya boleh memilih default `LOW` yang reversible/local dan tidak berdampak pada kontrak/security/data correctness. Orchestrator hanya boleh memilih default operasional `MEDIUM` bila dikonfigurasi eksplisit dan harus mengeluarkan decision trace. Risiko `HIGH` selalu butuh human confirmation dan memakai status `NEEDS_HUMAN_APPROVAL` pada automation-safe flow.
+
+Decision trace tetap ringkas: decision, selected option, authority used, risk level, reason, affected tasks/artifacts. Trace ini bukan workflow state, dependency graph, scheduler input, atau trigger eksekusi.
+
+### 7.6 Artifact lifecycle mode-handoff
+
+Artifact lifecycle adalah catatan kecil untuk menghubungkan hasil antar-mode dan antar-sesi. Artifact disimpan hanya bila berguna, default di `generated/artifacts/`, dan tetap non-otoritatif.
+
+Tipe artifact dibatasi:
+
+| Mode | Artifact |
+|---|---|
+| `planning` | ECP Artifact |
+| `implementation` | Execution Contract Artifact |
+| `execute` | Execute Result Artifact |
+| `testing` | Testing Result Artifact |
+| `review` | Review Result Artifact |
+| `incident` | Incident Artifact |
+| `refactor` | Refactor Artifact |
+
+Artifact boleh mereferensikan artifact sebelumnya, ECP ID, execution contract ID, evidence repository, commit, PR/MR, ADR, atau konfirmasi manusia. Link ini hanya trace reference: bukan workflow, bukan DAG, bukan orchestration, bukan trigger eksekusi, bukan agent memory.
+
+Artifact harus kecil, human-readable, append-friendly, replaceable, discardable, dan mudah direview. Artifact tidak boleh menyimpan chain-of-thought tersembunyi, secret mentah, riwayat percakapan, summary panjang generik, memory AI persisten, atau knowledge graph.
 
 ---
 
@@ -315,12 +391,14 @@ Alur pemuatan:
 3. → 00-meta/*                        (SELALU — cara membaca sistem & bootstrap)
 4. → 01-core/*                        (SELALU — inti universal)
 5. Pilih mode → modes/<mode>.md       (resolusi include/on_demand/exclude — DELTA saja)
-6. Skip status=deprecated; hormati token_budget
+6. Skip status=deprecated; gunakan token_budget sebagai target scoped loading
 ```
 
 Langkah 3–4 tidak bergantung mode — selalu dijalankan. Langkah 5 adalah bagian variabel.
 
-Mekanisme hemat token: (1) selective loading via mode — tiap tugas memuat subset; (2) mode = referensi, bukan konten; (3) inti yang selalu termuat didefinisikan sekali — mode hanya menyatakan delta; (4) **tanpa duplikasi lintas `core`/`layers`/`systems`** (§4.3); (5) lapisan mulai sebagai README ringkas; (6) `generated/` & `temp/` dibuat saat dipakai; (7) size budget per file.
+Mekanisme hemat token: (1) selective loading via mode — tiap tugas memuat subset; (2) mode = referensi, bukan konten; (3) inti yang selalu termuat didefinisikan sekali — mode hanya menyatakan delta; (4) **tanpa duplikasi lintas `core`/`layers`/`systems`** (§4.3); (5) lapisan mulai sebagai README ringkas; (6) `generated/`, `generated/artifacts/`, & `temp/` dibuat saat dipakai; (7) size budget per file.
+
+Selective loading tidak berarti mengabaikan evidence penting. Bila scoped context normal tidak cukup untuk menjawab aman, AI melaporkan `CONTEXT_BUDGET_LIMITED`, menyebut missing evidence dan batas kesimpulan, lalu hanya memperluas konteks dengan alasan jelas. Sebaliknya, ketidakpastian bukan alasan untuk memuat seluruh `.forge/context` secara default.
 
 Size budget (batas lunak): `01-core/*` ≤ ~200 baris; `layers/*` ≤ ~150; `systems/*/system.md` ≤ ~200; `modes/*` ≤ ~40; `knowledge/*` append-only. File yang melewati budget dipecah menjadi sub-file di folder yang sama.
 
@@ -342,6 +420,8 @@ Status hanya naik melalui transisi tercatat; naik ke `confirmed` mewajibkan entr
 
 Kontrak operasi AI (ditulis di `00-meta/conventions.md`): (1) jangan menaikkan status — boleh mengusulkan saja; (2) jangan menyajikan `inferred`/`assumption` sebagai fakta; (3) saat menemui `unknown`, berhenti & tanya atau catat — dilarang menebak; (4) inferensi baru masuk `inferred.md`/`generated/`, tidak pernah langsung ke file `source: human`; (5) tanpa `evidence`, status maksimal `assumption`; (6) jangan mengarang arsitektur, API, service, database, integrasi, kepemilikan, atau aturan bisnis.
 
+Drift adalah bagian dari resistensi halusinasi: artifact/context yang lebih tua dari evidence kode tidak boleh mengalahkan kode. AI wajib menandai `DRIFT_DETECTED` atau `DRIFT_RISK` ketika kontradiksi atau staleness mempengaruhi keputusan, dan memakai `NO_DRIFT_FOUND` hanya ketika area relevan memang telah diperiksa.
+
 ---
 
 ## 10. Siklus Hidup Konteks
@@ -352,7 +432,7 @@ CREATE ──► EVIDENCED ──► CONFIRMED ──► MAINTAINED ──► (D
 
 Keputusan kunci: **`confirmed` tidak permanen.** Konteks dikonfirmasi relatif terhadap satu titik riwayat kode. Karena tiap file `confirmed`/`inferred` membawa `evidence` yang menunjuk path kode, **perubahan kode pada path itu otomatis menurunkan `confirmed` → `inferred`** — diatur oleh `governance.demote_confirmed_on_evidence_change`. Pemicu re-review lain: `updated` lebih tua dari `staleness_days`.
 
-Siklus berbeda per tipe: `temp/*` (satu sesi → dihapus); `generated/*` (sampai diregenerasi → ditimpa); entri `inferred`/`assumption`/`unknown` (sampai diselesaikan); `core`/`layer`/`system` (panjang, dipelihara → `deprecated`); ADR (permanen → `superseded`, tidak pernah dihapus).
+Siklus berbeda per tipe: `temp/*` (satu sesi → dihapus); `generated/*` (sampai diregenerasi → ditimpa); `generated/artifacts/*` (append-friendly, replaceable, discardable, tidak otoritatif); entri `inferred`/`assumption`/`unknown` (sampai diselesaikan); `core`/`layer`/`system` (panjang, dipelihara → `deprecated`); ADR (permanen → `superseded`, tidak pernah dihapus).
 
 ---
 
@@ -388,6 +468,8 @@ Siklus berbeda per tipe: `temp/*` (satu sesi → dihapus); `generated/*` (sampai
 
 `00-meta/conventions.md` — penamaan & ID, skema front-matter, kosakata status, **definisi inti yang selalu termuat** (§7.1), kontrak operasi AI (§9, NORMATIF), jalur promosi status, siklus hidup, kebijakan staleness.
 
+Konvensi engineering lintas-repo juga berada di `00-meta/conventions.md`: repository style first, pragmatic idiomatic code, natural naming, bounded style evolution, minimal abstraction, and test style consistency. Ini adalah kontrak perilaku AI, bukan tooling lint, metrik rigid, atau preferensi framework tertentu.
+
 `00-meta/glossary.md` *(opsional)* — daftar `istilah — definisi kanonik — status`.
 
 `01-core/product.md` — ringkasan, domain & masalah, pengguna & pemangku kepentingan, batas sistem (IN/OUT), istilah inti.
@@ -416,11 +498,11 @@ Siklus berbeda per tipe: `temp/*` (satu sesi → dihapus); `generated/*` (sampai
 
 ### 14.1 Dibuat sekarang — kerangka fondasi
 
-`.forge/forge.config.yaml`; `00-meta/{context-manifest,conventions,glossary}.md`; `01-core/{product,architecture,principles,constraints}.md` (**template kosong**: heading + front-matter `status: unknown`); `layers/<layer>/README.md` (×5, konten final); `systems/README.md` (placeholder, konten final); `knowledge/decisions/ADR-0000-template.md`; `knowledge/{assumptions,unknowns,inferred,confirmations}.md` (header tabel, tanpa entri); `modes/{planning,implementation,execute,testing,review}.md`; `CLAUDE.md`.
+`.forge/forge.config.yaml`; `00-meta/{context-manifest,conventions,glossary}.md`; `01-core/{product,architecture,principles,constraints}.md` (**template kosong**: heading + front-matter `status: unknown`); `layers/<layer>/README.md` (×5, konten final); `systems/README.md` (placeholder, konten final); `knowledge/decisions/ADR-0000-template.md`; `knowledge/{assumptions,unknowns,inferred,confirmations}.md` (header tabel, tanpa entri); `modes/{ask,planning,implementation,execute,testing,review,incident,refactor}.md`; `CLAUDE.md`.
 
 ### 14.2 Dihasilkan saat Context Initialization (fase berikutnya)
 
-**Isi** `01-core/*` (fakta nyata); `layers/<layer>/<layer>.md` & sub-file (konten lapisan, README tetap); `systems/<nama-sistem>/system.md` per unit implementasi nyata; entri di keempat file ledger `knowledge/`; ADR nyata (`ADR-0001` dst); isi `generated/` & `temp/` (folder dibuat saat dipakai).
+**Isi** `01-core/*` (fakta nyata); `layers/<layer>/<layer>.md` & sub-file (konten lapisan, README tetap); `systems/<nama-sistem>/system.md` per unit implementasi nyata; entri di keempat file ledger `knowledge/`; ADR nyata (`ADR-0001` dst); isi `generated/`, `generated/artifacts/`, & `temp/` (folder dibuat saat dipakai).
 
 > Dokumen ini hanya *mendefinisikan* kedua daftar. Pembuatan file nyata adalah fase Context Initialization, di luar cakupan fase saat ini.
 
@@ -432,15 +514,15 @@ Struktur identik di tiga tier; yang berbeda hanya cakupan aktivasi. Naik tier = 
 
 **Minimal (~8 file)** — `forge.config.yaml`; `00-meta/{context-manifest,conventions}.md`; `01-core/{product,architecture}.md`; `knowledge/{decisions/ADR-0000-template.md, assumptions.md, unknowns.md}`; `CLAUDE.md`. Tanpa `layers/`, `systems/`, `modes/` — untuk titik awal/eksperimen.
 
-**Standard (~22–28 file) — rekomendasi** — Minimal + `glossary.md` + `01-core/{principles,constraints}.md` + `layers/<5>/README.md` + `systems/README.md` + `knowledge/{inferred,confirmations}.md` + `modes/<5>`. Repo single-service maupun monorepo memakai tier ini. Pohon penuh → §2.4.
+**Standard (~25–31 file) — rekomendasi** — Minimal + `glossary.md` + `01-core/{principles,constraints}.md` + `layers/<5>/README.md` + `systems/README.md` + `knowledge/{inferred,confirmations}.md` + `modes/<8>`. Repo single-service maupun monorepo memakai tier ini. Pohon penuh → §2.4.
 
-**Advanced (~38+ file)** — Standard + `layers/{observability,security}/README.md` + banyak unit di `systems/` (monorepo) + `modes/{security,documentation}.md` + `00-meta/{lifecycle,agent-contract}.md`.
+**Advanced (~38+ file)** — Standard + `layers/{observability,security}/README.md` + banyak unit di `systems/` (monorepo) + `00-meta/{lifecycle,agent-contract}.md`.
 
 | Dimensi | Minimal | Standard | Advanced |
 |---|---|---|---|
 | `layers/` | – | 5 README | + observability, security |
 | `systems/` | – | README (unit diisi saat init) | multi-unit (monorepo) |
-| `modes/` | – (muat penuh) | 5 mode | + security, documentation |
+| `modes/` | – (muat penuh) | 8 mode | Tidak menambah visible mode |
 | Kesiapan agent | – | – | kontrak agent |
 
 ---
@@ -448,6 +530,8 @@ Struktur identik di tiga tier; yang berbeda hanya cakupan aktivasi. Naik tier = 
 ## 16. Tata Kelola & Validasi
 
 Invarian yang dapat dicek mekanis (oleh CI di fase mendatang; di sini hanya *aturannya*): setiap file punya front-matter valid; setiap file terdaftar di manifest; setiap `id` unik; `confirmed`/`inferred` wajib ber-`evidence`; file `source: human` tidak ditulis AI; tak ada `systems/*` atau `layers/*` menyalin konten `01-core/`; tak ada `systems/*` menyalin standar `layers/*` (§4.3); **tak ada file `modes/*` mendaftar `00-meta/*` atau `01-core/*`** (§7.1 — inti hanya delta); tiap entri `unknowns`/`assumptions` punya pemilik & status; file melewati size budget memicu peringatan; `updated` melewati `staleness_days` memicu review; perubahan kode di path `evidence` menurunkan `confirmed` → `inferred`; ADR `accepted` immutable.
+
+Review manusia/AI boleh menandai naming drift, abstraksi tidak perlu, gaya non-idiomatik, atau pola yang terasa generated bila berdampak pada maintainability atau kejelasan operasional. Validasi ini tetap berbasis konteks repository dan tidak berubah menjadi metrik wajib seperti panjang fungsi, jumlah parameter, atau preferensi arsitektur tertentu.
 
 ---
 
@@ -471,7 +555,7 @@ Tujuh keputusan struktural yang harus dipertahankan di tier mana pun:
 
 ## 18. Di Luar Cakupan Fase Ini
 
-Sengaja **tidak** ada: pembuatan file/folder nyata (fase Context Initialization); logika analisis repo; generator proyek baru; workflow SDD, orchestration agent, otomasi MR/PR; pipeline CI/CD, deployment, runtime; kode aplikasi & pilihan bahasa/framework. Desain ini hanya menyediakan *fondasi*.
+Sengaja **tidak** ada: pembuatan file/folder nyata (fase Context Initialization); logika analisis repo; generator proyek baru; workflow SDD, orchestration agent, agent loops, scheduler, trigger, auto-retry orchestration, otomasi MR/PR; pipeline CI/CD, deployment/release automation, runtime executor; kode aplikasi & pilihan bahasa/framework. Desain ini hanya menyediakan *fondasi*.
 
 ---
 

@@ -5,10 +5,10 @@ type: mode
 status: confirmed
 confidence: high
 source: human
+evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-24
+updated: 2026-05-25
 ---
-
 # Mode: Review
 ## include
 - `layers/<related>`
@@ -24,12 +24,17 @@ updated: 2026-05-24
 ## token_budget
 6000
 ## notes
-- Review correctness, regressions, risks, and consistency against evidence, decisions, and task-scoped context.
-- Verify execute results against approved tasks, architecture/runtime consistency, and reported validation evidence.
-- Do not replace testing mode; reference test evidence when assessing regression risk and coverage gaps.
-- Check topology, runtime behavior, data flow, contracts, and layer/system boundaries only when relevant evidence is loaded.
-- Lead with evidence-based critique; keep unevidenced concerns as uncertainty, not confirmed defects.
-- If `runtime.non_interactive: false`, ask review-scope clarification only when necessary; if `true`, emit a review ambiguity report.
-- Identify unconfirmed proposed defaults and flag any accidental promotion of proposed assumptions into confirmed behavior.
-- Treat raw secret exposure in diffs, reports, generated context, or comments as a security finding requiring redaction.
-- Report reviewed areas, loaded context, missing evidence or ambiguity, risk severity, and whether review mode was sufficient.
+- Act like a senior MR reviewer: answer acceptability, required fixes, risk, reviewer focus, and MR readiness.
+- When persistence helps continuity, write or reference a Review Result Artifact with review result, MR readiness, critical/major findings, reviewer focus, rollback/safety notes, and suggested next action.
+- Use one result status: `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, or `PARTIAL_REVIEW`.
+- State MR readiness as exactly one of: `MR-ready`, `not MR-ready`, `MR-ready with accepted risk`, or `cannot determine`.
+- Group findings by severity: `CRITICAL`, `MAJOR`, `MINOR`, `INFO`; omit empty groups only when saying `Tidak ada temuan`.
+- Every `CRITICAL` or `MAJOR` finding must include affected file/area, what is wrong, why it matters, and suggested fix.
+- Check execution contract, approved boundaries, topology drift, service/repository boundary bypass, and unapproved contract/schema changes.
+- Check relevant safety risks: secret/raw payload logging, PII exposure, retry/DLQ, idempotency, rollback readiness, and validation honesty.
+- Check scoped evidence, drift, cross-repo uncertainty, and concise governance risks; use `CONTEXT_BUDGET_LIMITED` with missing evidence and affected readiness, or drift status, instead of approving unsupported scope.
+- Treat hidden validation gaps or unsupported production-ready/test-passed claims as review findings without becoming testing mode.
+- Keep testing comments as review findings and coverage gaps, not full test plans.
+- Use output sections in order: `Review Result`, `MR readiness`, `Critical findings`, `Major findings`, `Minor findings`, `Info / observations`, `Reviewer perlu fokus ke`, `Yang belum tervalidasi`, `Rollback / safety notes`, and `Suggested next action`.
+- Keep critique evidence-based; if review evidence is missing, use `BLOCKED` or `PARTIAL_REVIEW` instead of approval.
+- Avoid audit/report prose, broad implementation task lists, nitpicking, lifecycle redesign, tooling, agents, CI/CD, deploy workflow, or runtime executor semantics.

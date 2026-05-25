@@ -7,8 +7,9 @@ confidence: high
 source: human
 evidence:
   - { type: doc, ref: ../../../FORGE-CONTEXT-ARCHITECTURE.md }
+  - { type: doc, ref: ../../../../specs/artifact-lifecycle.md }
 owner: forge-context-engine
-updated: 2026-05-24
+updated: 2026-05-25
 ---
 
 # Context System Conventions
@@ -63,6 +64,18 @@ review_by: YYYY-MM-DD  # optional
 
 `00-meta/*` + `01-core/*`. Modes **never** re-list core — delta only.
 
+## Scoped Loading Semantics
+
+Context loading is relevance-first, evidence-first, and bounded by task scope.
+
+- Prefer direct repository evidence over broad context scans.
+- Do not load the entire `.forge/context` tree by default.
+- Load `include` entries only when relevant to the task; load `on_demand` entries only when they answer a concrete evidence need.
+- Expand context only with a clear reason, such as contract ambiguity, ownership uncertainty, drift risk, cross-repo reference, incident blast-radius check, or governance risk.
+- If required evidence is outside the normal scoped budget, report `CONTEXT_BUDGET_LIMITED` and explain what evidence is missing or why expansion is needed.
+- `token_budget` is a target operating range for concise work, not a blind hard cap. Exceeding normal scoped budget is allowed only when safe reasoning requires more evidence.
+- Even under `CONTEXT_BUDGET_LIMITED`, broad-load-everything remains forbidden.
+
 ## Mode File Schema
 
 Every `modes/*.md` file MUST expose exactly these Markdown sections after the title, in this order:
@@ -72,10 +85,10 @@ Every `modes/*.md` file MUST expose exactly these Markdown sections after the ti
 | `## include` | Context components normally loaded for this mode. |
 | `## on_demand` | Context components loaded only when relevant. |
 | `## exclude` | Context components never loaded by default. |
-| `## token_budget` | Numeric recommended maximum context budget for this mode. |
+| `## token_budget` | Numeric target scoped context budget for this mode. |
 | `## notes` | Concise mode-specific execution and reporting guidance. |
 
-`token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid.
+`token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid. Treat the number as an operating range for scoped loading, not a blind cap.
 
 Mode files are machine-resolvable context loading deltas and the authority for mode-specific execution behavior. They MUST NOT re-list `00-meta/*` or `01-core/*` unless explicitly needed, contain domain knowledge, or duplicate `conventions.md`.
 
@@ -84,25 +97,187 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 - Modes are loading deltas on top of always-loaded core.
 - Read `.forge/forge.config.yaml` before mode execution and apply `runtime.non_interactive`.
 - Mode files are authoritative for mode-specific execution behavior.
-- Visible modes are limited to `planning`, `implementation` (invoked as implement), `execute`, `testing`, and `review`.
-- `planning` owns strategic ECP reasoning; `implementation` owns human-reviewable task decomposition; `execute` owns repository modification; `testing` owns testing strategy/test changes; `review` owns correctness and risk review.
-- Keep testing distinct from execute and review: execute modifies implementation, testing reasons about tests/coverage/verification, review evaluates correctness and risk.
+- Visible modes are limited to `ask`, `planning`, `implementation` (invoked as implement), `execute`, `testing`, `review`, `incident`, and `refactor`.
+- `ask` owns lightweight repo understanding; `planning` owns strategic ECP reasoning; `implementation` owns human-reviewable task decomposition; `execute` owns approved repository modification; `testing` owns testing strategy/test changes; `review` owns correctness and risk review; `incident` owns issue diagnosis; `refactor` owns conservative behavior-preserving technical debt work.
+- Keep mode responsibilities distinct: ask does not plan or mutate; planning does not emit detailed coding tasks; implementation does not modify code; execute does not redesign; testing owns validation depth; review owns post-change risk assessment; incident does not redesign; refactor preserves behavior.
 - Test placement is convention-sensitive: unit tests are usually colocated, while non-unit tests may use a top-level `testing/` structure; testing mode owns detailed placement guidance.
 - Load only context required by the task; do not broad-load `.forge/context` by default.
 - Preserve evidence, inference, and unknown boundaries.
-- Report loaded context, missing evidence, unresolved ambiguity, and mode sufficiency according to the selected mode.
+- In normal interactive output, keep loading details quiet. A short `Scoped context loaded` line is enough when helpful.
+- Always surface blockers, missing evidence, unresolved ambiguity, validation limits, risks, and rollback according to the selected mode.
+- When context is insufficient, use `CONTEXT_BUDGET_LIMITED` with missing evidence, affected conclusion/action, targeted expansion needed, and safe fallback if one exists.
 - Runtime-managed cognition lives under `.forge/context`; repository-owned cognition remains in application code, repository docs, ADRs, and human confirmations.
+
+## Runtime Validation Semantics
+
+Validation reporting must never imply success without evidence.
+
+- Canonical operational statuses:
+  - Execute: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, `NOT_VALIDATED`
+  - Testing: `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, `NOT_RUN`
+  - Review: `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, `PARTIAL_REVIEW`
+  - Implementation: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, `READY_FOR_EXECUTION`
+- Before running validation or tests, check required prerequisites for the attempted command: language/runtime tools (`go`, `node`), formatters (`gofmt`), package managers (`npm`, `pnpm`, `yarn`), dependency/codegen/protobuf tools, Docker/compose, and explicitly required broker/database/test infra.
+- Missing tooling or infra is `BLOCKED_BY_ENVIRONMENT`; it is not an implementation failure.
+- Contract, schema, runtime behavior, approval, or ownership gaps are `BLOCKED`; they are not environment failures.
+- Code changes without reliable validation are `NOT_VALIDATED`, even if implementation work appears complete.
+- Partial implementation or incomplete validation is `PARTIAL_SUCCESS` for execute and `PARTIAL` for testing.
+- Validation sections must separate prerequisites checked, commands executed, failures, commands that could not run, and remaining unvalidated scope.
+- Manual actions must be explicit and operational, e.g. `Jalankan go test ./... setelah Go toolchain tersedia`, `Validasi Kafka integration membutuhkan broker aktif`, or `Replay/DLQ flow belum tervalidasi manual`.
+- Testing mode must group validated scope as applicable: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation.
+- Testing mode must separate automated checks, manual validation, infra-dependent validation, and production-like verification.
+- Runtime-sensitive testing must explicitly address retryable failures, non-retryable failures, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
+- Testing reports must surface unvalidated risk areas and must not imply full validation, production readiness, or complete coverage without evidence.
+- Drift statuses:
+  - `NO_DRIFT_FOUND`: checked relevant artifacts/context against current evidence and found no contradiction.
+  - `DRIFT_RISK`: evidence may be stale or incomplete; do not treat stale context as authoritative.
+  - `DRIFT_DETECTED`: current code/repo evidence contradicts an artifact, context entry, decision assumption, or generated output.
+- Incident cause statuses:
+  - `LIKELY_CAUSE`: supported by direct evidence and consistent symptoms.
+  - `POSSIBLE_CAUSE`: plausible but not proven by available evidence.
+  - `NEEDS_MORE_EVIDENCE`: cause cannot be stated safely.
+- Refactor risk statuses: `LOW`, `MEDIUM`, `HIGH`. HIGH-risk refactors require a planning/implementation path before execution.
+
+| Mode | Allowed statuses |
+|---|---|
+| Execute | `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, `NOT_VALIDATED` |
+| Testing | `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, `NOT_RUN` |
+| Review | `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, `PARTIAL_REVIEW` |
+| Implementation | `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, `READY_FOR_EXECUTION` |
+
+Ownership boundaries:
+- Execute may perform lightweight validation for the implemented scope.
+- Testing owns structured validation depth, test coverage reasoning, and environment/test dependency reporting.
+- Review evaluates correctness, risk, and whether implementation/validation evidence supports the claimed status.
+
+## Artifact Lifecycle Semantics
+
+Lifecycle artifacts are optional, human-readable continuity helpers under `generated/artifacts/` when persisted.
+
+- Artifacts support mode handoffs; they do not replace repository code, docs, ADRs, or human confirmations as source of truth.
+- Artifact types are bounded by mode: ECP, Execution Contract, Execute Result, Testing Result, Review Result, Incident, and Refactor.
+- Artifacts may link to previous artifact IDs, ECP IDs, execution contract IDs, repository evidence, commits, PR/MR IDs, ADRs, or human confirmations.
+- Links are trace references only; they must not become dependency graphs, workflow state, DAGs, orchestration, execution triggers, or agent memory.
+- Artifacts must stay concise, inspectable, append-friendly, replaceable, and discardable.
+- Do not store chain-of-thought, raw secrets, conversational history, generic long summaries, persistent AI memory, or knowledge graph structures.
+- If an artifact conflicts with current repository evidence, treat the artifact as stale, partial, or superseded; repository evidence wins.
+
+## Intelligence & Governance Semantics
+
+### Cognition Drift
+
+Forge must detect and report drift when stale assumptions, outdated decisions, context contradicting code, artifacts contradicting repository evidence, or generated artifacts older than code reality affect the task.
+
+- Prefer current code, repository docs, ADRs, and human confirmations over generated artifacts and inferred context.
+- Do not silently trust stale artifacts, stale context, or old generated output.
+- Use `DRIFT_DETECTED`, `DRIFT_RISK`, or `NO_DRIFT_FOUND` when drift materially affects the answer, plan, review, incident, or refactor.
+- Keep drift wording operational, not alarming: state the mismatch, newer evidence, and affected decision.
+- Mark stale artifacts as stale, partial, or superseded; do not let them override repository evidence.
+
+### Cross-Repo Awareness
+
+Forge may identify referenced external or shared repositories and report dependency, ownership, or contract uncertainty.
+
+- Compare cross-repo contracts only when evidence from both sides is available.
+- Do not assume another repository's behavior, runtime topology, release state, or ownership from references alone.
+- Do not modify multiple repositories automatically.
+- Do not introduce cross-repo orchestration, shared runtime assumptions, deploy workflows, or autonomous synchronization.
+
+### Fintech-Grade Governance Checks
+
+Governance checks are concise risk signals, not bureaucracy.
+
+Relevant modes should surface risk in these areas when the task touches them: PII/sensitive data, secrets/credentials, financial correctness, idempotency, retry safety, replay safety, rollback safety, transaction consistency, auditability, observability, and blast radius.
+
+- HIGH-risk governance decisions require human approval.
+- Never log, persist, or quote raw secrets or raw PII.
+- Never classify payment, balance, ledger, settlement, reconciliation, or transaction correctness as LOW risk.
+- Governance output must be operational, evidence-based, and concise: risk, evidence, impact, required decision or next check.
+- Avoid generic security/compliance checklists, audit essays, and bureaucratic language.
+
+## Engineering Style Convention
+
+AI-generated repository changes should feel like pragmatic, idiomatic engineering in that repository, not framework exposition.
+
+- Follow existing repository conventions by default: inspect nearby code, package layout, naming, tests, and error handling before creating a new pattern.
+- Prefer idiomatic Go, explicit behavior, readable control flow, operational clarity, and maintainable local simplicity.
+- Avoid academic architecture language, unnecessary ceremony, speculative extensibility, cleverness, and framework-style indirection.
+- Do not blindly copy unsafe technical debt. Minimal safe corrections are allowed for unsafe error handling, obviously brittle behavior, or unnecessary complexity.
+- Style evolution must be bounded to the task: no architecture rewrite, paradigm migration, competing coding style, or mass refactor during unrelated execution.
+- Prefer explicit flow, focused functions, composition, and direct dependencies over unnecessary interfaces, generic-heavy abstraction, or abstraction created only for future possibility.
+- Tests follow existing repository test style and placement. Add new test structure only when the repo lacks a convention or the task requires broader validation.
+
+### Naming Guidance
+
+Names must use natural engineering English and represent operational or business intent.
+
+| Prefer | Avoid |
+|---|---|
+| `CreateTransactionHistory` | `ExecuteTransactionalPersistenceOperation` |
+| `PublishEvent` | `BuildKafkaEventPayloadTransformer` |
+| `HandleMessage` | `HandleIncomingTransactionHistoryProcessing` |
+| `StartConsumer` | `InitializeConsumerRuntimeExecutionFacade` |
+| `FindByReferenceID` | `ResolveReferenceIdentityLookupOperation` |
+
+Function, type, method, and file names should feel familiar to normal engineers: clear, short enough to read, specific enough to operate, and free of "smart" or academic wording.
 
 ## Runtime Interaction Behavior
 
-Forge uses one runtime flag: `runtime.non_interactive`.
+Forge uses one controlling runtime flag for interaction behavior: `runtime.non_interactive`.
+
+`runtime.profile` is descriptive runtime profile metadata, not a second interaction flag.
+
+| Profile | Meaning |
+|---|---|
+| `local` | Default human-in-the-loop workflow. Interactive-first, concise human-readable output, may ask clarification questions. Implies `runtime.non_interactive: false` unless explicitly overridden. |
+| `automation` | Non-interactive-safe workflow. Must not ask conversational questions; emits structured statuses and required decisions. Implies `runtime.non_interactive: true` unless explicitly overridden. |
+| `ci` | Reserved for future use. It does not add CI/CD, pipeline, release, deploy, executor, trigger, or workflow behavior. |
 
 | Value | Behavior |
 |---|---|
 | `false` | Default interactive behavior. Ask concise clarification questions for blocking decisions, governance uncertainty, missing contract authority, ambiguous runtime behavior, or dangerous/destructive execution; continue after human confirmation. |
-| `true` | Automation-safe behavior. Do not ask conversational questions; emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION`; continue only with allowed proposed defaults. |
+| `true` | Automation-safe behavior. Do not ask conversational questions; emit structured `NEEDS_CONFIRMATION`, `BLOCKED`, or `NEEDS_HUMAN_APPROVAL`; continue only with allowed proposed defaults. |
+
+If `runtime.profile` and `runtime.non_interactive` conflict, report the conflict clearly before mode work and apply `runtime.non_interactive` as the controlling behavior. Do not introduce alternate or overlapping interaction flags.
+
+### Decision Authority and Risk
+
+Decision authority values:
+
+| Authority | Boundary |
+|---|---|
+| `ai` | May choose only LOW-risk proposed defaults. Must not decide MEDIUM or HIGH risk behavior. |
+| `orchestrator` | May choose MEDIUM-risk operational defaults only when explicitly configured. Must emit a decision trace. Must not approve HIGH-risk decisions. |
+| `human` | Required for HIGH-risk decisions and any decision whose authority is missing or disputed. |
+
+Decision risk levels:
+
+| Risk | Meaning | Behavior |
+|---|---|---|
+| `LOW` | Reversible, local, no contract/security/data correctness impact. | AI may choose a proposed default and label it `proposed`, `not confirmed`. |
+| `MEDIUM` | Operational behavior, config, or runtime behavior. | Orchestrator may choose only when `runtime.decision_authority: orchestrator`; otherwise needs confirmation. |
+| `HIGH` | Security/compliance, PII/secrets, financial correctness, destructive migration, production topology, contract authority, or rollback-risky change. | Requires human confirmation; automation must stop with `NEEDS_HUMAN_APPROVAL`. |
+
+Automation-selected LOW defaults and orchestrator-selected MEDIUM defaults must include a concise decision trace:
+- Decision.
+- Selected option.
+- Authority used.
+- Risk level.
+- Reason.
+- Affected tasks/artifacts.
+
+Automation semantics are decision boundaries only. They must not imply agent loops, auto-retry orchestration, scheduler behavior, workflow graph execution, DAG execution, deploy/release automation, CI pipeline execution, runtime executors, or autonomous multi-step chaining.
 
 Interactive prompts should offer the recommended option plus one alternative by default; use a third option only for major architecture tradeoffs. Avoid repetitive clarification loops and broad questionnaires.
+
+Human-facing confirmation prompts must be practical:
+
+- Start with `NEEDS_CONFIRMATION`.
+- Name the blocker in engineering language, e.g. `Format event Kafka yang akan diterima service`.
+- Explain why the decision matters for execution safety.
+- Show `Recommended` and `Alternative` with one-line tradeoffs.
+- Ask for `1`, `2`, or a concrete custom value.
+- Avoid abstract labels such as `Inbound contract` or `Execution values` when a concrete domain phrase is available.
 
 Changing `runtime.non_interactive` is runtime-managed operational behavior only. It must not re-init context, rewrite knowledge, invalidate assumptions, modify inferred context, or rewrite systems, layers, or core cognition files.
 
@@ -112,7 +287,7 @@ Unknowns are classified as:
 
 | Classification | Meaning | Runtime behavior |
 |---|---|---|
-| `blocking` | Cannot safely continue without an authoritative decision | Interactive: ask the minimum decision question. Automation: emit `BLOCKED`, `NEEDS_REVIEW`, or `NEEDS_CONFIRMATION`. |
+| `blocking` | Cannot safely continue without an authoritative decision | Interactive: ask the minimum decision question. Automation: emit the selected mode's allowed blocking/readiness status. |
 | `proposed-default` | Low-risk, conventional, reversible, non-authoritative operational choice | AI may continue, but must label the value `proposed`, `not confirmed`, and record why it is safe. |
 | `informational` | Useful uncertainty that does not affect safe continuation | Record only; do not interrupt workflow. |
 
@@ -169,6 +344,8 @@ Examples:
 13. **Implicit Constraint Extraction** — during init, scan code for implicit constraints (enum values, validation rules, required fields, ID semantics, currency/amount rules, status fields, retry/idempotency). Global rules → `constraints.md`. System-specific → `systems/<name>/system.md`. Ambiguous → `unknowns.md`. Weak inference → `inferred.md`.
 14. **Internal Table Hygiene** — markdown table cells follow the same conventions as front-matter. Owner cells use `unresolved`, never `TBD`. Status/classification cells use the canonical vocabulary.
 15. **Secret Safety** — raw secrets are never displayed, copied, summarized, or stored; report redacted evidence only and classify discoveries as security findings.
+16. **Automation Safety** — automation-safe behavior never asks conversational questions, never auto-approves HIGH-risk decisions, and never treats decision traces as orchestration state.
+17. **Scoped Intelligence Safety** — `CONTEXT_BUDGET_LIMITED`, drift statuses, cross-repo awareness, incident/refactor intelligence, and governance signals are semantic reporting tools only; they do not add RAG, vector search, knowledge graphs, agents, orchestration, schedulers, CI/CD, deploy behavior, runtime executors, or autonomous loops.
 
 ## Status Promotion
 

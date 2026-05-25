@@ -1,7 +1,7 @@
 # forge-context-engine — Engine Configuration
 # Not a narrative context file. Customize during Context Initialization for the target repo.
 
-forge_version: "0.2.1"   # framework version
+forge_version: "0.2.2"   # framework version
 tier: standard  # minimal | standard | advanced
 
 # Remove layers not relevant to the target repo.
@@ -16,11 +16,13 @@ layers_enabled:
 systems: []
 
 loading:
-  default_mode: implementation  # planning | implementation | execute | testing | review
+  default_mode: implementation  # ask | planning | implementation | execute | testing | review | incident | refactor
   respect_size_budget: true
 
 runtime:
+  profile: local  # local | automation | ci (reserved; no CI/CD behavior)
   non_interactive: false
+  decision_authority: ai  # ai | orchestrator | human
 
 size_budget:
   core_lines: 200

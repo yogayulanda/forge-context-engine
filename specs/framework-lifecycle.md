@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Forge Framework Lifecycle Specification |
-| Version | 1.1 |
+| Version | 1.8 |
 | Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Framework-level cognition maturity states |
-| Dependency | `specs/context-initialization.md`, `specs/context-validation.md`, `specs/mode-invocation.md` |
+| Dependency | `specs/context-initialization.md`, `specs/context-validation.md`, `specs/mode-invocation.md`, `specs/artifact-lifecycle.md` |
 
 ---
 
@@ -21,13 +21,21 @@ It defines:
 - Criteria for creating validation cases.
 - Coverage philosophy for Forge cognition evolution.
 - The boundary before runtime, tooling, or automation work begins.
+- Repository-wide engineering style conventions for AI-generated code.
+- Runtime validation and partial/blocking execution semantics.
+- Minimal artifact lifecycle semantics for continuity across modes and sessions.
+- Bounded runtime profile, decision authority, and automation-safe approval semantics.
+- Lightweight future-facing intelligence and fintech-grade governance semantics without automation.
 
 This document does NOT:
 - Implement tooling or automation.
 - Redesign the existing Forge structure.
 - Add runtime executors, orchestration, agents, or services.
+- Add workflow engines, DAG systems, schedulers, triggers, CI/CD behavior, deploy workflows, persistent AI memory, or knowledge graphs.
+- Add RAG systems, vector search, autonomous context expansion, cross-repo orchestration, or governance bureaucracy.
 - Define repository-specific context content.
 - Treat repository count or file count as maturity.
+- Enforce architecture ideology, framework preference, lint tooling, or rigid code metrics.
 
 ---
 
@@ -122,14 +130,36 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `imports != runtime-calls`
 - `shared-runtime != deployable-service`
 - `local-context-first discovery works`
+- `ask-mode answers repo-understanding questions without planning or mutation`
 - `planning-mode emits ECP, not PRD prose`
 - `planning-mode adapts sections to active layers`
 - `planning-mode scopes on-demand loading to the change`
 - `implementation-mode emits executable task breakdown, not code changes`
 - `execute-mode modifies repositories only from approved tasks`
-- `testing-mode owns test strategy, mocks/fakes/stubs, coverage, and regression validation`
+- `execute-mode reports SUCCESS only with validation evidence`
+- `execute-mode distinguishes PARTIAL_SUCCESS, BLOCKED, BLOCKED_BY_ENVIRONMENT, and NOT_VALIDATED`
+- `mode outputs stay human-readable, scannable, and operational`
+- `testing-mode owns structured validation, scope grouping, test strategy, mocks/fakes/stubs, coverage, and regression validation`
+- `testing-mode reports PASSED, FAILED, PARTIAL, BLOCKED_BY_ENVIRONMENT, or NOT_RUN with prerequisite checks and required testing sections`
+- `testing-mode validates confirmed contracts, rollback assumptions, retry/DLQ/idempotency behavior, runtime boundaries, and non-regression expectations where relevant`
 - `review-mode validates execute results without replacing testing mode`
+- `review-mode rejects hidden success and unsupported fully-validated/test-passed claims`
+- `review-mode produces senior MR-review output with status, MR readiness, severity-grouped evidence findings, reviewer focus, and safety notes`
+- `review-mode checks architecture/contract drift and relevant safety risks without redesigning lifecycle or replacing post-change human responsibility`
+- `incident-mode diagnoses bugs/issues without speculative redesign`
+- `refactor-mode preserves behavior and stays bounded`
 - `runtime.non_interactive` controls interaction behavior without rewriting repository cognition
+- `runtime.profile` labels local/automation behavior while `runtime.non_interactive` remains the controlling interaction flag
+- `NEEDS_HUMAN_APPROVAL` blocks HIGH-risk automation decisions until human confirmation
+- `CONTEXT_BUDGET_LIMITED` reports when safe scoped reasoning needs more evidence than normal budget
+- `drift-detection prefers current repository evidence over stale context/artifacts`
+- `cross-repo-awareness reports ownership/contract uncertainty without assuming external behavior`
+- `incident-mode distinguishes symptom, likely cause, possible cause, and evidence gaps with confidence`
+- `refactor-mode classifies LOW/MEDIUM/HIGH risk and requires a plan path for HIGH-risk work`
+- `fintech-governance surfaces concise risk signals without audit bureaucracy`
+- `payment-transaction-correctness is never classified as LOW risk`
+- `AI-generated code follows repository-native pragmatic naming, style, abstraction, and testing conventions`
+- `lifecycle artifacts preserve mode handoff continuity without overriding repository truth`
 
 ### Required Evidence
 
@@ -169,7 +199,9 @@ A cognition pattern reaches `cognition-validated` when Forge produces the expect
 - The case is repository-neutral enough to test framework cognition.
 - The case has regression value.
 
-For mode benchmarks, expected behavior should verify structured Engineering Change Plan output, layer-adaptive sections, evidence/inference/unknown separation, implementation task decomposition, execute-mode repository modification boundaries, testing-mode cognition boundaries, review-mode risk validation, and rejection of unsupported backend-only or topology assumptions.
+For mode benchmarks, expected behavior should verify ask-mode repo understanding without mutation, structured Engineering Change Plan output, layer-adaptive sections, scoped loading and `CONTEXT_BUDGET_LIMITED` behavior, evidence/inference/unknown separation, implementation task decomposition, execute-mode repository modification boundaries, grouped file-change reporting, explicit runtime prerequisite checks, partial/blocking/not-validated status semantics, concise blocker/confirmation UX, testing-mode structured validation sections, testing scope categories, contract-aware runtime-sensitive coverage, review-mode MR readiness, severity-grouped findings, reviewer focus, architecture/contract drift checks, safety notes, incident-mode diagnosis boundaries with cause confidence, refactor-mode behavior preservation and risk classification, fintech governance risk signals, and rejection of unsupported backend-only, topology, broad-loading, stale-artifact, cross-repo-assumption, generic-audit, testing-plan, fully-validated, production-ready, or test-passed claims.
+
+For engineering-style benchmarks, expected behavior should verify pragmatic idiomatic implementation, natural operational naming, repository-first test placement, minimal safe improvement, and rejection of unnecessary abstraction, academic wording, competing coding paradigms, or unrelated mass refactor.
 
 ### Non-Claims
 
@@ -263,7 +295,9 @@ Forge does not mature through:
 - Automation complexity.
 - Larger local contexts.
 - More generated documentation.
+- More lifecycle artifacts without new continuity value.
 - More benchmark cases without new semantic coverage.
+- Rigid style metrics or framework preference enforcement.
 
 Coverage is valuable only when it improves Forge's ability to reason correctly from evidence.
 
@@ -283,9 +317,32 @@ Runtime implementation must not be used to discover core cognition semantics.
 
 Automation may encode mature cognition behavior. It must not replace semantic validation.
 
+Runtime profile semantics may make local/manual and automation-safe behavior clearer. They do not create orchestration authority. Automation-safe decisions remain bounded by LOW/MEDIUM/HIGH risk, explicit authority, decision trace, and human approval for HIGH-risk changes.
+
 ---
 
-## 10. Promotion Rules
+## 10. Artifact Lifecycle Boundary
+
+Lifecycle artifacts may preserve concise planning, implementation, execution, testing, review, incident, and refactor handoff records.
+
+Valid artifact use:
+- Preserve approved engineering intent and confirmed decisions.
+- Preserve execution-ready task contracts and stop conditions.
+- Preserve implementation, validation, review, incident, or refactor results.
+- Link directly to prior artifacts or repository evidence.
+- Stay small, human-readable, replaceable, and reviewable.
+
+Invalid artifact use:
+- Treat artifacts as source of truth over code, repository docs, ADRs, or human confirmations.
+- Store hidden chain-of-thought, broad conversational history, or generic long-form summaries.
+- Create autonomous memory, knowledge graph, workflow engine, DAG, scheduler, agent, deploy, CI/CD, or runtime executor semantics.
+- Use artifact links as execution triggers or orchestration dependencies.
+
+Artifact maturity does not promote Forge lifecycle state by volume. A lifecycle artifact is useful only when it improves bounded continuity while preserving repository-first truth.
+
+---
+
+## 11. Promotion Rules
 
 | From | To | Required Signal |
 |---|---|---|
@@ -298,7 +355,7 @@ Promotion is not automatic. Each transition requires explicit evidence for the n
 
 ---
 
-## 11. State Summary
+## 12. State Summary
 
 | State | What Is Proven | What Is Not Proven |
 |---|---|---|
@@ -310,7 +367,7 @@ Promotion is not automatic. Each transition requires explicit evidence for the n
 
 ---
 
-## 12. Governance Rule
+## 13. Governance Rule
 
 Forge lifecycle state must be assigned to cognition behavior, not to repository size or documentation volume.
 

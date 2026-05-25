@@ -5,10 +5,10 @@ type: mode
 status: confirmed
 confidence: high
 source: human
+evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-24
+updated: 2026-05-25
 ---
-
 # Mode: Planning
 ## include
 - `knowledge/decisions/`
@@ -24,12 +24,17 @@ updated: 2026-05-24
 ## token_budget
 4000
 ## notes
-- Output an Engineering Change Plan (ECP): evidence-based, layer-adaptive strategic planning covering proposed change, architecture/runtime impact, dependency/contract impact, phases, risks, unknowns, validation, and rollback.
-- Explain why the change is needed, expected impact, sequencing rationale, and decision boundaries.
-- Do not produce detailed executable coding tasks or modify code; hand off approved phases to implementation mode for task decomposition.
-- Adapt sections to evidence: backend transactions/data/contracts; frontend UX/routes/components/state/accessibility/performance/analytics; infrastructure deployment/environment/reliability/security.
-- Prefer safe proposed defaults for low-risk operational choices; escalate only blocking decisions and keep prompts to recommended plus alternative.
-- If `runtime.non_interactive: false`, ask unresolved architecture/governance decisions early; if `true`, emit a planning blocked report instead of asking.
-- Redact secret values in ECPs and report secret discoveries only as security findings with type/path/line/masked preview.
-- Include impact/risk analysis, validation approach, rollback path, loaded context, missing evidence, unresolved ambiguity, and whether planning mode was sufficient.
-- Separate evidence, inference, and unknowns; do not invent topology, ownership, contracts, deployability, or runtime relationships from imports alone; load extra context only for the scoped change.
+- Output an ECP that reads like an engineering work plan, not an RFC.
+- When persistence helps continuity, write or reference an ECP Artifact with approved intent, decisions, blockers, boundaries, linked systems/layers, and revision reference.
+- Prefer sections such as: `Tujuan perubahan`, `Dampak teknis`, `Tahapan kerja`, `Risiko`, `Validasi`, `Rollback`, `Yang sengaja tidak diubah`.
+- Keep paragraphs short and operational; highlight blockers and decisions before detail.
+- Do not produce detailed executable coding tasks or modify code; approved phases hand off to implementation mode.
+- Adapt sections to evidence: backend data/contracts, frontend UX/state/accessibility, infrastructure deployment/reliability/security.
+- Ask unresolved architecture/governance decisions early; in non-interactive repos emit a concise blocked plan.
+- Redact secret values and report secret discoveries only as masked security findings.
+- Separate evidence, inference, and unknowns; do not invent topology, ownership, contracts, deployability, or runtime relationships from imports alone.
+- Prefer direct evidence and scoped loading; use `CONTEXT_BUDGET_LIMITED` only when required evidence exceeds the normal scoped budget, naming missing evidence, affected planning decision, and targeted expansion needed.
+- Check for drift between current code/repo evidence, decisions, assumptions, and generated artifacts; report `DRIFT_DETECTED`, `DRIFT_RISK`, or `NO_DRIFT_FOUND` calmly when it affects the plan.
+- For cross-repo references, identify external/shared repo uncertainty and compare contracts only with available evidence; do not plan orchestration or automatic multi-repo changes.
+- Surface fintech governance risks only when relevant: PII/secrets, financial correctness, idempotency, retry/replay, rollback, transaction consistency, auditability, observability, and blast radius. HIGH-risk governance decisions require human approval.
+- If useful, say `Scoped context loaded`; do not expose full loading internals in normal output.

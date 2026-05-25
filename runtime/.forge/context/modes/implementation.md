@@ -5,10 +5,10 @@ type: mode
 status: confirmed
 confidence: high
 source: human
+evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-24
+updated: 2026-05-25
 ---
-
 # Mode: Implementation
 ## include
 - `layers/<related>`
@@ -24,17 +24,17 @@ updated: 2026-05-24
 ## token_budget
 8000
 ## notes
-- Convert an approved ECP, approved phases, or simple request into a human-reviewable engineering task breakdown.
-- Use clarification phase before execution-ready phase: resolve blocking decisions before final executable tasks.
-- In interactive repos, stop before final breakdown when blockers affect runtime, contracts, DLQ/replay, idempotency, security/compliance, ownership/governance, destructive boundaries, acceptance criteria, or rollback; output `NEEDS_CONFIRMATION`.
-- For each interactive blocker, show title, Recommended option with reason, Alternative option with tradeoff, and reply instructions: `1 = Recommended`, `2 = Alternative`, `custom = provide explicit value`; use 2 options by default, 3 only for major architecture tradeoffs.
-- In non-interactive repos, do not ask questions; emit `BLOCKED`, `NEEDS_CONFIRMATION`, or `NEEDS_REVIEW` and continue only with allowed proposed defaults.
-- After blockers are resolved, break work into explicit executable tasks with likely files/components, dependency ordering, migration/runtime sequencing when relevant, validation notes, and rollback visibility.
-- Readiness status is required: `NEEDS_CONFIRMATION` for missing blockers/values, `READY_FOR_PARTIAL_EXECUTION` for safe scaffolding only, `READY_FOR_EXECUTION` only when required execution values are concrete.
-- For execution-sensitive changes, include `Execution Values` before `READY_FOR_EXECUTION`; do not use `READY_FOR_EXECUTION` with conditional or unavailable values.
-- Do not modify code, redesign architecture, repeat full ECP reasoning, or silently redefine approved plans.
-- Load only task-relevant layers, systems, decisions, and inferences; use on-demand context only when task decomposition requires it.
-- Keep task scope bounded; do not introduce speculative redesign, ownership, topology, contracts, or behavior not supported by evidence.
-- Continue on labeled proposed defaults only when low-risk, reversible, and non-authoritative; do not promote them into confirmed architecture/runtime behavior.
-- Never copy raw secrets from configs, env files, logs, fixtures, docs, or generated output into code or Forge context.
-- Report task list, likely files/components, dependencies, loaded context, missing evidence or ambiguity, proposed vs confirmed boundaries, and whether implementation mode was sufficient.
+- Convert an approved ECP, approved phases, or simple request into a task breakdown humans can execute or review.
+- When persistence helps continuity, write or reference an Execution Contract Artifact with readiness status, task cards, dependency order, stop conditions, do-not-change boundaries, acceptance criteria, and ECP reference.
+- If blockers affect runtime, contracts/schema, DLQ/replay, idempotency, security/compliance, ownership, destructive changes, acceptance criteria, or rollback, stop with `NEEDS_CONFIRMATION`.
+- `NEEDS_CONFIRMATION` must lead with blocker(s), explain execution impact briefly, then show `Recommended`, `Alternative`, and reply instructions: `1`, `2`, or concrete custom value.
+- For multiple blockers, use numbered blocker lines with one-line impact; avoid long defensive prose before the recommendation.
+- Use concrete labels such as `Format event Kafka yang akan diterima service` or `Nilai runtime/config yang wajib dipastikan`; avoid abstract labels like `Inbound contract`.
+- If blockers remain, ask confirmation first when interactive; in non-interactive repos emit `NEEDS_CONFIRMATION`; do not emit execution-ready task cards.
+- When `READY_FOR_EXECUTION` or `READY_FOR_PARTIAL_EXECUTION`, emit bounded task cards: Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
+- Prefer output order: Status; `Nilai eksekusi yang dipakai` when concrete; `Yang sengaja tidak diubah`; Task Cards; Dependency Order; Parallelization Notes; Ready For Execute Checklist; What executor must stop on.
+- Readiness status is required: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION`.
+- Before `READY_FOR_EXECUTION`, include concrete `Nilai eksekusi yang dipakai`; do not use conditional or unavailable values.
+- Do not modify code, redesign architecture, repeat full ECP reasoning, silently redefine approved plans, or invent unsupported ownership/topology/contracts/behavior.
+- Use scoped evidence first; report `CONTEXT_BUDGET_LIMITED`, `DRIFT_DETECTED`, or `DRIFT_RISK` when missing/stale evidence affects task safety.
+- Cross-repo contracts stay evidence/unknowns; governance uses `NEEDS_HUMAN_APPROVAL` for HIGH risk. Never copy raw secrets into code/context or add orchestration, agents, schedulers, workflow engines, DAGs, Jira/story-point planning, or tooling.

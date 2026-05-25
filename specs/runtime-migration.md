@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Runtime Migration Protocol Specification |
-| Version | 1.1 |
+| Version | 1.2 |
 | Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Safe adoption of newer Forge runtime behavior by initialized repositories |
@@ -26,7 +26,7 @@ This document defines:
 - Future compatibility direction.
 
 This document does NOT:
-- Implement automation or tooling.
+- Implement automation tooling.
 - Add generators or templates.
 - Redesign Forge runtime folders.
 - Define repository-specific cognition content.
@@ -47,13 +47,14 @@ Examples:
 - `.forge/context/00-meta/conventions.md`
 - `CLAUDE.md`
 - Optional runtime/config metadata when schema-compatible
-- `.forge/forge.config.yaml` runtime behavior keys, including `runtime.non_interactive`
+- `.forge/forge.config.yaml` runtime behavior keys, including `runtime.profile`, `runtime.non_interactive`, and `runtime.decision_authority`
 
 Purpose:
 - Operational behavior.
 - Loading strategy.
 - Runtime semantics.
 - Interactive vs non-interactive workflow behavior.
+- Runtime profile and automation-safe decision boundaries.
 - Framework conventions.
 - AI operational contract updates.
 
@@ -102,7 +103,7 @@ Runtime migration must be narrow. A repository that needs full context reconstru
 Runtime migration must:
 - Preserve local evidence.
 - Preserve inferred, assumption, confirmation, and unknown boundaries.
-- Preserve repository cognition when changing `runtime.non_interactive`; it controls operational interaction only.
+- Preserve repository cognition when changing `runtime.profile`, `runtime.non_interactive`, or `runtime.decision_authority`; they control operational interaction and decision-boundary behavior only.
 - Preserve secret-safety boundaries: raw secrets must not be printed, copied, summarized, or migrated into runtime-managed files.
 - Preserve audit/history semantics.
 - Preserve repository topology reasoning.
@@ -112,7 +113,10 @@ Runtime migration must:
 - Keep mode files as loading deltas.
 - Preserve canonical mode schema: `include`, `on_demand`, `exclude`, `token_budget`, `notes`.
 - Preserve numeric-only `token_budget`.
-- Use only `runtime.non_interactive` for interaction behavior; do not add alternate or overlapping flags.
+- Use only `runtime.non_interactive` for interaction behavior; `runtime.profile` is metadata and must not become an alternate or overlapping flag.
+- Preserve supported runtime profiles: `local`, `automation`, and reserved `ci`.
+- Preserve decision authority values: `ai`, `orchestrator`, and `human`.
+- Report profile/non-interactive conflicts clearly instead of silently changing behavior.
 
 Runtime migration must not:
 - Re-run initialization.
@@ -127,6 +131,7 @@ Runtime migration must not:
 - Modify application code, build logic, database migrations, or deployment assets.
 - Copy raw secrets from existing runtime files, repository-owned cognition, configs, logs, or reports.
 - Add runtime tooling, automation, generators, or folders.
+- Add CI/CD, deploy workflow, schedulers, triggers, workflow/DAG execution, agent loops, runtime executors, or autonomous chaining.
 
 If a runtime update conflicts with repository-owned cognition, record the conflict as an audit finding or unknown. Do not resolve it by guessing. If a secret is encountered, record only redacted evidence and classify it as a security finding; recommend rotation when exposure is possible.
 
@@ -142,6 +147,9 @@ After runtime migration:
 | Token budget | `token_budget` contains only a decimal integer |
 | Runtime parity | Refreshed runtime-managed files match the selected runtime source |
 | Interaction flag | `runtime.non_interactive` exists, is boolean, and defaults to `false` in runtime templates |
+| Runtime profile | `runtime.profile` is `local`, `automation`, or reserved `ci`; runtime templates default to `local` |
+| Decision authority | `runtime.decision_authority` is `ai`, `orchestrator`, or `human`; runtime templates default to `ai` |
+| Profile conflict | `local` + `non_interactive: true`, or `automation` + `non_interactive: false`, is reported clearly |
 | Conflicting flags | No alternate or overlapping interaction/workflow flags exist |
 | Repository cognition | Repository-owned cognition files are unchanged unless explicitly and separately approved |
 | Application code | No application code changed |
@@ -162,6 +170,7 @@ Re-audit is required when runtime migration introduces material semantic change,
 - Validation rules changed materially.
 - Operational cognition behavior changed materially.
 - Runtime interaction behavior changed materially.
+- Runtime profile, decision authority, or decision risk behavior changed materially.
 - Mode loading behavior changed materially.
 - AI hallucination boundaries changed materially.
 
@@ -186,7 +195,7 @@ Future runtime migration may support:
 - Runtime source parity checks.
 - Migration reports.
 
-These are future compatibility directions only. This specification does not implement automation, runtime tooling, folder redesign, or migration generators.
+These are future compatibility directions only. This specification does not implement automation, runtime tooling, folder redesign, migration generators, CI/CD behavior, deploy workflow, schedulers, triggers, workflow/DAG execution, runtime executors, agent loops, or autonomous chaining.
 
 ---
 

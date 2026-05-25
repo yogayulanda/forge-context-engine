@@ -190,12 +190,12 @@ Rules:
 - `include` = context components normally loaded for this mode.
 - `on_demand` = context components loaded only when relevant.
 - `exclude` = context components never loaded by default.
-- `token_budget` = recommended maximum context budget for this mode; value MUST be a decimal integer only.
+- `token_budget` = target scoped context budget for this mode; value MUST be a decimal integer only and is not a blind hard cap.
 - `notes` = concise human/AI guidance only.
 - Modes MUST NOT re-list `00-meta/*` and `01-core/*` unless explicitly needed.
 - Modes MUST NOT contain domain knowledge, large workflow playbooks, repository-specific implementation instructions, or duplicate `conventions.md`.
-- Visible modes are limited to `planning`, `implementation`/`implement`, `execute`, `testing`, and `review`.
-- Planning must stay strategic; implementation must produce human-reviewable executable task structure; execute owns actual repository modification behavior; testing owns test strategy/test changes; review owns correctness/risk validation.
+- Visible modes are limited to `ask`, `planning`, `implementation`/`implement`, `execute`, `testing`, `review`, `incident`, and `refactor`.
+- Ask owns lightweight repo understanding; planning must stay strategic; implementation must produce human-reviewable executable task structure; execute owns actual repository modification behavior; testing owns test strategy/test changes; review owns correctness/risk validation; incident owns diagnosis; refactor owns bounded behavior-preserving debt work.
 - Token budget labels such as `medium`, `medium-high`, or `large` are invalid; use values such as `4000`, `8000`, or `12000`.
 
 ### Status Rules (Phase 1)
@@ -460,7 +460,7 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] At least ADR-0001 exists
 [ ] modes/* expose Markdown sections: include/on_demand/exclude/token_budget/notes
 [ ] modes/* token_budget is numeric only
-[ ] visible modes constrained to planning/implement/execute/testing/review
+[ ] visible modes constrained to ask/planning/implement/execute/testing/review/incident/refactor
 [ ] implementation mode produces task breakdowns without code modification
 [ ] execute mode owns repository modification behavior
 [ ] testing mode owns test cognition and remains distinct from execute/review
