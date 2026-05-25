@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 3.0 |
-| Date | 2026-05-25 |
+| Version | 3.1 |
+| Date | 2026-05-26 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
-| Dependency | `runtime/CLAUDE.md`, `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md` |
+| Dependency | `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `runtime/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
 
 ---
 
@@ -40,6 +40,7 @@ v2.7 consolidates status vocabulary, human-facing section names, and mode bounda
 v2.8 adds minimal lifecycle artifact semantics for mode handoffs. It does not add orchestration, agents, workflow engines, DAG systems, CI/CD, deploy workflow, runtime executors, persistent AI memory, or knowledge graphs.
 v2.9 adds bounded runtime profile, decision authority, decision risk, and automation-safe approval semantics. It does not add agents, orchestration, workflow engines, DAG systems, schedulers, triggers, CI/CD, deploy workflow, runtime executors, or autonomous loops.
 v3.0 adds lightweight intelligence and governance semantics for scoped loading, drift detection, cross-repo awareness, incident/refactor reasoning, and fintech-grade risk signals. It does not add tooling, RAG, vector search, knowledge graphs, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops.
+v3.1 clarifies that Claude, Codex, shared skills, and tool-specific adapters are thin invocation surfaces that reference Forge core instead of duplicating runtime, validation, drift, artifact, governance, or secret semantics.
 
 This document does NOT:
 - Redesign Forge architecture.
@@ -48,6 +49,7 @@ This document does NOT:
 - Implement CI/CD, deploy, scheduling, trigger, workflow graph, agent loop, or runtime execution behavior.
 - Replace mode file schema rules.
 - Define repository-specific domain content.
+- Treat skills as cognition sources, orchestration units, memory systems, runtime executors, or lifecycle authorities.
 
 ---
 
@@ -393,9 +395,11 @@ If an artifact conflicts with repository evidence, code/repo evidence wins and t
 Runtime placement follows these boundaries:
 
 - `runtime/CLAUDE.md` keeps only concise invocation entry behavior.
+- `runtime/AGENTS.md` and tool adapters keep the same thin invocation-only boundary.
 - `00-meta/conventions.md` keeps global cognition principles and mode-loading discipline.
 - `modes/<mode>.md` owns mode-specific execution and reporting behavior in `## notes`.
 - Mode-specific ask, planning, implementation, execute, testing, review, incident, and refactor behavior should not be duplicated in globally loaded conventions.
+- Runtime, validation, drift, artifact, governance, and secret semantics are referenced from adapters, not duplicated in adapters.
 - Visible modes remain limited to `ask`, `planning`, `implementation` (user-facing `implement`), `execute`, `testing`, `review`, `incident`, and `refactor`.
 
 This placement reduces globally loaded operational text while preserving invocation guarantees.

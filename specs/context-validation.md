@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 3.5 |
-| Date | 2026-05-25 |
+| Version | 3.6 |
+| Date | 2026-05-26 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.0 · `specs/artifact-lifecycle.md` v1.0 |
@@ -19,6 +19,7 @@
 > **v3.2 -> v3.3 changes:** Adds bounded lifecycle artifact validation for ECP, Execution Contract, Execute Result, Testing Result, Review Result, Incident, and Refactor artifacts. No orchestration, agents, workflow engines, DAG systems, CI/CD, deploy workflow, runtime executors, persistent AI memory, or knowledge graphs.
 > **v3.3 -> v3.4 changes:** Adds bounded runtime profile, decision authority, decision risk, `NEEDS_HUMAN_APPROVAL`, and automation-safe decision trace validation. No agents, orchestration, workflow engines, DAG systems, schedulers, triggers, CI/CD behavior, deploy workflow, runtime executors, or autonomous loops.
 > **v3.4 -> v3.5 changes:** Adds future-safe intelligence and governance validation for scoped loading, `CONTEXT_BUDGET_LIMITED`, drift, cross-repo awareness, incident/refactor cause/risk semantics, and fintech-grade governance signals. No tooling, RAG, vector DB, knowledge graph, orchestration, agents, deploy workflow, CI/CD behavior, runtime executors, or autonomous loops.
+> **v3.5 -> v3.6 changes:** Adds thin-adapter validation rules so root adapters reference Forge core instead of duplicating cognition, lifecycle, validation, drift, artifact, governance, or secret semantics. No orchestration, memory, agent, runtime executor, deploy, CI/CD, or workflow behavior added.
 
 ---
 
@@ -243,6 +244,8 @@ Use this as:
 | F126 | Payment, balance, ledger, settlement, reconciliation, or transaction correctness is never classified as LOW risk | critical | manual |
 | F127 | Governance-sensitive output never logs, persists, quotes, or copies raw secrets or raw PII | critical | manual |
 | F128 | Intelligence/governance semantics do not add tooling, RAG, vector search, knowledge graphs, persistent AI memory, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops | critical | manual |
+| F129 | Root adapters such as `CLAUDE.md` and `AGENTS.md` remain thin bootstrap/invocation adapters and do not duplicate Forge cognition, lifecycle, validation, drift, artifact, governance, or secret semantics | error | manual |
+| F130 | Adapter files point to `.forge/context` and specs for normative behavior instead of creating parallel source-of-truth rules | error | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -688,6 +691,8 @@ ANTI-DUPLICATION
 [ ] F126 payment/transaction correctness is never LOW risk
 [ ] F127 raw secrets/PII are not logged, persisted, quoted, or copied
 [ ] F128 intelligence/governance semantics do not add tooling/RAG/vector DB/knowledge graph/orchestration/agents/runtime behavior
+[ ] F129 root adapters remain thin and do not duplicate Forge operational semantics
+[ ] F130 adapter files point to `.forge/context` and specs instead of creating parallel source-of-truth rules
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid

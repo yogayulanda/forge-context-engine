@@ -84,6 +84,58 @@ Artifact types:
 
 Artifacts are bounded engineering records. They are not source of truth, workflow state, dependency graphs, execution triggers, or persistent AI memory. If an artifact conflicts with current repository evidence, repository evidence wins.
 
+## Shared Skills, Adapters, And Commands
+
+Forge shared skills are reusable invocation layers for Forge workflows. They reduce invocation friction across Claude, Codex, GitHub Copilot, Cursor, and future AI tools without moving cognition out of `.forge/context`.
+
+Skills are not adapters, runtime systems, cognition sources, orchestration units, memory stores, or execution platforms. They invoke Forge lifecycle behavior and keep repository intelligence in local `.forge/context`.
+
+Adapters are thin invocation bridges for AI tools.
+
+Final architecture:
+
+```text
+tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -> scoped repository evidence
+```
+
+Responsibilities:
+- `.forge/context` is the cognition source of truth.
+- `runtime/skills/*/SKILL.md` is reusable Forge workflow behavior.
+- `runtime/adapters/*` is the tool-specific bridge.
+- `CLAUDE.md` and `AGENTS.md` are entrypoints.
+
+Supported foundation surfaces:
+
+- `runtime/skills/<skill>/SKILL.md` for shared Forge workflow entrypoints.
+- `CLAUDE.md` for Claude-compatible entry.
+- `AGENTS.md` for Codex-compatible entry.
+- `runtime/adapters/copilot/` for GitHub Copilot prompt instructions and prompt wrappers.
+- `runtime/adapters/<tool>/` for tool-specific loading notes.
+- `runtime/adapters/shared/` for portable command conventions.
+
+Skills use a small operational structure: `Purpose`, `Load`, `Invocation`, `Focus`, `Output`, and `Do NOT`. They invoke Forge modes, but they do not duplicate mode semantics or repository intelligence.
+
+Shared skills are available for ask, planning, implementation, execute, testing, review, incident, and refactor:
+
+- `forge-ask`
+- `forge-plan`
+- `forge-implement`
+- `forge-execute`
+- `forge-test`
+- `forge-review`
+- `forge-incident`
+- `forge-refactor`
+
+Invocation syntax may differ by tool. Claude can use `/forge-review` or `/forge-plan`. Codex can use `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review skill", depending on Codex surface/version. GitHub Copilot can use prompt files such as `/forge-review`, `/forge-plan`, or `/forge-ask` under `.github/prompts/`. In each case, behavior should resolve to the same shared skill.
+
+Claude slash command adapters are available under `runtime/adapters/claude/commands/` as thin wrappers around these shared skills.
+
+GitHub Copilot prompt wrappers are available under `runtime/adapters/copilot/prompts/` as thin wrappers around these shared skills. Intended repository integration uses `.github/copilot-instructions.md` and `.github/prompts/*.prompt.md`.
+
+Codex should remain skills-first through `AGENTS.md`; do not create a parallel Codex command-wrapper layer unless the Codex runtime explicitly requires it later.
+
+The same skill behaves differently in a fintech service, frontend app, or infrastructure module because local `.forge/context` and repository evidence differ. Skill and adapter files must never become source-of-truth context.
+
 ## Governance And Safety
 
 Forge treats governance as practical engineering risk, not compliance theater.
@@ -141,9 +193,13 @@ Forge v1 is not claiming complete automation, benchmarked behavior across all re
 | Path | Purpose |
 |---|---|
 | `runtime/` | Runtime template copied into target repositories during initialization. |
+| `runtime/skills/` | Shared Forge skill entrypoints for Claude, Codex, GitHub Copilot, Cursor, and future tools. |
+| `runtime/CLAUDE.md` | Thin Claude-compatible adapter pointing to `.forge/`. |
+| `runtime/AGENTS.md` | Thin Codex-compatible adapter pointing to `.forge/`. |
+| `runtime/adapters/` | Thin tool compatibility notes and shared command conventions. |
 | `runtime/.forge/context/` | Canonical Forge context skeleton: meta, core, layers, systems, knowledge, modes, generated, and temp zones. |
 | `runtime/.forge/context/generated/artifacts/` | Optional lifecycle handoff artifacts, created on demand. |
-| `specs/` | Normative specifications for initialization, validation, mode invocation, artifact lifecycle, migration, and framework lifecycle. |
+| `specs/` | Normative specifications for initialization, validation, mode invocation, artifact lifecycle, migration, framework lifecycle, and adapter/command foundation. |
 | `validation-cases/` | Focused cases used to validate Forge cognition patterns. |
 | `FORGE-CONTEXT-ARCHITECTURE.md` | Architecture foundation and design rationale. |
 
@@ -160,6 +216,8 @@ Forge intentionally does not provide:
 - persistent AI memory infrastructure
 - RAG, vector search, or knowledge graph systems
 - broad context loading as a default behavior
+- adapter-owned repository cognition
+- tool-specific orchestration or command chaining
 
 Future tooling may validate or assist the lifecycle, but it must preserve these boundaries.
 

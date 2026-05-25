@@ -3,13 +3,14 @@
 | Field | Value |
 |---|---|
 | Document | Context Initialization Protocol |
-| Version | 1.3 |
-| Date | 2026-05-21 |
+| Version | 1.4 |
+| Date | 2026-05-26 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.3 |
 
 > **v1.2 -> v1.3 changes:** Added machine-resolvable Markdown mode schema, numeric-only `token_budget`, and confidence calibration for AI-inferred brownfield context. No new zones, runtime folders, automation, or tooling.
+> **v1.3 -> v1.4 changes:** Aligns initialization handoff with thin adapters: Claude and universal agent adapters are copied as invocation surfaces only, while `.forge/context` remains the cognition source of truth. No lifecycle, orchestration, memory, runtime executor, deploy, or CI/CD behavior added.
 
 ---
 
@@ -36,7 +37,7 @@ Before running init:
 
 | Prerequisite | Description |
 |---|---|
-| Runtime copied | `runtime/` contents flattened into target repo root (CLAUDE.md, .gitignore merged, .forge/) |
+| Runtime copied | `runtime/` contents flattened into target repo root (`CLAUDE.md`, `AGENTS.md`, `skills/`, `adapters/`, `.gitignore` merged, `.forge/`) |
 | Repo access | AI/human has read access to target repo codebase |
 | Owner identified | Someone can answer clarifying questions and confirm promotions |
 | Scenario known | Explicitly declared: **brownfield** (existing code) or **greenfield** (new project) |
@@ -478,7 +479,7 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 ### First Commit
 
 ```
-git add .forge/ CLAUDE.md
+git add .forge/ CLAUDE.md AGENTS.md skills/ adapters/
 git commit -m "forge: context initialization complete"
 ```
 
@@ -488,7 +489,7 @@ git commit -m "forge: context initialization complete"
 
 - All validation checks pass.
 - Clean git status (no untracked context files).
-- System ready for normal operation (AI can bootstrap using CLAUDE.md → forge.config.yaml → 00-meta → 01-core → mode).
+- System ready for normal operation (AI can bootstrap using `CLAUDE.md` or `AGENTS.md` -> `forge.config.yaml` -> `00-meta` -> `01-core` -> mode).
 
 ---
 

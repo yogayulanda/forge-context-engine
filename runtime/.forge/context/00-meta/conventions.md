@@ -9,7 +9,7 @@ evidence:
   - { type: doc, ref: ../../../FORGE-CONTEXT-ARCHITECTURE.md }
   - { type: doc, ref: ../../../../specs/artifact-lifecycle.md }
 owner: forge-context-engine
-updated: 2026-05-25
+updated: 2026-05-26
 ---
 
 # Context System Conventions
@@ -107,6 +107,10 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 - Always surface blockers, missing evidence, unresolved ambiguity, validation limits, risks, and rollback according to the selected mode.
 - When context is insufficient, use `CONTEXT_BUDGET_LIMITED` with missing evidence, affected conclusion/action, targeted expansion needed, and safe fallback if one exists.
 - Runtime-managed cognition lives under `.forge/context`; repository-owned cognition remains in application code, repository docs, ADRs, and human confirmations.
+
+## Adapter Boundary
+
+Tool adapters such as `CLAUDE.md`, `AGENTS.md`, and `adapters/<tool>/` are invocation bridges only. They may point to Forge config, conventions, manifest, modes, commands, and specs, but they must not duplicate repository cognition, lifecycle semantics, validation/drift semantics, artifact semantics, governance rules, runtime flags, or secret-handling policy.
 
 ## Runtime Validation Semantics
 

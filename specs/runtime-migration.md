@@ -46,6 +46,9 @@ Examples:
 - `.forge/context/modes/*.md`
 - `.forge/context/00-meta/conventions.md`
 - `CLAUDE.md`
+- `AGENTS.md`
+- `skills/`
+- `adapters/`
 - Optional runtime/config metadata when schema-compatible
 - `.forge/forge.config.yaml` runtime behavior keys, including `runtime.profile`, `runtime.non_interactive`, and `runtime.decision_authority`
 

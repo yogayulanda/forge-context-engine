@@ -3,12 +3,12 @@
 | Field | Nilai |
 |---|---|
 | Dokumen | Desain Fondasi Context Engineering |
-| Fase | Fase 1 — Desain Struktur (BUKAN implementasi) |
-| Versi | 0.8 (Draft Desain) |
+| Fase | Forge v1 runtime architecture stabilization |
+| Versi | 0.9 |
 | Tanggal | 2026-05-25 |
-| Status | `decision` — menunggu konfirmasi pemilik |
+| Status | `decision` — siap untuk validasi penggunaan nyata |
 | Bahasa | Bahasa Indonesia |
-| Cakupan tooling | Agnostik tooling, kompatibel Claude |
+| Cakupan tooling | Agnostik tooling, kompatibel Claude/Codex/GitHub Copilot/Cursor |
 
 > **Perubahan v0.4 → v0.5:** `profiles/` diganti menjadi **`modes/`** (penamaan lebih natural — AI bekerja dalam "mode planning", "mode review", dst). **`base.md` dihapus** beserta mekanisme `extends` — inti yang selalu termuat (`00-meta/*` + `01-core/*`) sudah dijamin oleh konvensi numbering & urutan bootstrap, sehingga tidak perlu didaftar ulang dalam file mode. Mode kini hanya mendeklarasikan *delta*-nya. Rincian di Lampiran B.
 
@@ -65,9 +65,19 @@ Dokumen ini **tidak** membuat file/folder apa pun. Ia cetak biru. Pembuatan stru
 
 Seluruh sistem konteks berada di bawah satu direktori namespace di root repo: **`.forge/`** — isolasi penuh dari kode aplikasi (aman untuk existing project), satu titik masuk, portabel sebagai satu unit. Alternatif non-tersembunyi `forge/` juga sah.
 
-### 2.2 Adapter (agnostik tooling, kompatibel Claude)
+### 2.2 Adapter (agnostik tooling, kompatibel Claude/Codex/GitHub Copilot/Cursor)
 
-Satu file adapter tipis di root repo: **`CLAUDE.md`**. `AGENTS.md` opsional, ditambahkan hanya bila ada asisten AI kedua. Adapter tidak pernah menyimpan konteks — hanya menunjuk ke `.forge/`.
+GitHub Copilot memakai **`.github/copilot-instructions.md`** dan **`.github/prompts/*.prompt.md`** sebagai wrapper UX/invocation tipis yang menunjuk ke shared skills dan `.forge/context`.
+
+Adapter tipis berada di root repo dan/atau `adapters/<tool>/`: **`CLAUDE.md`** untuk Claude, **`AGENTS.md`** untuk Codex-compatible assistants, dan folder adapter tool-specific bila diperlukan. Adapter tidak pernah menyimpan konteks — hanya menunjuk ke `.forge/`.
+
+Kontrak adapter:
+
+- Forge core tetap memiliki cognition, mode, governance, artifact lifecycle, dan runtime semantics.
+- Adapter hanya memiliki invocation bridge, loading hint, dan command entrypoint.
+- Command bersifat ringan dengan section `Load`, `Goal`, `Requirements`, `Output`, dan `Do NOT`.
+- Repo intelligence selalu berasal dari `.forge/context`, bukan adapter atau command.
+- Adapter tidak boleh menjadi orchestration system, workflow runtime, memory layer, atau alternate runtime.
 
 ### 2.3 Kebijakan numbering (ringan & selektif)
 
@@ -77,7 +87,13 @@ Hanya `00-meta/` dan `01-core/` yang diberi nomor — keduanya punya **urutan-mu
 
 ```
 repo-root/
-├── CLAUDE.md                        # adapter tipis → .forge/  (AGENTS.md opsional)
+├── CLAUDE.md                        # adapter tipis Claude → .forge/
+├── AGENTS.md                        # adapter tipis Codex-compatible → .forge/
+├── adapters/                        # adapter notes/commands opsional, non-authoritative
+│   ├── claude/
+│   ├── codex/
+│   ├── cursor/
+│   └── shared/
 ├── .gitignore                       # mengecualikan .forge/context/temp/
 └── .forge/
     ├── forge.config.yaml            # manifest engine: tier, layer aktif, systems, mode default
@@ -490,7 +506,9 @@ Konvensi engineering lintas-repo juga berada di `00-meta/conventions.md`: reposi
 
 `modes/<mode>.md` — skema §7.2, deklarasi delta + kontrak operasional ringkas, ≤ ~40 baris.
 
-`CLAUDE.md` — adapter minimal: baca manifest → conventions → muat `00-meta/*` & `01-core/*` → pilih mode → muat delta mode.
+`CLAUDE.md` / `AGENTS.md` — adapter minimal: baca manifest → conventions → muat `00-meta/*` & `01-core/*` → pilih mode → muat delta mode.
+
+`adapters/<tool>/` — catatan kompatibilitas tool dan command wrapper tipis. Tidak menyimpan cognition, governance, lifecycle semantics, runtime semantics, atau repo intelligence.
 
 ---
 
@@ -498,7 +516,7 @@ Konvensi engineering lintas-repo juga berada di `00-meta/conventions.md`: reposi
 
 ### 14.1 Dibuat sekarang — kerangka fondasi
 
-`.forge/forge.config.yaml`; `00-meta/{context-manifest,conventions,glossary}.md`; `01-core/{product,architecture,principles,constraints}.md` (**template kosong**: heading + front-matter `status: unknown`); `layers/<layer>/README.md` (×5, konten final); `systems/README.md` (placeholder, konten final); `knowledge/decisions/ADR-0000-template.md`; `knowledge/{assumptions,unknowns,inferred,confirmations}.md` (header tabel, tanpa entri); `modes/{ask,planning,implementation,execute,testing,review,incident,refactor}.md`; `CLAUDE.md`.
+`.forge/forge.config.yaml`; `00-meta/{context-manifest,conventions,glossary}.md`; `01-core/{product,architecture,principles,constraints}.md` (**template kosong**: heading + front-matter `status: unknown`); `layers/<layer>/README.md` (×5, konten final); `systems/README.md` (placeholder, konten final); `knowledge/decisions/ADR-0000-template.md`; `knowledge/{assumptions,unknowns,inferred,confirmations}.md` (header tabel, tanpa entri); `modes/{ask,planning,implementation,execute,testing,review,incident,refactor}.md`; `CLAUDE.md`; `AGENTS.md`; `skills/*`; `adapters/{claude,codex,copilot,cursor,shared}`.
 
 ### 14.2 Dihasilkan saat Context Initialization (fase berikutnya)
 
