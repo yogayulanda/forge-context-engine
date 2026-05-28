@@ -10,7 +10,7 @@ Read `.forge/forge.config.yaml` first. Apply `runtime.non_interactive` and respe
 Use when the user asks for implementation breakdown, execution task cards, readiness, dependencies, or confirmation gates before code changes.
 
 ## Focus
-Classify blockers and unknowns. Emit `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION` according to the mode file.
+Classify blockers and unknowns. Emit `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION` according to the mode file, with task guardrails for minimal diffs, preserved formatting/line endings, and contract-source checks when relevant.
 
 ## Output
 Return mode-owned readiness output. Include task cards only when required execution values are concrete and blockers are resolved.

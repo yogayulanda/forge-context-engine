@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-25
+updated: 2026-05-28
 ---
 # Mode: Planning
 ## include
@@ -26,7 +26,7 @@ updated: 2026-05-25
 ## notes
 - Output an ECP that reads like an engineering work plan, not an RFC.
 - When persistence helps continuity, write or reference an ECP Artifact with approved intent, decisions, blockers, boundaries, linked systems/layers, and revision reference.
-- Prefer sections such as: `Tujuan perubahan`, `Dampak teknis`, `Tahapan kerja`, `Risiko`, `Validasi`, `Rollback`, `Yang sengaja tidak diubah`.
+- Prefer sections such as: `Tujuan perubahan`, `Dampak teknis`, `Tahapan kerja`, `Risiko`, `Validasi`, `Rollback`, `Yang sengaja tidak diubah`, `Recommended next action`.
 - Keep paragraphs short and operational; highlight blockers and decisions before detail.
 - Do not produce detailed executable coding tasks or modify code; approved phases hand off to implementation mode.
 - Adapt sections to evidence: backend data/contracts, frontend UX/state/accessibility, infrastructure deployment/reliability/security.

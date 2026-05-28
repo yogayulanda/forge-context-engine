@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Forge Adapter and Command Foundation |
-| Version | 1.2 |
-| Date | 2026-05-26 |
+| Version | 1.3 |
+| Date | 2026-05-28 |
 | Status | `decision` |
 | Scope | Shared skills, adapter architecture, command semantics, and tool compatibility boundaries |
 | Dependency | `specs/mode-invocation.md`, `specs/runtime-migration.md`, `specs/framework-lifecycle.md`, `runtime/.forge/context/00-meta/conventions.md` |
@@ -15,7 +15,7 @@
 
 This document defines the foundation for Forge shared skills, adapters, and commands.
 
-Shared skills, adapters, and commands make Forge usable from Claude, Codex, Cursor, and future AI tooling while preserving Forge's repository-native cognition model.
+Shared skills, adapters, and commands make Forge usable from Claude, Codex, GitHub Copilot, Cursor, and future AI tooling while preserving Forge's repository-native cognition model.
 
 This document defines:
 - Adapter architecture and ownership boundaries.
@@ -47,6 +47,7 @@ Canonical runtime adapter layout:
 runtime/
 +-- skills/
 +-- adapters/
++-- adapters/copilot/
 +-- CLAUDE.md
 +-- AGENTS.md
 +-- .forge/
@@ -214,7 +215,7 @@ Skills invoke Forge lifecycle behavior. They do not override `.forge/context`, m
 The stable bridge is:
 
 ```text
-tool syntax -> adapter -> shared skill -> .forge/context mode -> scoped repository evidence
+tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -> scoped repository evidence
 ```
 
 ### 2.2 Core Rules
@@ -378,7 +379,7 @@ Forge separates three concerns:
 | Forge core | Repository cognition, lifecycle modes, governance semantics, artifact lifecycle, runtime semantics |
 | Shared skill layer | Reusable tool-neutral workflow entrypoints under `runtime/skills/` |
 | Adapter layer | Tool-specific entry files, command text, loading hints, compatibility wrappers |
-| Execution surface | Claude slash commands, Codex `AGENTS.md`, Cursor rules, future assistant invocation surfaces |
+| Execution surface | Claude slash commands, Codex `AGENTS.md`, GitHub Copilot prompt files, Cursor rules, future assistant invocation surfaces |
 
 ### 5.1 Claude
 
@@ -403,7 +404,14 @@ Cursor compatibility uses:
 - Mode-aware command prompts that resolve to shared skills where supported.
 - No Cursor-specific lifecycle or governance layer.
 
-### 5.4 Future Tools
+### 5.4 GitHub Copilot
+
+GitHub Copilot compatibility uses:
+- `.github/copilot-instructions.md` as the thin repository instruction surface.
+- `.github/prompts/*.prompt.md` as tool UX wrappers that point to shared skills.
+- No Copilot-specific repository intelligence, lifecycle semantics, governance layer, or workflow system.
+
+### 5.5 Future Tools
 
 Future adapters must be added as thin folders under:
 
@@ -424,7 +432,7 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 
 ### 6.1 Naming
 
-- Adapter folders use lowercase tool names: `claude`, `codex`, `cursor`.
+- Adapter folders use lowercase tool names: `claude`, `codex`, `copilot`, `cursor`.
 - Shared conventions live in `adapters/shared`.
 - Command files use lowercase kebab-case when materialized as files.
 - Command names use `forge:<mode>` and optional suffixes.
@@ -437,6 +445,7 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 | `skills/` | Shared Forge skill entrypoints and invocation semantics. |
 | `adapters/claude/` | Claude invocation notes and optional slash-command mapping. |
 | `adapters/codex/` | Codex invocation notes and `AGENTS.md` mapping. |
+| `adapters/copilot/` | GitHub Copilot instruction and prompt-wrapper templates. |
 | `adapters/cursor/` | Cursor rules/invocation notes. |
 | `adapters/shared/` | Portable command semantics and anti-duplication rules. |
 

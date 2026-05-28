@@ -72,7 +72,7 @@ Index and routing map for the entire context system. Not a knowledge source.
 
 ## File Registry
 
-> Populated during init. Format: `path | id | type | status | owner`
+> Runtime template placeholder. Target repositories populate this during Context Initialization. Format: `path | id | type | status | owner`
 
 ```
 TBD

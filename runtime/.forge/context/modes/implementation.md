@@ -7,14 +7,13 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-25
+updated: 2026-05-28
 ---
 # Mode: Implementation
 ## include
 - `layers/<related>`
 - `systems/<related>`
-- `knowledge/decisions/`
-- `knowledge/inferred.md`
+- `knowledge/decisions/`, `knowledge/inferred.md`
 ## on_demand
 - `knowledge/assumptions.md`
 - `generated/<relevant>`
@@ -32,9 +31,10 @@ updated: 2026-05-25
 - Use concrete labels such as `Format event Kafka yang akan diterima service` or `Nilai runtime/config yang wajib dipastikan`; avoid abstract labels like `Inbound contract`.
 - If blockers remain, ask confirmation first when interactive; in non-interactive repos emit `NEEDS_CONFIRMATION`; do not emit execution-ready task cards.
 - When `READY_FOR_EXECUTION` or `READY_FOR_PARTIAL_EXECUTION`, emit bounded task cards: Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
-- Prefer output order: Status; `Nilai eksekusi yang dipakai` when concrete; `Yang sengaja tidak diubah`; Task Cards; Dependency Order; Parallelization Notes; Ready For Execute Checklist; What executor must stop on.
+- Prefer output order: Status; `Nilai eksekusi yang dipakai` when concrete; `Yang sengaja tidak diubah`; Task Cards; Dependency Order; Parallelization Notes; Ready For Execute Checklist; What executor must stop on; Recommended next action.
 - Readiness status is required: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION`.
-- Before `READY_FOR_EXECUTION`, include concrete `Nilai eksekusi yang dipakai`; do not use conditional or unavailable values.
+- Before `READY_FOR_EXECUTION`, include concrete `Nilai eksekusi yang dipakai`; task guardrails must require minimal diffs, preserved formatting/line endings, and no file-wide rewrites.
+- For API/docs/contract tasks, name the contract sources executor must check: proto, OpenAPI, grpc-gateway, generated docs, route/schema files, or existing source of truth.
 - Do not modify code, redesign architecture, repeat full ECP reasoning, silently redefine approved plans, or invent unsupported ownership/topology/contracts/behavior.
 - Use scoped evidence first; report `CONTEXT_BUDGET_LIMITED`, `DRIFT_DETECTED`, or `DRIFT_RISK` when missing/stale evidence affects task safety.
-- Cross-repo contracts stay evidence/unknowns; governance uses `NEEDS_HUMAN_APPROVAL` for HIGH risk. Never copy raw secrets into code/context or add orchestration, agents, schedulers, workflow engines, DAGs, Jira/story-point planning, or tooling.
+- Cross-repo contracts stay evidence/unknowns; governance uses `NEEDS_HUMAN_APPROVAL` for HIGH risk. Never copy raw secrets or add orchestration, agents, schedulers, workflow engines, DAGs, Jira/story-point planning, tooling, or autonomous chaining.

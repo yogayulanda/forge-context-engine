@@ -10,10 +10,10 @@ Read `.forge/forge.config.yaml` first. Apply `runtime.non_interactive` and respe
 Use only when the user provides approved task cards, an execution contract, or an explicitly approved bounded task subset.
 
 ## Focus
-Modify only approved scope. Stop on unclear scope, missing execution values, unresolved contract blockers, or HIGH-risk decisions without human approval. Distinguish implementation failures from environment/tooling failures.
+Modify only approved scope with minimal diffs, preserving formatting and line endings. Stop on unclear scope, missing execution values, unresolved contract blockers, residual review blockers, or HIGH-risk decisions without human approval. Distinguish implementation failures from environment/tooling failures.
 
 ## Output
-Return execute-mode result with status, changed files grouped by responsibility, validation performed, validation gaps, manual checks, rollback notes, intentionally unchanged scope, reviewer focus, and hidden-change check.
+Return execute-mode result with status, changed files grouped by responsibility, validation performed, validation gaps, manual checks, rollback notes, intentionally unchanged scope, reviewer focus, hidden-change check, and a short recommended next action. When API/docs/contracts changed, state the source files checked.
 
 ## Do NOT
 Do not redefine approved architecture, expand scope silently, broad-load context, run autonomous chains, add schedulers, introduce CI/CD/deploy behavior, or treat execution as an orchestration platform.

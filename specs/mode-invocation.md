@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 3.1 |
-| Date | 2026-05-26 |
+| Version | 3.2 |
+| Date | 2026-05-28 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
 | Dependency | `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `runtime/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
@@ -41,6 +41,7 @@ v2.8 adds minimal lifecycle artifact semantics for mode handoffs. It does not ad
 v2.9 adds bounded runtime profile, decision authority, decision risk, and automation-safe approval semantics. It does not add agents, orchestration, workflow engines, DAG systems, schedulers, triggers, CI/CD, deploy workflow, runtime executors, or autonomous loops.
 v3.0 adds lightweight intelligence and governance semantics for scoped loading, drift detection, cross-repo awareness, incident/refactor reasoning, and fintech-grade risk signals. It does not add tooling, RAG, vector search, knowledge graphs, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops.
 v3.1 clarifies that Claude, Codex, shared skills, and tool-specific adapters are thin invocation surfaces that reference Forge core instead of duplicating runtime, validation, drift, artifact, governance, or secret semantics.
+v3.2 hardens bounded execution against unintended file churn, residual review blockers, and contract-source drift, and adds one concise recommended next action to lifecycle outputs. It does not add modes, orchestration, agents, memory, schedulers, CI/CD, deploy logic, runtime executors, or autonomous chaining.
 
 This document does NOT:
 - Redesign Forge architecture.
@@ -265,6 +266,7 @@ Prefer human-friendly section names:
 - `Yang sengaja tidak diubah`
 - `Reviewer perlu fokus ke`
 - `Hidden change check`
+- `Recommended next action`
 
 Avoid prominent runtime/debug labels in normal interactive usage:
 - runtime interaction mode dumps
@@ -550,14 +552,14 @@ Expected behavior:
 - Implement approved implementation tasks or approved task subsets.
 - Produce an Execute Result artifact when persistence is useful for execution result, changed file groups, validation status, manual follow-up, rollback notes, and unchanged boundaries.
 - Preserve repository conventions and existing architecture/runtime constraints.
-- Keep changes scoped and minimal.
+- Keep changes scoped and minimal; preserve existing formatting and line endings, avoid file-wide rewrites, and do not perform unrelated cleanup.
 - Load only execution-relevant context.
 - Preserve proposed vs confirmed boundaries.
-- Report execution result, implemented changes, changed files, validation performed, unvalidated scope, manual checks, rollback, intentionally unchanged scope, reviewer focus, and hidden-change checks.
+- Report execution result, implemented changes, changed files, validation performed, unvalidated scope, manual checks, rollback, intentionally unchanged scope, reviewer focus, hidden-change checks, and one concise recommended next action.
 - `Execution Result` must use one clear status: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED`.
 - Before validation, check required runtime/tooling prerequisites for the commands being attempted.
 - Use `SUCCESS` only when reliable validation evidence exists; otherwise use `PARTIAL_SUCCESS`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED` as appropriate.
-- `File yang berubah` must group files by responsibility: Runtime / Bootstrap, Adapter / Handler, Service / Domain, Persistence, Config / Docs, and Tests. Omit empty groups.
+- `File yang berubah` must group files by responsibility and confirm intended files changed, unrelated files did not change, and no file-wide formatting or line-ending churn occurred.
 - `Validasi` must show prerequisites checked, command run, result, and failure/not-run reason. Failed or partial validation must be highlighted directly, not buried in prose.
 - `Yang belum tervalidasi` must list changed or risky scope without reliable validation evidence.
 - `Yang masih perlu dicek manual` must be an actionable follow-up list.
@@ -565,6 +567,10 @@ Expected behavior:
 - `Yang sengaja tidak diubah` must explain risky unchanged boundaries in simple wording: no database schema change, no service topology change, no direct SQL from handler, existing fallback still works.
 - `Reviewer perlu fokus ke` must highlight relevant checks such as idempotency behavior, retry vs DLQ classification, lifecycle/shutdown behavior, secret-safe logging, and boundary preservation.
 - `Hidden change check` must explicitly report whether database schema, deployment pipeline, shared runtime contracts, or unrelated context/runtime files changed unexpectedly.
+- When API, docs, or contracts change, wording and names must be checked against relevant source files before finalizing, such as proto, OpenAPI, grpc-gateway, generated docs, route/schema files, or existing contract sources.
+- When executing after review, previous review findings must be verified as resolved or explicitly still open; execute must not finalize while obvious residual review blockers remain.
+- Finalization must check that changed files are intended, unrelated files are absent, file-wide formatting or line-ending churn did not occur, validation was run or honestly not run, rollback is reported, and reviewer focus is clear.
+- `Recommended next action` must be short and singular, for example proceed, fix before merge, remediate first, track as later cleanup, or needs human confirmation.
 - Run narrow implementation verification when relevant.
 - Do not copy raw secrets from existing config, env, logs, fixtures, or docs into code or context.
 - Stop, narrow scope, or report blocked status when approved tasks depend on stale artifacts or contradicted evidence.
@@ -584,6 +590,7 @@ Preferred execute output order:
 8. `Yang sengaja tidak diubah`
 9. `Reviewer perlu fokus ke`
 10. `Hidden change check`
+11. `Recommended next action`
 
 Interaction behavior:
 - Interactive default: ask confirmation before dangerous, destructive, or runtime-impacting changes.
@@ -891,6 +898,10 @@ Mode invocation validation checks that runtime behavior follows this protocol:
 - Execute output used one clear status: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED`.
 - Execute status matched validation evidence and did not use `SUCCESS` when reliable validation was absent.
 - Execute output prioritized result, changed files grouped by responsibility, validation, unvalidated scope, manual checks, rollback, intentionally unchanged scope, reviewer focus, and hidden-change checks.
+- Execute output included one concise recommended next action after drift, risk, partial validation, or residual manual checks.
+- Execute finalization confirmed intended files changed, unrelated files were absent, file-wide formatting/line-ending churn was absent, validation was run or honestly not run, rollback was reported, and reviewer focus was clear.
+- Execute checked contract/docs/API wording against source files when API, docs, or contract surfaces changed.
+- Execute after review verified prior findings were resolved or explicitly still open and did not finalize with obvious residual blockers.
 - Execute validation failures, skipped validation, and partial validation were highlighted directly.
 - Execute/testing prerequisite checks were reported when validation depended on tooling or infra.
 - Environment/tooling blockers were classified as `BLOCKED_BY_ENVIRONMENT`, separate from implementation failures and contract/runtime blockers.

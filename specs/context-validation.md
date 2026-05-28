@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 3.6 |
-| Date | 2026-05-26 |
+| Version | 3.7 |
+| Date | 2026-05-28 |
 | Status | `decision` — finalized for forge-context-engine v0.2.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.0 · `specs/artifact-lifecycle.md` v1.0 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.2 · `specs/artifact-lifecycle.md` v1.0 |
 
 > **v2.5 -> v2.6 changes:** Human UX refinement for mode outputs: concise operational wording, quieter runtime internals, clearer confirmation prompts, grouped file-change reporting, and execute reports focused on result/validation/rollback. No lifecycle redesign, tooling, automation, runtime executors, orchestration, or new folders.
 > **v2.6 -> v2.7 changes:** Implementation readiness now requires deterministic task cards for `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION`, with explicit dependencies, guardrails, acceptance criteria, validation expectations, and blocker gates. No tooling, orchestration, agents, schedulers, workflow engines, DAGs, Jira integration, or story points.
@@ -20,6 +20,7 @@
 > **v3.3 -> v3.4 changes:** Adds bounded runtime profile, decision authority, decision risk, `NEEDS_HUMAN_APPROVAL`, and automation-safe decision trace validation. No agents, orchestration, workflow engines, DAG systems, schedulers, triggers, CI/CD behavior, deploy workflow, runtime executors, or autonomous loops.
 > **v3.4 -> v3.5 changes:** Adds future-safe intelligence and governance validation for scoped loading, `CONTEXT_BUDGET_LIMITED`, drift, cross-repo awareness, incident/refactor cause/risk semantics, and fintech-grade governance signals. No tooling, RAG, vector DB, knowledge graph, orchestration, agents, deploy workflow, CI/CD behavior, runtime executors, or autonomous loops.
 > **v3.5 -> v3.6 changes:** Adds thin-adapter validation rules so root adapters reference Forge core instead of duplicating cognition, lifecycle, validation, drift, artifact, governance, or secret semantics. No orchestration, memory, agent, runtime executor, deploy, CI/CD, or workflow behavior added.
+> **v3.6 -> v3.7 changes:** Adds execute hardening validation for minimal diffs, finalization checks, contract-source checks, review-loop closure, and concise recommended next action. No lifecycle redesign, modes, orchestration, memory, agents, runtime executors, deploy, CI/CD, or autonomous chaining added.
 
 ---
 
@@ -246,6 +247,11 @@ Use this as:
 | F128 | Intelligence/governance semantics do not add tooling, RAG, vector search, knowledge graphs, persistent AI memory, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops | critical | manual |
 | F129 | Root adapters such as `CLAUDE.md` and `AGENTS.md` remain thin bootstrap/invocation adapters and do not duplicate Forge cognition, lifecycle, validation, drift, artifact, governance, or secret semantics | error | manual |
 | F130 | Adapter files point to `.forge/context` and specs for normative behavior instead of creating parallel source-of-truth rules | error | manual |
+| F131 | Execute preserves existing formatting and line endings, avoids file-wide rewrites, and limits mutation to approved task scope | error | manual |
+| F132 | Execute finalization confirms changed files are intended, unrelated file changes are absent, and no broad formatting or line-ending churn occurred | error | manual |
+| F133 | Execute checks API/docs/contract wording against relevant source files, such as proto, OpenAPI, grpc-gateway, generated docs, route/schema files, or existing contract sources, before finalizing when those surfaces changed | error | manual |
+| F134 | Execute after review verifies prior findings are resolved or explicitly still open and does not finalize with obvious residual review blockers | error | manual |
+| F135 | Lifecycle outputs include one concise `Recommended next action`, such as proceed, fix before merge, remediate first, track as later cleanup, or needs human confirmation | warning | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -693,6 +699,11 @@ ANTI-DUPLICATION
 [ ] F128 intelligence/governance semantics do not add tooling/RAG/vector DB/knowledge graph/orchestration/agents/runtime behavior
 [ ] F129 root adapters remain thin and do not duplicate Forge operational semantics
 [ ] F130 adapter files point to `.forge/context` and specs instead of creating parallel source-of-truth rules
+[ ] F131 execute preserves formatting/line endings and avoids file-wide rewrites
+[ ] F132 execute finalization confirms intended changes, no unrelated files, and no churn
+[ ] F133 execute contract/docs/API wording is checked against source files when relevant
+[ ] F134 execute after review verifies prior findings and does not finalize with residual blockers
+[ ] F135 lifecycle outputs include one concise Recommended next action
 
 KNOWLEDGE LEDGERS
 [ ] G1  assumptions entries valid
