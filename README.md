@@ -2,9 +2,91 @@
 
 Forge is an AI-native engineering workflow system focused on bounded engineering cognition for real-world software development.
 
-It helps engineers and AI assistants work with repository context in a disciplined way: scoped evidence, clear lifecycle modes, explicit uncertainty, and reviewable engineering outputs. Forge is for teams that want AI-assisted planning, implementation guidance, execution reporting, testing, review, incident diagnosis, and refactoring without turning their repository into an autonomous automation system.
+It helps engineers and AI assistants work with repository context in a disciplined way: scoped evidence, clear lifecycle modes, explicit uncertainty, and reviewable engineering outputs. Forge is for teams that want AI-assisted planning, implementation guidance, execution reporting, testing, review, incident diagnosis, and refactoring with visible human control.
 
 Forge v1 is the lifecycle foundation: a context structure, mode protocol, validation rules, and lightweight handoff artifacts. It is ready for real-world pilot usage and evidence-based refinement.
+
+## Quick Mental Model
+
+Forge is a repository-native way to work with AI assistants without giving up engineering control.
+
+Think of Forge as:
+
+```text
+repository evidence -> scoped context -> one lifecycle mode -> reviewable engineering output
+```
+
+A human asks for one kind of work, Forge loads the matching context, and the output stays tied to code, docs, ADRs, explicit confirmations, and visible unknowns.
+
+The practical rule is simple:
+
+- Use `ask` to understand.
+- Use `planning` to shape a change.
+- Use `implementation` to turn approved intent into executable task cards.
+- Use `execute` to modify the repository within those approved boundaries.
+- Use `testing` to validate.
+- Use `review` to decide MR readiness.
+- Use `incident` when something is broken.
+- Use `refactor` for bounded behavior-preserving cleanup.
+
+## How Forge Works Operationally
+
+Forge has three lightweight parts:
+
+| Part | Role | Boundary |
+|---|---|---|
+| `.forge/context` | Repo-local conventions, mode files, scoped knowledge, and generated handoff artifacts. | Code, docs, ADRs, and human decisions still win. |
+| Lifecycle modes | Separate understanding, planning, implementation breakdown, execution, testing, review, incident diagnosis, and refactoring. | Each mode owns one kind of work. |
+| Skills and adapters | Let Claude, Codex, GitHub Copilot, Cursor, and other tools invoke the same Forge behavior. | Tool files stay thin invocation surfaces. |
+
+In normal use, the assistant reads the Forge config, reads the requested mode, loads only task-relevant context, checks current repository evidence, and returns a concise engineering output for that mode.
+
+## 5-Minute Quick Start
+
+1. Start from the `runtime/` template when adding Forge to a repository.
+2. Ask a scoped question with `ask`, such as "How does this service handle retries?"
+3. For a change, use `planning` before code when scope, risk, validation, or rollback matters.
+4. Use `implementation` to produce task cards before `execute` changes files.
+5. Review the result: changed files, validation, rollback notes, unknowns, and next action.
+
+## Typical Engineering Workflow
+
+Most feature and bug work follows this shape:
+
+```text
+Bug or feature request
+-> ask: understand current behavior and evidence
+-> planning: propose the engineering change plan
+-> implementation: produce task cards and stop conditions
+-> execute: apply the approved repository changes
+-> testing: run or define validation
+-> review: assess MR readiness
+-> merge: handled by the team outside Forge
+```
+
+Small changes may skip `planning` when the scope is obvious. `incident` and `refactor` are entry modes for diagnosis and bounded cleanup.
+
+Forge helps each step produce the next useful engineering artifact. It does not automatically advance from one step to another, approve risky choices, open PRs, deploy code, or merge changes.
+
+## Forge Working States
+
+Forge outputs should make the current state obvious:
+
+```text
+Understanding -> Planning -> Ready -> Executing -> Validating -> Reviewing -> Completed
+```
+
+| State | What it means | Common next move |
+|---|---|---|
+| Understanding | The team is trying to learn current behavior or missing evidence. | Use `ask`, or move to `planning` when the change is clear. |
+| Planning | The change needs scope, impact, risk, validation, or rollback thinking. | Confirm the plan or resolve unknowns. |
+| Ready | Implementation has concrete task cards, dependencies, guardrails, and execution values. | Use `execute` for the approved task set. |
+| Executing | Repository changes are being applied inside approved boundaries. | Validate, report changed files, and surface blockers. |
+| Validating | Tests, manual checks, or environment-dependent checks are being run or specified. | Use `testing`, then fix failures or continue to review. |
+| Reviewing | The team is checking correctness, risk, validation honesty, and MR readiness. | Address findings or merge outside Forge. |
+| Completed | The scoped work is implemented, validated enough for its risk, and review-ready or accepted. | Keep artifacts only if they help future handoff. |
+
+These are human working states, not a hidden state machine. Generated artifacts may record handoffs, but they do not trigger execution or become source of truth.
 
 ## Core Philosophy
 
@@ -16,19 +98,11 @@ Forge v1 is the lifecycle foundation: a context structure, mode protocol, valida
 
 ## What Forge Is Not
 
-Forge is not:
+Forge is not an autonomous agent framework, orchestration engine, workflow DAG system, CI/CD runner, deploy platform, or persistent AI memory system.
 
-- an autonomous agent framework
-- an orchestration engine
-- a workflow DAG system
-- a CI/CD runner
-- a deploy automation platform
-- a memory operating system
-- a persistent AI brain
+It provides lifecycle discipline for AI-assisted engineering work; it does not run the engineering organization or hide automation behind repository context.
 
-Forge intentionally avoids hidden automation semantics, runtime executors, agent loops, deploy workflows, and broad memory systems.
-
-## Lifecycle Modes
+## When To Use Each Lifecycle Mode
 
 | Mode | Purpose | Expected Output | Boundaries | Use When |
 |---|---|---|---|---|
@@ -41,28 +115,73 @@ Forge intentionally avoids hidden automation semantics, runtime executors, agent
 | `incident` | Diagnose bugs, issues, or incidents from evidence. | Symptoms, impact, likely/possible cause, mitigation, rollback, next checks. | No speculative redesign or unsupported root-cause claims. | Something is broken or unclear in operation. |
 | `refactor` | Improve technical debt conservatively. | Bounded refactor result/proposal, risk classification, validation expectations. | No architecture rewrite, paradigm migration, or hidden behavior change. | You need behavior-preserving cleanup or simplification. |
 
-The normal workflow is:
+The recommended full workflow is:
 
 ```text
 ask -> planning -> implementation -> execute -> testing -> review
 ```
 
-`incident` and `refactor` are entry modes for operational diagnosis and bounded cleanup.
+Use the smallest mode that fits the current decision. Do not use `execute` when scope, approval, or execution values are still unclear; use `implementation` or `planning` first.
+
+## Day-To-Day Usage Examples
+
+| Situation | Good Forge request | Why this mode fits |
+|---|---|---|
+| A backend engineer needs to understand retries. | "Use Forge ask mode to explain how this service retries failed events." | `ask` stays evidence-based and does not turn the answer into a change plan. |
+| A frontend engineer wants to change a shared state flow. | "Use Forge planning mode for this UI state change." | `planning` surfaces affected files, risks, validation, and unknowns before code changes. |
+| A technical lead approved a plan. | "Use Forge implementation mode to create task cards for the approved plan." | `implementation` checks readiness and stops on missing execution values. |
+| An AI-assisted coding session is ready to modify files. | "Use Forge execute mode for these approved task cards." | `execute` applies bounded changes and reports validation honestly. |
+| A contributor opened an MR. | "Use Forge review mode on this branch." | `review` focuses on correctness, risk, validation gaps, and MR readiness. |
+| Production behavior is unclear or broken. | "Use Forge incident mode for this symptom." | `incident` separates symptoms, evidence, likely causes, mitigation, and unknowns. |
+| A module needs cleanup without behavior changes. | "Use Forge refactor mode for this package." | `refactor` keeps cleanup bounded and behavior-preserving. |
+
+## How Teams Use Forge
+
+Teams usually adopt Forge as a shared engineering habit:
+
+- Backend engineers use it to keep service, data, retry, idempotency, rollback, and contract changes explicit.
+- Frontend engineers use it to scope UI behavior, state flow, accessibility, API assumptions, and regression validation.
+- Technical leads use it to preserve reviewable plans, task boundaries, and approval points across AI-assisted work.
+- OSS contributors use it to understand what kind of answer or change is expected before touching code.
+- AI-assisted engineering users use it to keep assistants inside evidence and visible lifecycle boundaries.
+
+The value is consistency: the same request shape works across different tools, while the repository remains the source of truth.
 
 ## Runtime Profiles
 
 Forge uses one controlling interaction flag:
 
-- `runtime.non_interactive: false` means local, interactive work. Forge may ask concise clarification questions for blocking decisions.
-- `runtime.non_interactive: true` means automation-safe behavior. Forge does not ask conversational questions; it emits structured statuses and required decisions.
+| Setting | Behavior |
+|---|---|
+| `runtime.non_interactive: false` | Local, interactive work. Forge may ask concise clarification questions for blocking decisions. |
+| `runtime.non_interactive: true` | Automation-safe behavior. Forge does not ask conversational questions; it emits structured statuses and required decisions. |
 
 `runtime.profile` is metadata:
 
-- `local` is the normal human-in-the-loop profile.
-- `automation` marks automation-safe usage.
-- `ci` is reserved metadata only; it does not add CI/CD or executor behavior.
+| Profile | Meaning |
+|---|---|
+| `local` | Normal human-in-the-loop profile. |
+| `automation` | Automation-safe usage. |
+| `ci` | Reserved metadata only; it does not add CI/CD or executor behavior. |
 
 High-risk decisions require human approval. In automation-safe flows, Forge uses `NEEDS_HUMAN_APPROVAL` for security/compliance, PII/secrets, financial correctness, destructive migration, production topology, contract authority, or rollback-risky decisions.
+
+In interactive local work, Forge should ask the smallest useful clarification question when a blocking decision is missing. In non-interactive work, Forge should stop with the appropriate status instead of inventing an answer.
+
+## Human Approval And Bounded Execution
+
+Forge separates "the assistant can explain or prepare this" from "the assistant may change the repository."
+
+Execution should be bounded by:
+
+- approved scope or task cards
+- concrete execution values
+- explicit do-not-change boundaries
+- known dependencies and stop conditions
+- validation expectations
+- rollback or manual follow-up notes when risk requires them
+
+`implementation` mode prepares that boundary. `execute` mode applies changes only inside it. If contract authority, security, financial correctness, destructive migration approval, production topology, or rollback-risky behavior is unresolved, Forge should stop or ask for human approval instead of continuing.
 
 ## Artifact Lifecycle
 
@@ -72,25 +191,21 @@ Lifecycle artifacts are small engineering handoff records stored under:
 .forge/context/generated/artifacts/
 ```
 
-Artifact types:
+| Artifact | Captures |
+|---|---|
+| ECP | Approved planning intent, decisions, blockers, and boundaries. |
+| Execution Contract | Implementation-ready task cards and stop conditions. |
+| Execute Result | Changed scope, validation status, rollback notes, and unchanged boundaries. |
+| Testing Result | Validation evidence, blockers, coverage gaps, and runtime-sensitive checks. |
+| Review Result | MR readiness, findings, reviewer focus, and safety notes. |
+| Incident | Diagnosis, mitigation, rollback possibility, and next checks. |
+| Refactor | Problem areas, safe improvements, risks, and out-of-scope redesigns. |
 
-- **ECP Artifact:** approved planning intent, decisions, blockers, and boundaries.
-- **Execution Contract Artifact:** implementation-ready task cards and stop conditions.
-- **Execute Result Artifact:** actual changed scope, validation status, rollback notes, and unchanged boundaries.
-- **Testing Result Artifact:** validation evidence, blockers, coverage gaps, and runtime-sensitive checks.
-- **Review Result Artifact:** MR readiness, findings, reviewer focus, and safety notes.
-- **Incident Artifact:** diagnosis, mitigation, rollback possibility, and next checks.
-- **Refactor Artifact:** problem areas, safe improvements, risks, and out-of-scope redesigns.
-
-Artifacts are bounded engineering records. They are not source of truth, workflow state, dependency graphs, execution triggers, or persistent AI memory. If an artifact conflicts with current repository evidence, repository evidence wins.
+Artifacts are bounded engineering records. They help with handoff, but they are not source of truth, workflow state, execution triggers, or persistent AI memory. If an artifact conflicts with current repository evidence, repository evidence wins.
 
 ## Shared Skills, Adapters, And Commands
 
-Forge shared skills are reusable invocation layers for Forge workflows. They reduce invocation friction across Claude, Codex, GitHub Copilot, Cursor, and future AI tools without moving cognition out of `.forge/context`.
-
-Skills are not adapters, runtime systems, cognition sources, orchestration units, memory stores, or execution platforms. They invoke Forge lifecycle behavior and keep repository intelligence in local `.forge/context`.
-
-Adapters are thin invocation bridges for AI tools.
+Forge shared skills are reusable invocation layers for Forge workflows. Adapters are thin tool-specific bridges. Together, they reduce invocation friction across Claude, Codex, GitHub Copilot, Cursor, and future AI tools while keeping repository intelligence in local `.forge/context`.
 
 Final architecture:
 
@@ -98,22 +213,17 @@ Final architecture:
 tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -> scoped repository evidence
 ```
 
-Responsibilities:
-- `.forge/context` is the cognition source of truth.
-- `runtime/skills/*/SKILL.md` is reusable Forge workflow behavior.
-- `runtime/adapters/*` is the tool-specific bridge.
-- `CLAUDE.md` and `AGENTS.md` are entrypoints.
+| Surface | Purpose |
+|---|---|
+| `.forge/context` | Cognition source of truth. |
+| `runtime/skills/*/SKILL.md` | Reusable Forge workflow behavior. |
+| `runtime/adapters/*` | Tool-specific bridges and loading notes. |
+| `CLAUDE.md` | Claude-compatible entrypoint. |
+| `AGENTS.md` | Codex-compatible entrypoint. |
+| `runtime/adapters/copilot/` | GitHub Copilot instructions and prompt wrappers. |
+| `runtime/adapters/shared/` | Portable command conventions. |
 
-Supported foundation surfaces:
-
-- `runtime/skills/<skill>/SKILL.md` for shared Forge workflow entrypoints.
-- `CLAUDE.md` for Claude-compatible entry.
-- `AGENTS.md` for Codex-compatible entry.
-- `runtime/adapters/copilot/` for GitHub Copilot prompt instructions and prompt wrappers.
-- `runtime/adapters/<tool>/` for tool-specific loading notes.
-- `runtime/adapters/shared/` for portable command conventions.
-
-Skills use a small operational structure: `Purpose`, `Load`, `Invocation`, `Focus`, `Output`, and `Do NOT`. They invoke Forge modes, but they do not duplicate mode semantics or repository intelligence.
+Skills use a small operational structure: `Purpose`, `Load`, `Invocation`, `Focus`, `Output`, and `Do NOT`.
 
 Shared skills are available for ask, planning, implementation, execute, testing, review, incident, and refactor:
 
@@ -126,15 +236,15 @@ Shared skills are available for ask, planning, implementation, execute, testing,
 - `forge-incident`
 - `forge-refactor`
 
-Invocation syntax may differ by tool. Claude can use `/forge-review` or `/forge-plan`. Codex can use `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review skill", depending on Codex surface/version. GitHub Copilot can use prompt files such as `/forge-review`, `/forge-plan`, or `/forge-ask` under `.github/prompts/`. In each case, behavior should resolve to the same shared skill.
+Invocation syntax may differ by tool:
 
-Claude slash command adapters are available under `runtime/adapters/claude/commands/` as thin wrappers around these shared skills.
+- Claude can use `/forge-review` or `/forge-plan`.
+- Codex can use `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review skill", depending on Codex surface/version.
+- GitHub Copilot can use prompt files such as `/forge-review`, `/forge-plan`, or `/forge-ask` under `.github/prompts/`.
 
-GitHub Copilot prompt wrappers are available under `runtime/adapters/copilot/prompts/` as thin wrappers around these shared skills. Intended repository integration uses `.github/copilot-instructions.md` and `.github/prompts/*.prompt.md`.
+In each case, behavior should resolve to the same shared skill. Claude command adapters live under `runtime/adapters/claude/commands/`; Copilot prompt wrappers live under `runtime/adapters/copilot/prompts/`; Codex remains skills-first through `AGENTS.md`.
 
-Codex should remain skills-first through `AGENTS.md`; do not create a parallel Codex command-wrapper layer unless the Codex runtime explicitly requires it later.
-
-The same skill behaves differently in a fintech service, frontend app, or infrastructure module because local `.forge/context` and repository evidence differ. Skill and adapter files must never become source-of-truth context.
+The same skill behaves differently in a fintech service, frontend app, or infrastructure module because local `.forge/context` and repository evidence differ.
 
 ## Governance And Safety
 
@@ -164,15 +274,6 @@ Forge is designed for scoped loading:
 - Avoid loading all of `.forge/context` by default.
 
 This keeps context useful, reviewable, and resistant to stale or speculative claims.
-
-## Example Workflow
-
-1. `ask`: "How does this service currently publish transaction events?"
-2. `planning`: produce an ECP for changing event retry behavior.
-3. `implementation`: turn the approved plan into task cards with concrete execution values.
-4. `execute`: implement the approved tasks and report changed files, validation, rollback, and reviewer focus.
-5. `testing`: run or design structured validation for retry, DLQ, replay, and regression coverage.
-6. `review`: assess MR readiness, correctness, safety, validation honesty, and remaining risk.
 
 ## Current Status
 
@@ -218,8 +319,6 @@ Forge intentionally does not provide:
 - broad context loading as a default behavior
 - adapter-owned repository cognition
 - tool-specific orchestration or command chaining
-
-Future tooling may validate or assist the lifecycle, but it must preserve these boundaries.
 
 ## Contributing And Evolution
 
