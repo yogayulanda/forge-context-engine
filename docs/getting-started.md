@@ -1,0 +1,155 @@
+# Getting Started
+
+Use this guide when you want the first successful Forge setup and invocation in a repository.
+
+Goal: within 10-15 minutes, a new engineer should be able to install the runtime template, invoke one mode, and understand the next workflow step.
+
+## What You Need
+
+- A repository with code or docs that Forge can inspect.
+- The Forge `runtime/` directory from this repository.
+- At least one supported AI tool surface:
+  - Claude with `CLAUDE.md`
+  - Codex with `AGENTS.md`
+  - GitHub Copilot with prompt files and instructions
+
+Forge does not require a server, daemon, workflow engine, scheduler, or separate memory store.
+
+## Minimal Setup Flow
+
+1. Copy the runtime template into the target repository.
+
+   ```text
+   forge-context-engine/runtime/.forge -> <target-repo>/.forge
+   forge-context-engine/runtime/skills -> <target-repo>/skills
+   forge-context-engine/runtime/adapters -> <target-repo>/adapters
+   forge-context-engine/runtime/CLAUDE.md -> <target-repo>/CLAUDE.md
+   forge-context-engine/runtime/AGENTS.md -> <target-repo>/AGENTS.md
+   ```
+
+2. Open `<target-repo>/.forge/forge.config.yaml`.
+
+   Check:
+   - `runtime.profile: local` for normal interactive use.
+   - `runtime.non_interactive: false` for local human-in-the-loop work.
+   - `layers_enabled` only lists layers that exist in the repository.
+   - `systems` reflects actual repo units, or stays empty until initialized from evidence.
+
+3. Keep `.forge/context` repository-first.
+
+   Start from runtime skeleton files, then populate repo facts from code, docs, ADRs, and human confirmations. Do not copy broad assumptions into context.
+
+4. Keep tool entrypoints thin.
+
+   `CLAUDE.md`, `AGENTS.md`, and files under `adapters/` should point to Forge skills and `.forge/context`. They should not store repo-specific cognition.
+
+5. Make one scoped first request.
+
+   ```text
+   Use Forge ask mode to explain how this service handles retries. Cite the repository evidence and list unknowns.
+   ```
+
+## CLAUDE.md And AGENTS.md Usage
+
+Use `CLAUDE.md` for Claude-compatible assistants. It tells the assistant to:
+
+- read `.forge/forge.config.yaml`
+- read the routing manifest and conventions
+- read the requested mode file
+- load only task-relevant context
+- keep outputs concise and mode-aligned
+
+Use `AGENTS.md` for Codex-compatible assistants. It maps natural prompts such as `Use Forge review mode` to the shared Forge skill for that mode.
+
+Both files are entrypoints only. `.forge/context` remains the source of truth.
+
+## Supported Tool Overview
+
+| Tool | Common invocation | Runtime path |
+|---|---|---|
+| Claude | `/forge-plan`, `/forge-review`, or natural language | `CLAUDE.md`, `skills/`, `adapters/claude/` |
+| Codex | `$forge-review`, `/skill forge-review`, or natural language | `AGENTS.md`, `skills/`, `adapters/codex/` |
+| GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask` prompt files | `adapters/copilot/`, `.github/prompts/` when materialized |
+
+Tool syntax may differ. The expected behavior should resolve to:
+
+```text
+tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -> scoped repository evidence
+```
+
+## First Successful Invocation
+
+Start with `ask` mode because it does not mutate files or require an approved plan.
+
+Good first request:
+
+```text
+Use Forge ask mode to explain the request path for creating an order.
+Separate repository evidence, inferred assumptions, and unknowns.
+```
+
+Expected output:
+
+- short explanation of the current flow
+- file or code references when available
+- clear unknowns instead of guesses
+- no change plan unless you ask for planning
+- no code modification
+
+If the answer says evidence is missing, that is a successful Forge outcome. It means the assistant stayed inside repository-first truth.
+
+## Expected First Workflow
+
+A first real change usually looks like this:
+
+1. `ask`: understand current behavior.
+2. `planning`: describe the change, risks, validation, rollback, and unknowns.
+3. `implementation`: produce executable task cards and stop conditions.
+4. `execute`: apply the approved task cards only.
+5. `testing`: validate or report validation blockers.
+6. `review`: assess MR readiness.
+
+Small, low-risk edits can skip `planning` when the scope is obvious. Risky, ambiguous, contract-heavy, or production-sensitive work should not skip planning.
+
+Next, read [First Workflow](first-workflow.md) to see this path end to end, then use [Mode Selection](mode-selection.md) when you need to choose the smallest fitting lifecycle mode.
+
+## Common Beginner Mistakes
+
+| Mistake | Better approach |
+|---|---|
+| Asking `execute` to start before scope or values are clear. | Use `planning` or `implementation` first. |
+| Loading all of `.forge/context` for every question. | Load the requested mode and task-relevant context only. |
+| Treating generated artifacts as source of truth. | Use artifacts as handoff records; current repo evidence wins. |
+| Putting repo facts in `CLAUDE.md`, `AGENTS.md`, or adapters. | Put repo cognition in `.forge/context`. |
+| Using `incident` as a redesign request. | Diagnose first; hand off approved remediation to `execute`. |
+| Treating Copilot, Claude, or Codex behavior as separate Forge versions. | Keep the tool surface thin and resolve to shared skills. |
+
+## Lightweight Setup Example
+
+For a backend service:
+
+```text
+1. Copy runtime files.
+2. Keep `backend` and `testing` in `layers_enabled`.
+3. Add one system entry for the service after verifying repo evidence.
+4. Ask: "Use Forge ask mode to explain retry and idempotency behavior."
+5. If a change is needed, ask: "Use Forge planning mode for improving retry behavior without changing the public contract."
+```
+
+For an OSS contributor:
+
+```text
+1. Read README and docs/mode-selection.md.
+2. Ask `ask` mode to understand the affected area.
+3. Use `planning` for non-trivial changes.
+4. Keep the MR description aligned with Forge validation and review output.
+```
+
+## Setup Checklist
+
+- `.forge/forge.config.yaml` exists.
+- `.forge/context/modes/` contains the visible lifecycle modes.
+- `skills/` contains the shared Forge skills.
+- `CLAUDE.md` and/or `AGENTS.md` point to Forge instead of duplicating repo facts.
+- First `ask` request returns evidence, inferences, and unknowns.
+- No adapter implies autonomous execution, orchestration, or hidden memory.

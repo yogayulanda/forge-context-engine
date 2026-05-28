@@ -11,7 +11,7 @@ Codex is skills-first for Forge usage. `AGENTS.md` is the repository-native entr
 - "Use Forge incident mode for this bug."
 - "Use Forge refactor mode for this cleanup."
 
-Codex invocation may be `$forge-review`, `/skill forge-review`, or a natural prompt such as "Use Forge review skill", depending on Codex surface or version. Do not create a parallel Codex command-wrapper layer unless the Codex runtime explicitly requires it later.
+Codex invocation may be `$forge-review`, `/skill forge-review`, or a natural prompt such as "Use Forge review mode", depending on Codex surface or version. Do not create a parallel Codex command-wrapper layer unless the Codex runtime explicitly requires it later.
 
 ## Loading Contract
 

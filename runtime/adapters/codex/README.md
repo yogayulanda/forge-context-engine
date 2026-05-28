@@ -26,7 +26,7 @@ Codex should treat these as Forge skill entrypoints:
 | `Use Forge execute mode` | `forge-execute` |
 | `Use Forge testing mode` | `forge-test` |
 | `Use Forge review mode` | `forge-review` |
-| `Use Forge incident workflow` | `forge-incident` |
+| `Use Forge incident mode` | `forge-incident` |
 | `Use Forge refactor mode` | `forge-refactor` |
 
 ## Command Use
@@ -35,7 +35,7 @@ Codex-facing invocation may use names such as:
 
 - `$forge-review`
 - `/skill forge-review`
-- natural prompts such as "Use Forge review skill"
+- natural prompts such as "Use Forge review mode"
 
 Command behavior must come from shared skills, local `.forge/context`, and current repository evidence, not from Codex-specific adapter files.
 

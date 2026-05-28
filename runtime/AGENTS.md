@@ -6,7 +6,7 @@ Codex is skills-first for Forge usage. This file maps Codex prompts to shared Fo
 
 ## Natural Invocation
 
-When the user says "Use Forge <mode> mode/workflow", resolve the request to the matching shared skill under `runtime/skills/<skill>/SKILL.md`, then enter that Forge mode:
+When the user says "Use Forge <mode> mode", resolve the request to the matching shared skill under `runtime/skills/<skill>/SKILL.md`, then enter that Forge mode:
 
 | User wording | Shared skill | Use for |
 |---|---|---|
@@ -19,7 +19,7 @@ When the user says "Use Forge <mode> mode/workflow", resolve the request to the 
 | `incident` | `forge-incident` | Diagnosis and mitigation |
 | `refactor` | `forge-refactor` | Bounded technical debt work |
 
-Codex invocation syntax may vary by surface or version. Accept `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review skill" when they resolve to the same shared skill.
+Codex invocation syntax may vary by surface or version. Accept `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review mode" when they resolve to the same shared skill.
 
 ## Load
 

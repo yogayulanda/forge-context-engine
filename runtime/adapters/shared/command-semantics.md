@@ -2,7 +2,7 @@
 
 Commands are lightweight tool entrypoints. They invoke shared Forge skills; they do not replace Forge.
 
-Natural language such as "Use Forge review workflow" or "Use Forge planning mode" is equivalent to invoking the matching shared skill, such as `forge-review` or `forge-plan`.
+Natural language such as "Use Forge review mode" or "Use Forge planning mode" is equivalent to invoking the matching shared skill, such as `forge-review` or `forge-plan`.
 
 Final architecture:
 
