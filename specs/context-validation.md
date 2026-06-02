@@ -273,7 +273,7 @@ Use this as:
 | H1 | `01-core/*` files ≤ `size_budget.core_lines` (default 200) | warning | yes |
 | H2 | `layers/*` content files ≤ `size_budget.layer_lines` (default 150) | warning | yes |
 | H3 | `systems/*` files ≤ `size_budget.system_lines` (default 200) | warning | yes |
-| H4 | `modes/*` files ≤ `size_budget.mode_lines` (default 40) | warning | yes |
+| H4 | `modes/*` files ≤ `size_budget.mode_lines` (default 50) — budget includes required YAML front-matter (~11 lines); operational notes may use the remaining line budget | warning | yes |
 | H5 | Files with `updated` older than `governance.staleness_days` (default 90) → flagged for review | info | yes |
 | H6 | Files exceeding budget should be split into sub-files, not truncated | info | manual |
 
@@ -392,7 +392,7 @@ Recommended frequency:
 AI agent can be asked to run validation by reading all files and checking rules. Prompt:
 
 ```
-Read all files under .forge/context/ and validate against the rules in 
+Read all files under .forge/context/ and validate against the rules in
 specs/VALIDATION-SPEC.md. Report: rule ID, pass/fail, file path, details.
 ```
 
@@ -473,7 +473,7 @@ SUMMARY:
 Some rules depend on others passing first:
 
 ```
-A1 (config exists) 
+A1 (config exists)
   └── I1–I7 (config validity)
        └── A7 (layers match config)
        └── A8 (systems match config)
@@ -719,7 +719,7 @@ SIZE & STALENESS
 [ ] H1  core ≤ 200 lines
 [ ] H2  layers ≤ 150 lines
 [ ] H3  systems ≤ 200 lines
-[ ] H4  modes ≤ 40 lines
+[ ] H4  modes ≤ 50 lines (including front-matter)
 [ ] H5  stale files flagged
 [ ] H6  over-budget files split
 

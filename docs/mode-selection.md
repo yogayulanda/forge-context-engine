@@ -100,6 +100,26 @@ When the boundary is unclear, go back to `planning` or `implementation`.
 | "Can the assistant fix the review findings?" | `execute` with the approved finding scope |
 | "Can we clean this package while preserving behavior?" | `refactor` |
 | "Can we skip straight to execute?" | Only for clear, low-risk, bounded changes |
+| "Review returned NEEDS_CHANGES. What now?" | `implementation` for fix task cards on `CRITICAL`/`MAJOR` findings; `execute` directly for bounded `MINOR` fixes with human-named scope |
+| "Can I go back from review to execute?" | Yes — human approves the fix scope, then `execute` with that scoped request |
+
+## Review Fix Path
+
+When `forge-review` returns `NEEDS_CHANGES`, the fix path is:
+
+For `CRITICAL` or `MAJOR` findings:
+
+1. Use `implementation` to produce fix task cards for the finding scope.
+2. Human approves the task cards.
+3. Use `execute` for the approved task cards.
+4. Re-use `review` to verify the findings are resolved.
+
+For `MINOR` findings:
+
+- Human can directly request `execute` with the precise fix scope named.
+- Review will verify residual findings when re-invoked.
+
+Do not re-run `execute` on the original task cards to fix review findings without the human naming the fix scope. Review findings do not automatically become execute tasks.
 
 ## Correct Mode Examples
 

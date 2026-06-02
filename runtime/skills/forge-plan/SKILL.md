@@ -17,3 +17,4 @@ Return the planning-mode result shape: goal, evidence, constraints, proposed app
 
 ## Do NOT
 Do not produce detailed executable task cards, modify code, approve HIGH-risk decisions, broad-load context, invent contracts, or add orchestration/runtime behavior.
+Do not imply the planning output is approved or ready for implementation. Output is `proposed` only; flag it as awaiting human approval before implementation proceeds.

@@ -16,7 +16,7 @@ layers_enabled:
 systems: []
 
 loading:
-  default_mode: implementation  # ask | planning | implementation | execute | testing | review | incident | refactor
+  default_mode: ask  # ask is the safe starting mode; override for automated pipelines. ask | planning | implementation | execute | testing | review | incident | refactor
   respect_size_budget: true
 
 runtime:
@@ -28,7 +28,7 @@ size_budget:
   core_lines: 200
   layer_lines: 150
   system_lines: 200
-  mode_lines: 40
+  mode_lines: 50
 
 governance:
   staleness_days: 90

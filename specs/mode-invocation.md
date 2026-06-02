@@ -65,7 +65,7 @@ Canonical lifecycle:
 5. Mode file read from `.forge/context/modes/<mode>.md`.
 6. `include`, `on_demand`, `exclude`, `token_budget`, and `notes` parsed.
 7. Scoped context loaded according to the mode delta.
-8. Task executed according to mode behavior and runtime interaction behavior.
+8. Task executed according to mode behavior and runtime interaction behavior. For planning, human approval of the ECP is required before implementation proceeds. For implementation, human approval of the Execution Contract is required before execute proceeds.
 9. Decision risk and authority applied before any automation-selected default.
 10. Runtime/tooling prerequisites checked before validation or testing commands when such commands depend on tooling/infra.
 11. Validation evidence separated from validation gaps, blocked commands, and manual follow-up.
@@ -78,13 +78,24 @@ Canonical lifecycle:
 
 Mode invocation is successful only when the assistant can explain what mattered for the task, what evidence was missing, and whether the selected mode was enough. Normal interactive output should not expose full runtime/bootstrap detail.
 
-Recommended workflow:
+Canonical workflow:
 
 ```
-planning -> implementation -> execute -> testing -> review
+forge-plan
+→ human approval (ECP: proposed → approved)
+→ forge-implement
+→ human approval (Execution Contract: proposed → approved)
+→ forge-execute
+→ optional forge-test
+→ forge-review
+→ scoped fix loop when review returns NEEDS_CHANGES
 ```
 
-Ask, incident, and refactor are entry modes, not mandatory lifecycle stages. Small/simple tasks may skip planning. Implementation may operate directly on simple requests. Execute may operate on approved task subsets. Testing may operate independently for test-only requests.
+Each transition between planning output and implementation, and between implementation task cards and execution, requires explicit human approval. Assistants must not proceed to the next mode without that signal.
+
+Ask, incident, and refactor are entry modes, not mandatory lifecycle stages. Small, well-understood changes may skip planning. Execution may operate on approved task subsets. Testing may operate independently for test-only requests.
+
+See `docs/workflow.md` for the narrative walkthrough, approval gate UX, and post-review fix loop.
 
 ---
 

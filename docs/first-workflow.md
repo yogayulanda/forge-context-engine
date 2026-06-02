@@ -57,7 +57,23 @@ State after this step:
 Planning
 ```
 
-The plan may be persisted as an ECP artifact if continuity helps, but the artifact is only a handoff record.
+The plan may be persisted as an ECP artifact if continuity helps, but the artifact is only a handoff record. A newly produced ECP has `status: proposed` until the human explicitly approves it.
+
+## Human Approval — Plan
+
+After reviewing the planning output, approve explicitly before continuing:
+
+```text
+"Approved. Use Forge implementation mode for the retry plan."
+```
+
+The assistant must not proceed to implementation until this signal is given. Reference the ECP artifact ID in the next request if continuity is useful.
+
+State after this step:
+
+```text
+Planning → Approved
+```
 
 ## Implementation Breakdown
 
@@ -78,15 +94,23 @@ Expected `implementation` output:
 - test expectations
 - stop conditions
 
-If retry/DLQ contract, idempotency behavior, or runtime config is unclear, Forge should return `NEEDS_CONFIRMATION` instead of pretending the task is ready.
+If retry/DLQ contract, idempotency behavior, or runtime config is unclear, Forge should return `NEEDS_CONFIRMATION` instead of pretending the task is ready. A newly produced Execution Contract has `status: proposed` until the human explicitly approves it.
+
+## Human Approval — Task Cards
+
+After reviewing the implementation task cards, approve explicitly before execution:
+
+```text
+"Approved. Use Forge execute mode for task cards IMP-001 and IMP-002."
+```
+
+The assistant must not execute code changes until this signal is given.
 
 State after this step:
 
 ```text
-Ready
+Implementation → Approved
 ```
-
-Still no code changes.
 
 ## Execute
 
@@ -161,21 +185,52 @@ Expected `review` output:
 State after this step:
 
 ```text
-Reviewing -> Completed
+Reviewing -> Completed (if APPROVED)
 ```
 
 Merge, release, deploy, and production rollout remain outside Forge.
+
+## After Review: Fix Loop
+
+If review returns `NEEDS_CHANGES`:
+
+For `CRITICAL` or `MAJOR` findings:
+
+```text
+"Use Forge implementation mode for fixing [finding description].
+Scope: only the files identified in the review finding."
+```
+
+Get implementation task cards. Human approves. Execute. Then re-review.
+
+For `MINOR` findings:
+
+```text
+"Use Forge execute mode to fix [finding description] in [file].
+Do not change any other files."
+```
+
+Review will verify prior findings are resolved when re-invoked. Review findings do not automatically become execute tasks; the human must name the fix scope.
+
+State after fix loop completes:
+
+```text
+Reviewing -> Completed
+```
 
 ## What Changes Through The Lifecycle
 
 | Step | Main output | Mutation allowed? |
 |---|---|---|
 | `ask` | Evidence-based understanding | No |
-| `planning` | Engineering change plan | No |
-| `implementation` | Execution task cards and stop conditions | No |
+| `planning` | ECP (`status: proposed`) | No |
+| human approval — plan | ECP transitions to `approved` | N/A |
+| `implementation` | Execution Contract (`status: proposed`) | No |
+| human approval — task cards | Execution Contract transitions to `approved` | N/A |
 | `execute` | Bounded repository changes and validation report | Yes, inside approved scope |
 | `testing` | Structured validation result | Maybe, if test changes are the scoped task |
 | `review` | MR readiness and findings | No, unless separately asked to execute fixes |
+| fix loop | Bounded code fix | Yes, inside approved fix scope |
 
 ## Good Workflow Signals
 

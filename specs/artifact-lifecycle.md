@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Artifact Lifecycle Specification |
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2026-05-25 |
 | Status | `decision` |
 | Scope | Minimal lifecycle artifacts for mode continuity |
@@ -109,6 +109,20 @@ Minimum contents:
 - Linked systems/layers.
 - Revision timestamp or reference.
 
+**ECP status vocabulary:**
+
+| Status | Meaning |
+|---|---|
+| `proposed` | Planning output produced; awaiting human review and approval |
+| `approved` | Human has explicitly accepted this as the basis for implementation |
+| `superseded` | Replaced by a newer revision |
+| `rejected` | Human declined this direction |
+
+Rules:
+- A newly produced ECP artifact must use `status: proposed`.
+- Only the human may transition an ECP to `approved`.
+- An AI assistant must not self-promote an ECP from `proposed` to `approved`.
+
 ### 4.2 Execution Contract Artifact
 
 Produced by: implementation mode.
@@ -124,6 +138,20 @@ Minimum contents:
 - Do-not-change boundaries.
 - Acceptance criteria.
 - Derived-from ECP reference.
+
+**Execution Contract status vocabulary:**
+
+| Status | Meaning |
+|---|---|
+| `proposed` | Task cards produced by implementation mode; awaiting human review |
+| `approved` | Human has confirmed these task cards are safe to execute |
+| `blocked` | Blockers remain unresolved; not execution-ready |
+| `superseded` | Replaced by a revised contract |
+
+Rules:
+- A newly produced Execution Contract must use `status: proposed`.
+- Only the human may transition it to `approved`.
+- An AI assistant must not self-promote from `proposed` to `approved`.
 
 ### 4.3 Execute Result Artifact
 
@@ -233,6 +261,8 @@ Artifacts are lifecycle helpers with these semantics:
 - Discardable: deleting an artifact must not remove repository truth.
 - Bounded: no long conversational dumps or broad historical summaries.
 - Explicitly non-authoritative over repository evidence.
+- Producing an artifact does not imply approval. A newly produced ECP or Execution Contract is `proposed` until the human explicitly approves it.
+- Artifact status promotion from `proposed` to `approved` requires explicit human confirmation; it is not a side-effect of artifact creation or assistant output.
 
 Revision references may use `r1`, `r2`, or date-based references. Revisions should preserve the reason for change when it affects execution or review continuity.
 

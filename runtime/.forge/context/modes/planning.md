@@ -24,12 +24,12 @@ updated: 2026-05-28
 ## token_budget
 4000
 ## notes
+- Output status is `proposed`; await explicit human approval before implementation proceeds.
 - Output an ECP that reads like an engineering work plan, not an RFC.
-- When persistence helps continuity, write or reference an ECP Artifact with approved intent, decisions, blockers, boundaries, linked systems/layers, and revision reference.
-- Prefer sections such as: `Tujuan perubahan`, `Dampak teknis`, `Tahapan kerja`, `Risiko`, `Validasi`, `Rollback`, `Yang sengaja tidak diubah`, `Recommended next action`.
+- When persistence helps continuity, write or reference an ECP Artifact with `status: proposed`, decisions, blockers, boundaries, linked systems/layers, and revision reference.
+- Prefer the section structure from `specs/mode-invocation.md` §3.2; adapt sections to evidence: backend data/contracts, frontend UX/state/accessibility, infrastructure deployment/reliability/security.
 - Keep paragraphs short and operational; highlight blockers and decisions before detail.
-- Do not produce detailed executable coding tasks or modify code; approved phases hand off to implementation mode.
-- Adapt sections to evidence: backend data/contracts, frontend UX/state/accessibility, infrastructure deployment/reliability/security.
+- Do not produce detailed executable coding tasks or modify code; hand off to implementation mode only after explicit human approval.
 - Ask unresolved architecture/governance decisions early; in non-interactive repos emit a concise blocked plan.
 - Redact secret values and report secret discoveries only as masked security findings.
 - Separate evidence, inference, and unknowns; do not invent topology, ownership, contracts, deployability, or runtime relationships from imports alone.
