@@ -42,6 +42,17 @@ Index and routing map for the entire context system. Not a knowledge source.
 - `01-core/principles.md` *(optional in Minimal tier)*
 - `01-core/constraints.md` *(optional in Minimal tier)*
 
+## Scoped Convention Files (On Demand)
+
+Load based on task type. Do not load all for every task.
+
+| File | Load when |
+|---|---|
+| `00-meta/conventions-evidence.md` | Evidence, drift, constraint extraction, table role classification |
+| `00-meta/conventions-validation.md` | Validation statuses, prerequisite checks, testing/review conventions |
+| `00-meta/conventions-risk.md` | Governance, risk levels, secret safety, approval-sensitive decisions |
+| `00-meta/conventions-language.md` | Language consistency, naming, reference stability, engineering style |
+
 ## Selective (Per Mode)
 
 | Zone | Loaded by |

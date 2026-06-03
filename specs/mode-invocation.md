@@ -436,164 +436,52 @@ Raw secrets must not be copied into `.forge/context`, inferred knowledge, unknow
 
 ## 6. Per-Mode Operational Expectations
 
-### 6.1 Ask
+See `docs/workflow.md` for the canonical workflow narrative, approval gate UX, and post-review fix loop. See `specs/artifact-lifecycle.md` for artifact status vocabulary. See `runtime/.forge/context/00-meta/conventions-validation.md` for validation status semantics and output section structure.
 
-Ask mode answers lightweight repository-understanding questions.
+### Mode Summary
 
-Expected behavior:
-- Explain current code, flow, ownership, dependencies, behavior, and loaded Forge context from evidence.
-- Keep answers concise and scoped.
-- Separate confirmed facts, inference, assumptions, and unknowns.
-- Load only the minimum task-relevant context.
-- Report `CONTEXT_BUDGET_LIMITED` when safe answering requires more evidence than the normal scoped budget.
-- Report `DRIFT_DETECTED` or `DRIFT_RISK` when stale context/artifacts affect the answer.
-- Treat cross-repo behavior as unknown unless directly evidenced.
-- No planning, mutation, redesign, or broad audit.
+| Mode | Purpose | Produces | Approval required? |
+|---|---|---|---|
+| `ask` | Lightweight repo understanding | Answers from evidence | No |
+| `planning` | Strategic ECP reasoning | ECP (`status: proposed`) | Before implementation |
+| `implementation` | Human-reviewable task decomposition | Execution Contract (`status: proposed`) | Before execute |
+| `execute` | Approved repository modification | Code changes + result report | After contract approval |
+| `testing` | Structured validation depth | Testing Result artifact | No (independent) |
+| `review` | Correctness and risk assessment | Review Result artifact | No (independent) |
+| `incident` | Issue and incident diagnosis | Incident artifact | No |
+| `refactor` | Conservative behavior-preserving cleanup | Refactor artifact | Human stop for HIGH risk |
 
-Interaction behavior:
-- Interactive default: ask for clarification only when the question cannot be answered safely as scoped.
-- Non-interactive: emit missing evidence or ambiguity instead of guessing.
+### Approval Gates
 
-### 6.2 Planning
+Both gates are required and cannot be skipped. See `docs/workflow.md` for exact approval signal wording.
 
-Planning mode produces an Engineering Change Plan (ECP) by default.
+- **Gate 1**: Human must explicitly approve an ECP before `forge-implement` treats it as approved. ECP artifact begins as `status: proposed`.
+- **Gate 2**: Human must explicitly approve an Execution Contract before `forge-execute` runs. Execution Contract begins as `status: proposed`.
 
-Expected behavior:
-- Strategic engineering planning.
-- Produce an ECP artifact when persistence is useful for approved intent, confirmed decisions, blockers, boundaries, linked systems/layers, and revision reference.
-- Architecture and runtime reasoning.
-- Implementation phases.
-- Risk and impact analysis.
-- Dependency, contract, data, and topology checks when evidenced.
-- Validation and rollback planning.
-- WHY and IMPACT explanation.
-- No implementation code by default.
-- No detailed executable coding tasks by default.
-- Safe proposed defaults for low-risk operational choices.
-- Escalation only for blocking decisions.
-- Secret findings redacted and treated as security findings.
-- Smarter scoped loading with `CONTEXT_BUDGET_LIMITED` when planning cannot proceed safely within normal scope.
-- Drift checks across decisions, assumptions, generated artifacts, and current repository evidence.
-- Cross-repo ownership/contract uncertainty surfaced without orchestration or assumed behavior.
-- Concise governance risk signals for PII/secrets, financial correctness, idempotency, retry/replay, rollback, transaction consistency, auditability, observability, and blast radius.
-- Short paragraphs, operational bullets, and highlighted blockers.
+`READY_FOR_EXECUTION` in implementation output is a readiness signal, not autonomous permission to execute.
 
-Planning mode must stay layer-adaptive. It must not force backend-only, deployability, ownership, contract, or runtime topology assumptions without evidence.
+### Mode Boundaries
 
-Interaction behavior:
-- Interactive default: ask unresolved architecture or governance decisions early.
-- Non-interactive: emit a planning blocked report and continue only with allowed proposed defaults.
+- `ask` does not plan, mutate, redesign, or run broad audits.
+- `planning` produces strategic ECP with phases; it does not emit detailed executable coding tasks.
+- `implementation` produces human-reviewable task cards; it does not modify code directly.
+- `execute` implements approved tasks; it does not redesign architecture or absorb testing/review responsibilities.
+- `testing` owns validation depth, coverage, and test-focused changes; it does not replace review mode.
+- `review` assesses correctness and risk; it does not replace testing or produce implementation task lists.
+- `incident` diagnoses symptoms to root cause; it does not redesign architecture or topology.
+- `refactor` improves code conservatively within a bounded scope; it preserves behavior and does not hide architecture changes.
 
-### 6.3 Implementation
+### Task Card Requirements
 
-Implementation mode converts an approved ECP/phases or a simple request into a human-reviewable execution plan.
+Implementation `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` output must use task cards. Each card must include: Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
 
-Expected behavior:
-- Clarification phase before execution-ready phase when blocking decisions exist.
-- Produce an Execution Contract artifact when persistence is useful for readiness status, task cards, dependency order, stop conditions, do-not-change boundaries, acceptance criteria, and ECP reference.
-- Explicit executable engineering task cards only after blockers are resolved.
-- Likely files/components impacted after blockers are resolved.
-- Dependency ordering after blockers are resolved.
-- Migration/runtime sequencing when relevant after blockers are resolved.
-- Developer-friendly, bounded task structure after blockers are resolved.
-- Required readiness status: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION`.
-- Practical blocker names and concrete execution values.
-- Load only task-relevant layers, systems, decisions, and inferred knowledge.
-- Avoid speculative redesign.
-- Keep proposed defaults visible and unconfirmed.
-- Do not copy raw secrets from existing config, env, logs, fixtures, or docs into code or context.
-- Do not directly modify code.
-- Report `CONTEXT_BUDGET_LIMITED` instead of producing execution-ready tasks when required evidence is outside normal scoped context.
-- Stop or request approval when drift makes the approved plan/artifact unsafe to execute.
-- Do not create tasks that assume external repo behavior or require automatic multi-repo changes.
-- HIGH-risk fintech governance decisions use `NEEDS_HUMAN_APPROVAL`.
+Task cards are an output discipline only — not DAG, scheduler, agent, workflow engine, or Jira semantics.
 
-Implementation mode must not redesign architecture again, repeat full ECP reasoning, or silently redefine approved plans. It creates the human-reviewable execution boundary before code changes.
+### Execute Output Order
 
-Interaction behavior:
-- Interactive default: if blocking decisions affect runtime behavior, contracts/schema, DLQ/replay, idempotency, security/compliance, ownership/governance, destructive boundaries, acceptance criteria, or rollback, stop before the final breakdown and output `NEEDS_CONFIRMATION`.
-- Interactive confirmation must use CLI-friendly numbered choices: blocker title, why it matters, Recommended option with reason, Alternative option with tradeoff, and reply instructions (`1 = Recommended`, `2 = Alternative`, `custom = provide explicit value`).
-- For multiple blockers, list `Blocker 1`, `Blocker 2`, etc. with one-line impact, then provide the smallest set of shared or per-blocker choices needed to unblock execution.
-- Use concrete wording such as `Format event Kafka yang akan diterima service` or `Nilai runtime/config yang wajib dipastikan`; avoid abstract labels such as `Inbound contract`.
-- Use 2 options by default; use a third option only for major architecture tradeoffs.
-- Interactive implementation mode must wait for human answers before emitting final executable tasks, allowed file modifications, acceptance criteria, or executor instructions.
-- Non-interactive: do not ask questions; emit `NEEDS_CONFIRMATION` when required execution values are missing, or `READY_FOR_PARTIAL_EXECUTION` only when safe proposed-default work can proceed.
-
-Readiness semantics:
-- `NEEDS_CONFIRMATION`: blocking decisions or required execution values are missing.
-- `READY_FOR_PARTIAL_EXECUTION`: only safe scaffolding or proposed-default work can proceed; production/final behavior remains blocked.
-- `READY_FOR_EXECUTION`: all required execution values are concrete enough for lower-reasoning execution.
-- For execution-sensitive changes, include concrete execution values before `READY_FOR_EXECUTION`.
-- Human-facing output may label this as `Nilai eksekusi yang dipakai`.
-- Do not use `READY_FOR_EXECUTION` when values are assumed, provided later, unknown, missing contract details, or production behavior remains pending confirmation.
-
-Task-card semantics:
-- `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` output must use task cards, not long document-style breakdowns.
-- Each task card must include: Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
-- Task IDs use stable execution labels such as `IMP-001`; a repo/domain prefix such as `TRH-KAFKA-001` is allowed when obvious from approved context.
-- Priority values are `P0` critical/blocking foundation, `P1` core implementation, `P2` supporting/test/docs, and `P3` optional/follow-up.
-- Impact values are `HIGH` runtime/data/contract-sensitive, `MEDIUM` behavior/config/test-impacting, and `LOW` docs/local cleanup/minor support.
-- Scope values should use operational areas such as runtime, transport, service, domain, persistence, testing, docs/config, or the closest evidenced repository term.
-- `Depends On` must list task IDs or `none`; multi-step work must also include a short dependency order section using task IDs.
-- `Parallel Safe` must be `yes`, `no`, or `after dependencies`, with a short reason when risk is not obvious.
-- `Do Not Change` guardrails are required for risky runtime, data, contract, security, or broad refactor boundaries.
-- `Acceptance Criteria` and `Test Expectation` must be concrete enough for a lower-reasoning executor to implement and for MR review to verify.
-- Task cards are an output discipline only. They do not define a DAG engine, scheduler, agent system, workflow engine, Jira integration, story points, or tooling.
-
-Preferred implementation output order:
-1. Status.
-2. `Nilai eksekusi yang dipakai` only when concrete values exist.
-3. `Yang sengaja tidak diubah`.
-4. Task Cards.
-5. Dependency Order.
-6. Parallelization Notes.
-7. Ready For Execute Checklist.
-8. What executor must stop on.
-
-Blocked behavior:
-- If `runtime.non_interactive=false` and blockers exist, ask confirmation first and do not emit final task cards.
-- If `runtime.non_interactive=true` and blockers exist, emit a `NEEDS_CONFIRMATION` report and do not emit final task cards as execution-ready.
-- Final executable task cards are invalid while critical blockers remain unresolved.
-
-### 6.4 Execute
-
-Execute mode performs actual repository modifications.
-
-Expected behavior:
-- Implement approved implementation tasks or approved task subsets.
-- Produce an Execute Result artifact when persistence is useful for execution result, changed file groups, validation status, manual follow-up, rollback notes, and unchanged boundaries.
-- Preserve repository conventions and existing architecture/runtime constraints.
-- Keep changes scoped and minimal; preserve existing formatting and line endings, avoid file-wide rewrites, and do not perform unrelated cleanup.
-- Load only execution-relevant context.
-- Preserve proposed vs confirmed boundaries.
-- Report execution result, implemented changes, changed files, validation performed, unvalidated scope, manual checks, rollback, intentionally unchanged scope, reviewer focus, hidden-change checks, and one concise recommended next action.
-- `Execution Result` must use one clear status: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED`.
-- Before validation, check required runtime/tooling prerequisites for the commands being attempted.
-- Use `SUCCESS` only when reliable validation evidence exists; otherwise use `PARTIAL_SUCCESS`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED` as appropriate.
-- `File yang berubah` must group files by responsibility and confirm intended files changed, unrelated files did not change, and no file-wide formatting or line-ending churn occurred.
-- `Validasi` must show prerequisites checked, command run, result, and failure/not-run reason. Failed or partial validation must be highlighted directly, not buried in prose.
-- `Yang belum tervalidasi` must list changed or risky scope without reliable validation evidence.
-- `Yang masih perlu dicek manual` must be an actionable follow-up list.
-- `Cara rollback perubahan ini` must use operational wording such as disable flag, revert config, keep fallback path, and replay if needed.
-- `Yang sengaja tidak diubah` must explain risky unchanged boundaries in simple wording: no database schema change, no service topology change, no direct SQL from handler, existing fallback still works.
-- `Reviewer perlu fokus ke` must highlight relevant checks such as idempotency behavior, retry vs DLQ classification, lifecycle/shutdown behavior, secret-safe logging, and boundary preservation.
-- `Hidden change check` must explicitly report whether database schema, deployment pipeline, shared runtime contracts, or unrelated context/runtime files changed unexpectedly.
-- When API, docs, or contracts change, wording and names must be checked against relevant source files before finalizing, such as proto, OpenAPI, grpc-gateway, generated docs, route/schema files, or existing contract sources.
-- When executing after review, previous review findings must be verified as resolved or explicitly still open; execute must not finalize while obvious residual review blockers remain.
-- Finalization must check that changed files are intended, unrelated files are absent, file-wide formatting or line-ending churn did not occur, validation was run or honestly not run, rollback is reported, and reviewer focus is clear.
-- `Recommended next action` must be short and singular, for example proceed, fix before merge, remediate first, track as later cleanup, or needs human confirmation.
-- Run narrow implementation verification when relevant.
-- Do not copy raw secrets from existing config, env, logs, fixtures, or docs into code or context.
-- Stop, narrow scope, or report blocked status when approved tasks depend on stale artifacts or contradicted evidence.
-- Do not modify multiple repositories automatically or assume cross-repo runtime behavior.
-- Treat payment/transaction correctness, financial consistency, idempotency, retry/replay, rollback, and blast-radius changes as governance-sensitive; HIGH risk requires human approval.
-
-Execute mode must not perform major architecture redesign, invent topology/contracts, broad-load unrelated context, silently redefine approved plans, or absorb testing/review responsibilities.
-
-Preferred execute output order:
-1. `Execution Result`
+1. `Execution Result` (one of: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, `NOT_VALIDATED`)
 2. `Yang berhasil diubah`
-3. `File yang berubah`
+3. `File yang berubah` (grouped by responsibility)
 4. `Validasi`
 5. `Yang belum tervalidasi`
 6. `Yang masih perlu dicek manual`
@@ -601,131 +489,11 @@ Preferred execute output order:
 8. `Yang sengaja tidak diubah`
 9. `Reviewer perlu fokus ke`
 10. `Hidden change check`
-11. `Recommended next action`
+11. `Recommended next action` (short and singular)
 
-Interaction behavior:
-- Interactive default: ask confirmation before dangerous, destructive, or runtime-impacting changes.
-- Non-interactive: stop safely and emit a blocked report.
+### Lower-Cost Execution
 
-### 6.5 Testing
-
-Testing mode owns testing cognition and test-focused repository changes.
-
-Expected behavior:
-- Unit test strategy and test implementation guidance.
-- Produce a Testing Result artifact when persistence is useful for testing result, validated scope, blockers, automated/manual validation, coverage gaps, and runtime-sensitive validation.
-- Integration testing strategy.
-- E2E, smoke, rollback, migration, runtime validation, and contract validation when relevant to the approved change.
-- Mock, fake, stub, fixture, and test isolation reasoning.
-- Regression validation and coverage reasoning.
-- Operational verification and environment/test dependency considerations.
-- Required testing status: `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN`.
-- Required output sections: `Testing Result`, `Scope yang divalidasi`, `Automated validation`, `Environment/runtime blockers`, `Yang belum tervalidasi`, `Yang masih perlu dicek manual`, `Reviewer perlu fokus ke`, and `Risk summary`.
-- Scope grouping by unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation, omitting irrelevant categories without flattening the report.
-- Contract traceability to the confirmed execution contract, approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations.
-- Runtime/tooling prerequisite checks before validation commands that depend on tooling or infra.
-- Clear separation between implementation/test failures and environment/tooling blockers.
-- Clear separation between automated checks, manual validation, infra-dependent validation, and production-like verification.
-- Test placement guidance: colocate unit tests near target packages/files; when no repo convention exists, prefer top-level `testing/integration`, `testing/e2e`, `testing/mocks`, `testing/fixtures`, and `testing/helpers` for non-unit concerns.
-- Existing repository test conventions take precedence over the recommended layout and should be reported when detected.
-- Retryable failure, non-retryable failure, DLQ, duplicate/idempotent replay, partial replay, rollback, and proposed-default path validation where relevant.
-- Drift reporting when test expectations, execution contracts, context, or artifacts contradict current repository evidence.
-- Cross-repo contract validation only when external evidence is available; otherwise mark external behavior as unvalidated.
-- Fintech-sensitive validation gaps for financial correctness, transaction consistency, idempotency, retry/replay, rollback, auditability, observability, and blast radius.
-- Identification of missing coverage.
-- Reviewer-oriented visibility into unvalidated risk areas, missing coverage, risky runtime assumptions, and runtime-sensitive behavior not verified.
-- Test evidence reporting with secret redaction.
-
-Testing mode may create or modify tests when requested. It must not become generic architecture planning, replace review mode, or broadly redesign implementation.
-
-Interaction behavior:
-- Interactive default: ask unresolved validation expectations only when needed.
-- Non-interactive: emit an unresolved validation report and continue only with allowed proposed defaults.
-
-### 6.6 Review
-
-Review mode evaluates correctness and risk.
-
-Expected behavior:
-- Correctness review.
-- Produce a Review Result artifact when persistence is useful for review result, MR readiness, critical/major findings, reviewer focus, rollback/safety notes, and suggested next action.
-- Regression and operational risk detection.
-- Topology, runtime, data, and contract consistency checks when relevant.
-- Evidence-based critique with explicit uncertainty.
-- Senior MR-review framing: acceptability, required fixes, risky areas, reviewer focus, and MR readiness.
-- Detection of unconfirmed proposed defaults.
-- Detection of accidental promotion from proposed assumption to confirmed behavior.
-- Verification of execute results.
-- Required review status: `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, or `PARTIAL_REVIEW`.
-- Required MR readiness: `MR-ready`, `not MR-ready`, `MR-ready with accepted risk`, or `cannot determine`.
-- Required severity grouping: `CRITICAL`, `MAJOR`, `MINOR`, and `INFO`.
-- `CRITICAL` and `MAJOR` findings include affected file/area, what is wrong, why it matters, and suggested fix.
-- Required output sections: `Review Result`, `MR readiness`, `Critical findings`, `Major findings`, `Minor findings`, `Info / observations`, `Reviewer perlu fokus ke`, `Yang belum tervalidasi`, `Rollback / safety notes`, and `Suggested next action`.
-- Assessment of whether execute/testing status claims are supported by validation evidence.
-- Findings for hidden validation gaps, ambiguous partial success, missing prerequisite checks, or production-ready/test-passed claims without evidence.
-- Detection of accidental architecture or contract drift: execution contract violation, boundary violation, hidden topology redesign, service/repository boundary bypass, or unapproved contract/schema change.
-- Safety checks for secret/raw payload logging, PII exposure, retry/DLQ correctness, idempotency correctness, rollback readiness, and validation honesty when relevant.
-- Drift checks across code, context, execution contracts, decisions, assumptions, and generated artifacts when material to MR readiness.
-- Cross-repo findings limited to evidenced scope; external ownership/contract uncertainty remains unvalidated scope or a finding.
-- Fintech governance checks for financial correctness, transaction consistency, replay/rollback safety, auditability, observability, and blast radius when relevant. HIGH-risk governance issues cannot be approved automatically.
-- Assessment of test evidence, residual regression risk, and coverage gaps without replacing testing mode.
-- Raw secret exposure in diffs, reports, generated context, or comments is a security finding.
-
-Review mode must not treat unevidenced concerns as confirmed defects, become testing mode, emit full test plans, or turn findings into implementation task lists.
-
-Interaction behavior:
-- Interactive default: ask review-scope clarification only when necessary.
-- Non-interactive: emit a review ambiguity report.
-
-### 6.7 Incident
-
-Incident mode diagnoses bugs, issues, and incidents.
-
-Expected behavior:
-- Identify symptom, impact, affected flow, likely root cause, mitigation, rollback, and next checks.
-- Produce an Incident artifact when persistence is useful for incident summary, likely root cause, affected systems, mitigation, rollback possibility, and next checks.
-- Distinguish symptom from cause.
-- Use cause statuses: `LIKELY_CAUSE`, `POSSIBLE_CAUSE`, or `NEEDS_MORE_EVIDENCE`.
-- Include confidence level for cause and mitigation statements.
-- Never claim root cause without evidence.
-- Preserve uncertainty between evidence, hypotheses, unknowns, and proposed mitigations.
-- Use logs, traces, metrics, configs, contracts, migrations, recent changes, and runbooks only when relevant.
-- Report drift when runbooks, context, or artifacts conflict with current code/config evidence.
-- For cross-repo dependencies, report external ownership/contract uncertainty and avoid claims about another repo's runtime behavior without evidence.
-- For fintech incidents, surface PII/secrets, financial correctness, idempotency, retry/replay, rollback, transaction consistency, auditability, observability, and blast-radius risks as concise operational signals.
-- Redact secrets from operational evidence.
-- No speculative redesign, topology invention, or architecture rewrite.
-
-Interaction behavior:
-- Interactive default: ask only for missing incident evidence that blocks diagnosis or mitigation.
-- Non-interactive: emit an incident ambiguity or blocked report.
-
-### 6.8 Refactor
-
-Refactor mode owns safe technical debt improvement.
-
-Expected behavior:
-- Improve code conservatively within a bounded scope while preserving behavior.
-- Produce a Refactor artifact when persistence is useful for problem areas, proposed safe improvements, risk areas, out-of-scope redesigns, and recommended execution boundaries.
-- Prefer local simplification, duplication removal, naming cleanup, and existing convention alignment.
-- Classify risk as `LOW`, `MEDIUM`, or `HIGH`.
-- Prioritize LOW-risk behavior-preserving improvements.
-- HIGH-risk refactors require a planning/implementation path before execution.
-- Identify behavior-preservation evidence and validation expectations.
-- Report drift when current code contradicts stale context/artifacts about debt or behavior.
-- Do not assume external repo contracts or modify multiple repos as part of refactor.
-- For fintech-sensitive code, treat financial correctness, transaction consistency, idempotency, retry/replay, rollback, auditability, observability, and blast radius as governance-sensitive.
-- No architecture rewrite, paradigm migration, hidden behavior change, or unrelated cleanup.
-
-Interaction behavior:
-- Interactive default: ask or stop before broad, risky, destructive, contract-changing, or runtime-impacting refactors.
-- Non-interactive: stop safely when behavior preservation cannot be established.
-
-### 6.9 Lower-Cost Execution Philosophy
-
-After architecture reasoning, unknown classification, and task-card decomposition are complete, execute mode should be more deterministic and less reasoning-heavy. It is suitable in principle for lower-cost execution-oriented models that follow an approved task plan.
-
-This protocol does not add model routing, tool orchestration, automation tooling, runtime executors, or agent services.
+After architecture reasoning, unknown classification, and task-card decomposition are complete, execute mode is suitable for lower-cost execution-oriented models following an approved task plan. This does not add model routing, tool orchestration, automation tooling, runtime executors, or agent services.
 
 ---
 
@@ -777,172 +545,117 @@ Normal runtime output should not include large internal loading dumps. Maintaine
 
 ## 10. Forbidden Behaviors
 
-The following are invalid mode invocation behavior:
+The following are invalid mode invocation behaviors. See `runtime/.forge/context/00-meta/conventions-validation.md` for validation-specific forbidden patterns. See `conventions-risk.md` for governance and secret forbidden patterns.
 
-- Ignoring the requested mode file.
-- Invoking a mode without first reading `.forge/forge.config.yaml`.
-- Failing to detect, report, or apply `runtime.non_interactive`.
-- Failing to report a `runtime.profile` / `runtime.non_interactive` conflict before mode work.
-- Treating `runtime.profile` as a second interaction flag instead of metadata controlled by `runtime.non_interactive`.
-- Emitting automation-style blocked reports in interactive repositories instead of ask-first clarification.
-- Asking conversational clarification questions in non-interactive repositories.
+**Config and interaction:**
+- Ignoring the requested mode file or invoking without reading `.forge/forge.config.yaml` first.
+- Failing to detect, report, or apply `runtime.non_interactive` as the controlling flag.
+- Treating `runtime.profile` as a second interaction flag.
+- Emitting automation-style blocked reports in interactive mode instead of ask-first clarification.
+- Asking conversational questions in non-interactive mode.
+- Using reserved `ci` profile to introduce CI/CD, deploy, release, or executor behavior.
+- Introducing any conflicting interaction or workflow flag.
+
+**Context loading:**
+- Loading broad `.forge/context` by default.
+- Treating modes as optional suggestions or `on_demand` entries as unconditional defaults.
+- Ignoring `exclude` entries.
+- Exceeding the normal scoped `token_budget` without a concrete evidence reason.
+
+**Decisions and approval:**
 - Auto-approving HIGH-risk decisions.
 - Using orchestrator authority without explicit `runtime.decision_authority: orchestrator`.
 - Omitting decision trace for automation-selected LOW defaults or orchestrator-selected MEDIUM decisions.
-- Treating decision traces as workflow state, dependency state, scheduler input, retry policy, or execution graph.
-- Using reserved `ci` profile to introduce CI/CD, deploy, release, pipeline, trigger, or runtime executor behavior.
-- Loading broad `.forge/context` by default.
-- Treating modes as optional suggestions.
-- Treating `on_demand` entries as unconditional defaults.
-- Ignoring `exclude`.
-- Exceeding the normal scoped `token_budget` range without a task-specific evidence reason.
-- Inventing topology, ownership, contracts, integrations, deployment ownership, APIs, databases, or business rules without evidence.
-- Printing, copying, summarizing, or storing raw secrets.
-- Including raw secrets in `.forge/context`, reports, validation-cases, reviews, tests, decisions, confirmations, unknowns, inferred knowledge, modes, or platform context.
+- Treating decision traces as workflow state, scheduler input, retry policy, or execution graph.
 - Treating a proposed default as confirmed.
-- Asking broad questionnaires when a minimal decision prompt is enough.
-- Requiring interactive input in automation/non-interactive mode.
-- Generating open-ended architecture option lists instead of bounded decision options.
-- Producing RFC/audit-style narrative when concise operational structure is enough.
-- Prominently exposing runtime/debug/loading internals in normal interactive output.
-- Dumping changed files without grouping them by responsibility when grouping is feasible.
-- Emitting execute output without a clear execution result status.
-- Burying failed, skipped, or partial validation inside prose.
-- Emitting `SUCCESS` without clear validation status and evidence.
-- Treating missing runtime/tooling/infra as an implementation failure instead of `BLOCKED_BY_ENVIRONMENT`.
-- Omitting validation gaps or unvalidated scope after code changes.
-- Using ambiguous `PARTIAL_SUCCESS` semantics.
-- Skipping runtime prerequisite checks when validation depends on tooling or infra.
-- Omitting testing or review statuses, or using status vocabularies inconsistently.
-- Claiming fully validated, production-ready, or test-passed without supporting evidence.
-- Emitting testing output without the required testing sections or status.
-- Mixing automated validation, manual validation, infra-dependent validation, and production-like verification ambiguously.
-- Burying environment/runtime blockers in prose instead of surfacing them directly.
-- Ignoring retry, DLQ, idempotency, replay, or runtime-sensitive paths when the system is event-driven or runtime-sensitive.
-- Letting testing output become generic QA documentation or review/governance critique.
-- Emitting review output without `Review Result`, clear MR readiness, severity-grouped findings, reviewer focus, unvalidated scope, rollback/safety notes, and suggested next action.
-- Emitting `CRITICAL` or `MAJOR` review findings without affected file/area, what is wrong, why it matters, and suggested fix.
-- Letting review output become a generic audit/report, a full testing plan, or an implementation task breakdown.
-- Skipping architecture/contract drift checks for non-trivial review scope.
-- Skipping relevant review safety checks for secrets/raw payloads, PII, retry/DLQ, idempotency, rollback readiness, or validation honesty.
-- Omitting rollback for runtime-impacting execute changes.
-- Omitting unchanged-boundary reporting for risky execute changes.
-- Omitting reviewer focus for non-trivial execute changes.
-- Exposing excessive runtime interaction, bootstrap, loading, or debug details in normal execute output.
-- Collapsing ask, planning, implementation task decomposition, execute, testing, review, incident, and refactor into generic reasoning behavior.
-- Allowing planning to collapse into detailed executable task lists.
-- Allowing implementation mode in interactive repositories to emit final executable tasks while critical blockers remain unresolved.
+
+**Mode boundaries:**
+- Collapsing ask, planning, implementation, execute, testing, review, incident, and refactor into generic reasoning behavior.
+- Allowing planning to produce detailed executable coding tasks instead of strategic ECP.
+- Allowing implementation mode to emit final executable tasks while critical blockers remain unresolved.
 - Allowing implementation mode to hide blocking decisions at the end of a full breakdown.
-- Allowing implementation readiness output without bounded task cards.
-- Allowing ready task cards without task ID, priority, impact, dependencies, acceptance criteria, or risky-change guardrails.
-- Treating implementation task cards as automation, orchestration, scheduling, DAG, agent, Jira, story-point, or workflow-engine semantics.
-- Allowing interactive implementation confirmation without `NEEDS_CONFIRMATION`, Recommended/Alternative choices, or clear numbered reply instructions.
-- Marking implementation output `READY_FOR_EXECUTION` while required execution values are conditional, unavailable, unresolved, or pending confirmation.
-- Emitting final executor instructions without concrete execution values for execution-sensitive changes.
+- Marking implementation output `READY_FOR_EXECUTION` while required execution values are conditional, unavailable, or unresolved.
 - Allowing implementation to directly modify code.
-- Allowing execute to redefine approved architecture or task intent.
-- Allowing execute to absorb testing responsibilities entirely.
-- Allowing review to collapse into testing or replace test strategy/test implementation work.
+- Allowing execute to redefine approved architecture or absorb testing/review responsibilities.
+- Allowing review to become testing, replace test strategy, or produce implementation task lists.
 - Allowing ask to become planning, review, audit, or mutation.
-- Allowing incident to become speculative redesign.
+- Allowing incident to become speculative redesign or architecture rewrite.
 - Allowing refactor to hide behavior changes, architecture rewrites, or paradigm migrations.
+
+**Implementation task cards:**
+- Allowing readiness output without bounded task cards.
+- Allowing ready task cards without task ID, priority, impact, dependencies, acceptance criteria, or risky-change guardrails.
+- Allowing interactive implementation confirmation without `NEEDS_CONFIRMATION`, Recommended/Alternative choices, and clear numbered reply instructions.
+- Treating task cards as DAG, scheduler, agent, Jira, story-point, or workflow-engine semantics.
+
+**Output and evidence:**
+- Inventing topology, ownership, contracts, APIs, databases, or business rules without evidence.
+- Prominently exposing runtime/debug/loading internals in normal interactive output.
+- Asking broad questionnaires when a minimal decision prompt is enough.
+- Producing RFC/audit-style narrative when concise operational structure is enough.
 - Duplicating mode-specific execution behavior in globally loaded conventions.
 - Replacing repository-owned code/docs/ADRs with Forge-generated cognition.
-- Treating lifecycle artifacts as source of truth over repository code, docs, ADRs, or human confirmations.
-- Persisting hidden chain-of-thought, raw secrets, unnecessary conversation history, or generic long-form summaries in lifecycle artifacts.
-- Using artifact links as orchestration, DAG, workflow, scheduler, agent-memory, execution-trigger, or dependency-management semantics.
+
+**Artifacts:**
+- Treating lifecycle artifacts as source of truth over repository evidence.
+- Persisting hidden chain-of-thought, raw secrets, or generic long-form summaries in artifacts.
+- Using artifact links as orchestration, DAG, workflow, scheduler, agent-memory, or execution-trigger semantics.
 - Creating unclear artifact ownership or generic artifacts not owned by a mode.
-- Adding automation/tooling/runtime execution under the guise of protocol compliance.
+
+**Automation:**
 - Introducing agent loops, auto-retry orchestration, scheduler behavior, workflow graph execution, DAG execution, deploy/release automation, CI pipeline execution, or autonomous multi-step chaining.
-- Introducing any conflicting interaction or workflow flag.
 
 ---
 
 ## 11. Validation Expectations
 
-Mode invocation validation checks that runtime behavior follows this protocol:
+Mode invocation validation checks that runtime behavior follows this protocol. See `validation-cases/` for regression benchmarks. See `specs/artifact-lifecycle.md` for artifact status validation. See `docs/workflow.md` for workflow validation cases. See `runtime/.forge/context/00-meta/conventions-validation.md` for detailed validation status and section expectations.
 
-- `.forge/forge.config.yaml` was read before the requested mode file.
-- `runtime.profile`, `runtime.non_interactive`, and decision authority were detected.
-- `runtime.non_interactive` was applied as the controlling interaction behavior.
-- Profile/non-interactive conflicts were reported clearly before mode work.
-- The requested mode file was read before mode-specific context loading.
-- `include`, `on_demand`, `exclude`, `token_budget`, and `notes` were considered.
-- Loaded context was scoped to the task.
-- Broad-loading violations were reported or avoided.
-- Ask, planning, implementation, execute, testing, review, incident, and refactor retained distinct operational behavior.
-- Visible modes were constrained to `ask`, `planning`, `implementation`/`implement`, `execute`, `testing`, `review`, `incident`, and `refactor`.
-- Ask answered lightweight repo-understanding questions without planning, mutation, redesign, or broad audit.
-- Planning produced strategic ECP/phases without detailed executable coding tasks.
-- Implementation used clarification phase before execution-ready phase when blocking decisions were present.
-- Implementation produced executable task cards with likely file/component visibility and dependency ordering only after critical blockers were resolved.
-- Execute owned actual repository modification behavior and did not silently redefine approved plans.
-- Testing remained visible and distinct from execute/review, with test strategy, test implementation guidance, coverage, mocks/fakes/stubs, and regression validation responsibilities.
-- Review assessed correctness/risk and execute results without replacing testing mode.
-- Incident diagnosed symptoms, impact, affected flow, root cause, mitigation, rollback, and next checks without speculative redesign.
-- Refactor remained conservative, bounded, and behavior-preserving.
-- Architecture reasoning and execution reasoning remained separated.
-- Mode-specific behavior lives in mode files rather than globally loaded conventions.
-- Evidence, inference, and unknown boundaries were preserved.
-- Unknowns were classified as blocking, proposed-default, or informational.
-- Proposed defaults were explicitly labeled and not promoted to confirmed facts.
-- Non-interactive behavior used blocking status output instead of interactive questions.
-- `runtime.non_interactive` existed, was boolean, and defaulted to `false`.
-- No conflicting interaction flags existed.
-- Interactive repositories used ask-first clarification for blocking decisions instead of automation-style blocked reports.
-- Non-interactive repositories avoided conversational questions and emitted the selected mode's allowed blocking/readiness status when blocked.
-- Automation-safe output used `NEEDS_CONFIRMATION`, `BLOCKED`, or `NEEDS_HUMAN_APPROVAL` for decisions it could not safely make.
-- HIGH-risk decisions were not auto-approved and required human confirmation.
-- Orchestrator authority was used only when explicitly configured.
-- Automation-selected LOW defaults and orchestrator-selected MEDIUM decisions included decision trace with decision, selected option, authority used, risk level, reason, and affected tasks/artifacts.
-- Interactive implementation mode did not emit final executable tasks, allowed file modifications, acceptance criteria, or executor instructions while critical blockers remained unresolved.
-- Interactive implementation mode did not bury blockers at the end of a full breakdown.
-- Interactive implementation confirmation used `NEEDS_CONFIRMATION`, Recommended and Alternative choices, reasons/tradeoffs, and clear reply instructions.
-- Interactive implementation confirmation explained why the decision mattered and used concrete engineering language.
-- Interactive implementation confirmation used 2 options by default and at most 3 for major architecture tradeoffs.
-- Implementation output included one readiness status: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION`.
-- `READY_FOR_EXECUTION` appeared only with concrete required execution values and no conditional/unavailable value language.
-- Execution-sensitive `READY_FOR_EXECUTION` output included concrete execution values before final executor instructions.
-- `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` output included task cards with Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
-- Multi-step implementation output included Dependency Order and Parallelization Notes using task IDs.
-- Final task cards were absent from blocked interactive confirmation output and absent from non-interactive blocked reports marked as execution-ready.
-- Execute output used one clear status: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED`.
-- Execute status matched validation evidence and did not use `SUCCESS` when reliable validation was absent.
-- Execute output prioritized result, changed files grouped by responsibility, validation, unvalidated scope, manual checks, rollback, intentionally unchanged scope, reviewer focus, and hidden-change checks.
-- Execute output included one concise recommended next action after drift, risk, partial validation, or residual manual checks.
-- Execute finalization confirmed intended files changed, unrelated files were absent, file-wide formatting/line-ending churn was absent, validation was run or honestly not run, rollback was reported, and reviewer focus was clear.
-- Execute checked contract/docs/API wording against source files when API, docs, or contract surfaces changed.
-- Execute after review verified prior findings were resolved or explicitly still open and did not finalize with obvious residual blockers.
-- Execute validation failures, skipped validation, and partial validation were highlighted directly.
-- Execute/testing prerequisite checks were reported when validation depended on tooling or infra.
-- Environment/tooling blockers were classified as `BLOCKED_BY_ENVIRONMENT`, separate from implementation failures and contract/runtime blockers.
-- Testing output used one clear status: `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN`.
-- Testing output used the required sections and grouped validation scope by relevant test category.
-- Testing output separated automated, manual, infra-dependent, and production-like validation.
-- Testing output traced checks to the confirmed execution contract where evidence existed.
-- Runtime-sensitive testing addressed retry, DLQ, idempotency, replay, runtime boundaries, and rollback assumptions when relevant.
-- Testing output surfaced coverage gaps, unvalidated risks, and reviewer focus without becoming review mode.
-- Review output used one clear status: `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, or `PARTIAL_REVIEW`.
-- Review output stated one MR readiness result: `MR-ready`, `not MR-ready`, `MR-ready with accepted risk`, or `cannot determine`.
-- Review findings were grouped by `CRITICAL`, `MAJOR`, `MINOR`, and `INFO`.
-- `CRITICAL` and `MAJOR` review findings included affected file/area, what is wrong, why it matters, and suggested fix.
-- Non-trivial review checked execution contract adherence, boundary preservation, topology drift, service/repository boundary bypass, and unapproved contract/schema changes.
-- Review checked relevant safety risks including secret/raw payload logging, PII exposure, retry/DLQ, idempotency, rollback readiness, and validation honesty.
-- Review output stayed concise and MR-oriented without becoming testing mode, a generic audit, or an implementation task list.
-- Validation sections separated executed checks, failures, blocked/not-run checks, remaining unvalidated scope, and manual action.
-- Runtime-impacting execute changes included rollback guidance.
-- Risky execute changes reported intentionally unchanged boundaries.
-- Non-trivial execute changes included reviewer focus.
-- Changing runtime interaction behavior did not require context re-init or repository cognition rewrite.
-- Human decision prompts followed option-count discipline.
-- Raw secret exposure was absent from generated context and reports.
-- Secret findings were redacted, classified as security findings, and included rotation guidance when exposure was possible.
-- Context loading details stayed concise in normal output.
-- Missing evidence and unresolved ambiguity were reported.
-- Mode sufficiency was evaluated.
-- Lifecycle artifacts, when used, stayed mode-owned, bounded, human-readable, link-only, non-authoritative, and free of chain-of-thought/raw secrets.
-- Artifact references did not imply orchestration, workflow, DAG, scheduler, agent memory, execution triggers, persistent AI memory, or knowledge graph behavior.
-- Runtime profile and automation-safe semantics did not imply agent loops, auto-retry orchestration, scheduler behavior, workflow graph execution, DAG execution, deploy/release automation, CI pipeline execution, runtime executors, or autonomous multi-step chaining.
+**Config and bootstrap:**
+- `.forge/forge.config.yaml` read before the requested mode file.
+- `runtime.profile`, `runtime.non_interactive`, and decision authority detected.
+- `runtime.non_interactive` applied as the controlling interaction behavior.
+- Profile/non-interactive conflicts reported before mode work.
+- Mode file read before mode-specific context loading.
+- `include`, `on_demand`, `exclude`, `token_budget`, and `notes` considered.
+
+**Context loading:**
+- Loaded context scoped to the task; broad-loading violations avoided.
+- `CONTEXT_BUDGET_LIMITED` used when required evidence exceeds scoped budget.
+
+**Mode boundary integrity:**
+- All eight modes retained distinct operational behavior per §6.
+- No mode collapsed into another or absorbed out-of-scope responsibilities.
+- Mode-specific behavior lives in mode files, not globally loaded conventions.
+
+**Decisions and approval:**
+- Evidence, inference, and unknown boundaries preserved.
+- Unknowns classified as blocking, proposed-default, or informational.
+- Proposed defaults explicitly labeled; never promoted to confirmed without human confirmation.
+- HIGH-risk decisions not auto-approved; human confirmation required.
+- Decision traces present for automation-selected LOW and orchestrator-selected MEDIUM decisions.
+- Interactive mode used ask-first clarification; non-interactive mode used blocking status output.
+
+**Implementation correctness:**
+- Implementation blocked correctly when critical blockers exist; final task cards absent from blocked output.
+- Implementation confirmation used `NEEDS_CONFIRMATION`, Recommended/Alternative choices, and numbered reply instructions.
+- `READY_FOR_EXECUTION` used only with concrete execution values.
+- Task cards include all required fields (Task ID, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Acceptance Criteria, Test Expectation).
+
+**Execute correctness:**
+- One clear status used; `SUCCESS` only when reliable validation evidence exists.
+- Changed files grouped by responsibility; unrelated files absent; formatting churn absent.
+- Rollback reported for runtime-impacting changes; reviewer focus present for non-trivial changes.
+- Prior review findings verified resolved or explicitly still open.
+
+**Testing and review correctness:**
+- Testing output used required sections and grouped validation by test category.
+- Review output used required sections, severity grouping, and one MR readiness result.
+- `CRITICAL`/`MAJOR` review findings included file/area, what is wrong, why it matters, and suggested fix.
+
+**Artifacts and secrets:**
+- Lifecycle artifacts mode-owned, bounded, human-readable, non-authoritative, free of raw secrets.
+- Raw secret exposure absent from generated context and reports.
 
 These expectations may be validated manually today and automated later.
 
