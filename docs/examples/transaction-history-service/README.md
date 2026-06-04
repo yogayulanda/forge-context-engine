@@ -3,7 +3,7 @@
 This example shows Forge across a realistic service change:
 
 ```text
-ask -> planning -> implementation -> execute -> testing -> review
+ask -> plan -> implementation -> execute -> review -> verify-context when context health may be affected
 ```
 
 The reference pattern is a generic transaction history service: a backend service stores immutable history records, exposes read APIs, and may consume sanitized event messages from another system. Names, paths, payloads, and scenarios are intentionally generic for public documentation.
@@ -15,10 +15,10 @@ This is not a demo repository and not a product architecture. Use it as a workfl
 | Step | Example |
 |---|---|
 | Understand current behavior | [ask-current-flow.md](ask-current-flow.md) |
-| Plan a retry/history update | [planning-retry-history-update.md](planning-retry-history-update.md) |
+| Plan a retry/history update | [plan-retry-history-update.md](plan-retry-history-update.md) |
 | Produce task cards | [implementation-task-cards.md](implementation-task-cards.md) |
 | Execute a bounded change | [execute-bounded-change.md](execute-bounded-change.md) |
-| Validate behavior | [testing-validation.md](testing-validation.md) |
+| Validate behavior | [execute-validation.md](execute-validation.md) |
 | Review MR readiness | [review-mr-readiness.md](review-mr-readiness.md) |
 
 ## Shared Scenario
@@ -52,7 +52,7 @@ Example sanitized event:
 - Mode transitions should be requested by a human.
 - `implementation` should stop when execution values are missing.
 - `execute` should only modify approved files.
-- `testing` should separate run checks from blocked checks.
+- `execute` validation should separate run checks from blocked checks.
 - `review` should focus on correctness, validation honesty, and MR readiness.
 
 ## Stop The Workflow

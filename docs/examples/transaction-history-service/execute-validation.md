@@ -1,4 +1,4 @@
-# Testing Validation
+# Execute Validation
 
 Use this step to validate the change and make remaining gaps visible.
 
@@ -9,7 +9,7 @@ A bounded retry history update has been implemented. The engineer needs validati
 ## Example Forge Prompt
 
 ```text
-Use Forge testing mode to validate the retry history update.
+Use Forge execute mode to run scoped validation for the retry history update.
 
 Separate:
 - unit checks
@@ -25,7 +25,7 @@ Do not redesign the change. Do not mark blocked checks as passed.
 
 ## Expected Output Shape
 
-- testing status such as `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN`
+- validation status such as `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN`
 - validation scope
 - commands run
 - results and failures

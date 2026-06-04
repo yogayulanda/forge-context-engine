@@ -12,15 +12,16 @@ Copy or materialize these files into a target repository when Copilot prompt fil
 .github/
 +-- copilot-instructions.md
 +-- prompts/
+    +-- forge-init.prompt.md
     +-- forge-ask.prompt.md
     +-- forge-plan.prompt.md
-    +-- forge-implement.prompt.md
+    +-- forge-implementation.prompt.md
     +-- forge-execute.prompt.md
-    +-- forge-test.prompt.md
     +-- forge-review.prompt.md
-    +-- forge-incident.prompt.md
-    +-- forge-refactor.prompt.md
+    +-- forge-verify-context.prompt.md
 ```
+
+Compatibility prompt files for validation, incident, and refactor scenarios may be included when useful, but they are not core lifecycle modes.
 
 The source templates live in:
 
@@ -34,14 +35,13 @@ runtime/adapters/copilot/
 
 GitHub Copilot prompt invocation may use:
 
+- `/forge-init`
 - `/forge-ask`
 - `/forge-plan`
-- `/forge-implement`
+- `/forge-implementation`
 - `/forge-execute`
-- `/forge-test`
 - `/forge-review`
-- `/forge-incident`
-- `/forge-refactor`
+- `/forge-verify-context`
 
 Prompt behavior must resolve to the matching shared skill:
 

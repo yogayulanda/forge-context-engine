@@ -30,10 +30,11 @@ Forge does not require a server, daemon, workflow engine, scheduler, or separate
 2. Open `<target-repo>/.forge/forge.config.yaml`.
 
    Check:
-   - `runtime.profile: local` for normal interactive use.
-   - `runtime.non_interactive: false` for local human-in-the-loop work.
-   - `layers_enabled` only lists layers that exist in the repository.
-   - `systems` reflects actual repo units, or stays empty until initialized from evidence.
+   - `forge.version: "0.3.0"` for the current runtime config shape.
+   - `run.interaction: manual` for local human-in-the-loop work.
+   - `workflow.default_mode: ask` unless the repository has an explicit reason to start elsewhere.
+   - `context.root: .forge/context` so context stays repository-local.
+   - `policy.require_human_confirmation_for` covers important domain, data, architecture, contract, security, and migration changes.
 
 3. Keep `.forge/context` repository-first.
 
@@ -93,7 +94,7 @@ Expected output:
 - short explanation of the current flow
 - file or code references when available
 - clear unknowns instead of guesses
-- no change plan unless you ask for planning
+- no change plan unless you ask for plan mode
 - no code modification
 
 If the answer says evidence is missing, that is a successful Forge outcome. It means the assistant stayed inside repository-first truth.
@@ -103,13 +104,14 @@ If the answer says evidence is missing, that is a successful Forge outcome. It m
 A first real change usually looks like this:
 
 1. `ask`: understand current behavior.
-2. `planning`: describe the change, risks, validation, rollback, and unknowns.
-3. `implementation`: produce executable task cards and stop conditions.
-4. `execute`: apply the approved task cards only.
-5. `testing`: validate or report validation blockers.
-6. `review`: assess MR readiness.
+2. `plan`: describe the change, risks, validation, rollback, and unknowns.
+3. `implementation`: produce an ECP and stop conditions.
+4. Human approval: approve the ECP for execution.
+5. `execute`: apply the approved ECP only and run scoped validation.
+6. `review`: assess MR readiness, security, validation gaps, and context impact.
+7. `verify-context`: run when source changes may affect curated context.
 
-Small, low-risk edits can skip `planning` when the scope is obvious. Risky, ambiguous, contract-heavy, or production-sensitive work should not skip planning.
+Small, low-risk edits can skip `plan` when the scope is obvious. Risky, ambiguous, contract-heavy, or production-sensitive work should not skip plan.
 
 Next, read [First Workflow](first-workflow.md) to see this path end to end, then use [Mode Selection](mode-selection.md) when you need to choose the smallest fitting lifecycle mode.
 
@@ -117,11 +119,11 @@ Next, read [First Workflow](first-workflow.md) to see this path end to end, then
 
 | Mistake | Better approach |
 |---|---|
-| Asking `execute` to start before scope or values are clear. | Use `planning` or `implementation` first. |
+| Asking `execute` to start before scope or values are clear. | Use `plan` or `implementation` first. |
 | Loading all of `.forge/context` for every question. | Load the requested mode and task-relevant context only. |
 | Treating generated artifacts as source of truth. | Use artifacts as handoff records; current repo evidence wins. |
 | Putting repo facts in `CLAUDE.md`, `AGENTS.md`, or adapters. | Put repo cognition in `.forge/context`. |
-| Using `incident` as a redesign request. | Diagnose first; hand off approved remediation to `execute`. |
+| Using an incident scenario as a redesign request. | Diagnose first; hand off approved remediation to `plan`, `implementation`, and `execute` as needed. |
 | Treating Copilot, Claude, or Codex behavior as separate Forge versions. | Keep the tool surface thin and resolve to shared skills. |
 
 ## Lightweight Setup Example
@@ -133,7 +135,7 @@ For a backend service:
 2. Keep `backend` and `testing` in `layers_enabled`.
 3. Add one system entry for the service after verifying repo evidence.
 4. Ask: "Use Forge ask mode to explain retry and idempotency behavior."
-5. If a change is needed, ask: "Use Forge planning mode for improving retry behavior without changing the public contract."
+5. If a change is needed, ask: "Use Forge plan mode for improving retry behavior without changing the public contract."
 ```
 
 For an OSS contributor:
@@ -141,7 +143,7 @@ For an OSS contributor:
 ```text
 1. Read README and docs/mode-selection.md.
 2. Ask `ask` mode to understand the affected area.
-3. Use `planning` for non-trivial changes.
+3. Use `plan` for non-trivial changes.
 4. Keep the MR description aligned with Forge validation and review output.
 ```
 

@@ -14,7 +14,7 @@ updated: 2026-06-03
 
 # Validation & Testing Conventions
 
-Load this file when the task involves validation reporting, testing expectations, review evidence, prerequisite checks, or missing validation behavior.
+Load this file when the task involves validation reporting, test expectations, review evidence, prerequisite checks, or missing validation behavior.
 
 ---
 
@@ -27,7 +27,6 @@ Validation reporting must never imply success without evidence.
 | Mode | Allowed statuses |
 |---|---|
 | Execute | `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, `NOT_VALIDATED` |
-| Testing | `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, `NOT_RUN` |
 | Review | `APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, `PARTIAL_REVIEW` |
 | Implementation | `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, `READY_FOR_EXECUTION` |
 
@@ -39,13 +38,6 @@ Execute:
 - `BLOCKED`: contract, approval, runtime behavior, ownership, security, or other non-environment prerequisites are unresolved.
 - `BLOCKED_BY_ENVIRONMENT`: required runtime/tooling/infra is unavailable.
 - `NOT_VALIDATED`: code changed, but no reliable validation executed.
-
-Testing:
-- `PASSED`: selected validation ran and passed.
-- `FAILED`: selected validation ran and exposed a failure.
-- `PARTIAL`: some validation ran, but required coverage or scenarios remain incomplete.
-- `BLOCKED_BY_ENVIRONMENT`: required tooling or infra is unavailable.
-- `NOT_RUN`: no reliable validation command was executed.
 
 Review:
 - `APPROVED`: sufficient implementation and validation evidence; no blocking findings.
@@ -72,21 +64,21 @@ Validation sections must separate:
 
 Manual actions must be explicit and operational, e.g. `Jalankan go test ./... setelah Go toolchain tersedia`, `Validasi Kafka integration membutuhkan broker aktif`, or `Replay/DLQ flow belum tervalidasi manual`.
 
-### Testing Scope Grouping
+### Validation Scope Grouping
 
-Testing mode must group validated scope by applicable category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation.
+Validation reporting must group validated scope by applicable category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation.
 
-Testing mode must separate automated checks, manual validation, infra-dependent validation, and production-like verification.
+Validation reporting must separate automated checks, manual validation, infra-dependent validation, and production-like verification.
 
 Runtime-sensitive testing must explicitly address retryable failures, non-retryable failures, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
 
-Testing reports must surface unvalidated risk areas and must not imply full validation, production readiness, or complete coverage without evidence.
+Validation reports must surface unvalidated risk areas and must not imply full validation, production readiness, or complete coverage without evidence.
 
 ### Ownership Boundaries
 
-- Execute may perform lightweight validation for the implemented scope.
-- Testing owns structured validation depth, test coverage reasoning, and environment/test dependency reporting.
+- Execute performs scoped validation for the implemented scope.
 - Review evaluates correctness, risk, and whether implementation/validation evidence supports the claimed status.
+- Deeper test planning is a validation activity inside execute/review workflows, not a core lifecycle mode.
 
 ---
 

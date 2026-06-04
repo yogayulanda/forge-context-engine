@@ -68,9 +68,10 @@ Phase 7:    Human Confirmation Pass            ← NEW (operational feedback v1.
 
 1. Confirm scenario: `brownfield` or `greenfield`.
 2. Edit `forge.config.yaml`:
-   - Set `tier` (recommend `standard`).
-   - Remove irrelevant entries from `layers_enabled`.
-   - Set `loading.default_mode` based on immediate work type.
+   - Set `forge.version` to the current runtime version.
+   - Set `run.interaction` for manual or automation-safe behavior.
+   - Set `workflow.default_mode` based on immediate work type.
+   - Confirm `context.root`, policy confirmation boundaries, artifact directories, and tool adapter defaults.
 3. Merge `.gitignore` entries with target repo's existing `.gitignore`.
 4. Verify `.forge/` structure is intact after copy.
 5. **Declare dominant context language** *(v1.2)* — pick one based on (in order): existing repo docs language, team convention, legacy `.ai/` content, dominant commit language. Record in `00-meta/conventions.md` if it differs from the runtime default. Apply consistently from this phase onward.
@@ -195,8 +196,8 @@ Rules:
 - `notes` = concise human/AI guidance only.
 - Modes MUST NOT re-list `00-meta/*` and `01-core/*` unless explicitly needed.
 - Modes MUST NOT contain domain knowledge, large workflow playbooks, repository-specific implementation instructions, or duplicate `conventions.md`.
-- Visible modes are limited to `ask`, `planning`, `implementation`/`implement`, `execute`, `testing`, `review`, `incident`, and `refactor`.
-- Ask owns lightweight repo understanding; planning must stay strategic; implementation must produce human-reviewable executable task structure; execute owns actual repository modification behavior; testing owns test strategy/test changes; review owns correctness/risk validation; incident owns diagnosis; refactor owns bounded behavior-preserving debt work.
+- Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
+- Ask owns lightweight repo understanding; plan must stay strategic; implementation must produce a human-reviewable ECP; execute owns approved repository modification behavior; review owns correctness/risk and validation-gap assessment; verify-context owns context health. Incident, refactor, and test-focused work are workflow scenarios, not core lifecycle modes.
 - Token budget labels such as `medium`, `medium-high`, or `large` are invalid; use values such as `4000`, `8000`, or `12000`.
 
 ### Status Rules (Phase 1)
@@ -209,6 +210,22 @@ Rules:
 - Never use `confidence: high` merely because the reasoning feels plausible.
 - If human confirmation exists, promote through `knowledge/confirmations.md` instead of inflating confidence.
 - For brownfield init, unknown ownership, architecture intent, business rules, compliance, and deployment ownership stay `medium`, `low`, or `unknown` unless explicitly evidenced.
+
+### Context Card Metadata
+
+Every curated context card created or refreshed during init must include source metadata sufficient for later context impact checks:
+
+```yaml
+title: <human-readable card title>
+status: confirmed | inferred | assumption | unknown | deprecated
+confidence: high | medium | low
+source_paths:
+  - <repo path used as evidence>
+source_commit: <git commit sha or unknown>
+last_verified: YYYY-MM-DD
+```
+
+`source_paths` identify the repository files that support or affect the card. `source_commit` records the commit used when the card was last verified; use `unknown` only when git evidence is unavailable and record why in `knowledge/unknowns.md`. `last_verified` is the date the evidence was checked, not the date the card was first written.
 
 Examples:
 
@@ -461,10 +478,10 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] At least ADR-0001 exists
 [ ] modes/* expose Markdown sections: include/on_demand/exclude/token_budget/notes
 [ ] modes/* token_budget is numeric only
-[ ] visible modes constrained to ask/planning/implement/execute/testing/review/incident/refactor
+[ ] visible core modes constrained to init/ask/plan/implementation/execute/review/verify-context
 [ ] implementation mode produces task breakdowns without code modification
 [ ] execute mode owns repository modification behavior
-[ ] testing mode owns test cognition and remains distinct from execute/review
+[ ] validation activity remains distinct across execute/review and does not become a core lifecycle mode
 [ ] secret safety: no raw secrets copied into context, ledgers, reports, or validation evidence
 [ ] source: ai + status: inferred defaults to confidence: medium unless direct deterministic evidence supports high
 [ ] (v1.2) Evidence consistency: table/migration/entity/api counts match repo
@@ -662,12 +679,17 @@ After successful initialization:
 
 | Operation | When | How |
 |---|---|---|
-| Incremental updates | During development | AI proposes → human confirms → update context file |
-| Staleness check | After `governance.staleness_days` | Re-verify `evidence` paths; demote stale entries |
+| Incremental updates | During development | changed files -> affected context cards -> `.forge/context-patches` proposal -> review -> promote to `.forge/context` |
+| Staleness check | During `verify-context` or context-impact review | Re-verify `source_paths` and `last_verified`; demote stale entries |
 | New unit added | When new service/app created | Run Phase 3 steps for that unit only |
 | New layer activated | When new discipline enters scope | Run Phase 2 steps for that layer only |
 | Promote assumption | When implementation validates it | Add evidence → promote to `inferred` → human confirms → `confirmed` + entry in `confirmations.md` |
 | Resolve unknown | When answer is found | Move to correct semantic location + mark unknown `resolved` |
+
+Team workflow defaults:
+- `team.context_update_flow` must be `reviewable_patch`.
+- `team.require_context_impact_check` must be `true`.
+- Code changes that affect `source_paths` must include a context impact note, a context patch, or a clear "no context impact" finding.
 
 ---
 
@@ -816,7 +838,7 @@ These improvements MUST preserve runtime lightweight behavior:
 |---|---|
 | README size | Stays small — TOC + activation rule only |
 | Confirmation summary cap | ~30 items per pass |
-| Unknown growth | Bounded by priority filtering during planning mode |
+| Unknown growth | Bounded by priority filtering during plan mode |
 | Legacy reference | Never inlined into core context |
 | Generated artifacts | Default gitignored; commit only when reproducibly useful |
 

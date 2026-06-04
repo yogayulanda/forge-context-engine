@@ -3,19 +3,6 @@
 Use shared skill:
 `runtime/skills/forge-plan/SKILL.md`
 
-This is a GitHub Copilot prompt wrapper for Forge planning mode.
+Thin Copilot prompt wrapper for Forge plan mode. Plan mode produces a Quick Plan or SDD with an explicit reason and final status. It does not edit code or produce an ECP.
 
-Focus on:
-- Evidence-led Engineering Change Plans.
-- Repository constraints, risks, blockers, and unknowns.
-- Proposed approach and validation expectations.
-- No code changes or executable task-card expansion.
-
-Repository behavior and lifecycle semantics come from:
-- `.forge/context`
-- `.forge/context/modes/planning.md`
-- current repository evidence
-
-Use scoped repository loading only.
-
-Do not add repository cognition, orchestration, memory, or duplicated lifecycle semantics here.
+Load `.forge/context/modes/plan.md` and scoped repository evidence only.

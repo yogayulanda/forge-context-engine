@@ -26,7 +26,7 @@ Forge must detect and report drift when stale assumptions, outdated decisions, c
 
 - Prefer current code, repository docs, ADRs, and human confirmations over generated artifacts and inferred context.
 - Do not silently trust stale artifacts, stale context, or old generated output.
-- Use `DRIFT_DETECTED`, `DRIFT_RISK`, or `NO_DRIFT_FOUND` when drift materially affects the answer, plan, review, incident, or refactor.
+- Use `DRIFT_DETECTED`, `DRIFT_RISK`, or `NO_DRIFT_FOUND` when drift materially affects the answer, plan, implementation, execute, review, or context verification.
 - Keep drift wording operational, not alarming: state the mismatch, newer evidence, and affected decision.
 - Mark stale artifacts as stale, partial, or superseded; do not let them override repository evidence.
 
@@ -63,7 +63,7 @@ Relevant modes should surface risk in these areas when the task touches them: PI
 
 ## Secret Safety
 
-Forge must never print, copy, summarize, or expose raw secrets discovered during init, audit, planning, implementation, review, testing, migration, or platform discovery.
+Forge must never print, copy, summarize, or expose raw secrets discovered during init, audit, plan, implementation, execute, review, verify-context, migration, or platform discovery.
 
 Sensitive values include API keys, access tokens, refresh tokens, passwords, private keys, JWTs, session cookies, webhook secrets, database URLs with credentials, Kafka/SASL credentials, cloud credentials, and OAuth client secrets.
 

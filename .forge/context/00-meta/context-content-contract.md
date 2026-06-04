@@ -173,13 +173,13 @@ AI never fabricates architecture, APIs, services, databases, integrations, owner
 
 *Location: `.forge/` (root namespace, only component outside `context/`) · no front-matter — config file, not narrative context*
 
-- **Purpose** — Machine-readable engine manifest: declares **configuration** of the context system — tier, active layers, systems list, default mode, governance & size budget parameters.
-- **Knowledge it holds** — Configuration values only: `forge_version`, `tier`, `layers_enabled`, `systems[]`, `loading.default_mode`, `size_budget`, `governance.*`.
+- **Purpose** — Machine-readable engine manifest: declares **configuration** of the context system — runtime version, run behavior, workflow default, context root, policy, team, artifact, and tool settings.
+- **Knowledge it holds** — Configuration values only: `forge.version`, `run.*`, `workflow.*`, `context.*`, `policy.*`, `team.*`, `artifacts.*`, `tools.*`.
 - **Must NOT hold** — Domain knowledge; prose; architecture facts; conventions; human narrative. Minimal comments only.
 - **AI behavior** — Read earliest at bootstrap to know **how** the engine is configured. Not a knowledge source; never cited as domain fact. AI may propose changes, not silently modify.
 - **Verbosity** — Minimal; key/value only.
 - **Loading** — Always loaded (bootstrap step 2, before `context/`).
-- **Relations** — Paired with `context-manifest.md` (config = settings & toggles; manifest = content index). Activates `layers/`, `systems/`, and default mode. `governance`/`size_budget` parameters enforce `conventions.md` rules.
+- **Relations** — Paired with `context-manifest.md` (config = settings & toggles; manifest = content index). Activates the workflow default mode, context root, policy confirmation boundaries, artifact directories, and tool adapter defaults.
 
 ### 3.9 `layers/`
 

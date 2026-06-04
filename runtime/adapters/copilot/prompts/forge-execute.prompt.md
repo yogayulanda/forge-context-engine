@@ -6,10 +6,10 @@ Use shared skill:
 This is a GitHub Copilot prompt wrapper for Forge execute mode.
 
 Focus on:
-- Approved task cards or execution contract only.
-- Bounded repository changes and hidden-change checks.
+- Approved ECP only.
+- Bounded repository changes, per-task validation, final validation, and hidden-change checks.
 - Stop on unclear scope or missing execution values.
-- Stop on HIGH-risk decisions without human approval.
+- Stop on policy/high-risk decisions without human approval.
 - Distinguish implementation failure from environment/tooling failure.
 
 Repository behavior and lifecycle semantics come from:

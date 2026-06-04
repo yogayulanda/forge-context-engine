@@ -1,39 +1,44 @@
 ---
-id: mode.testing
-title: "Mode: Testing"
-type: mode
+id: scenario.validation
+title: "Scenario Guidance: Validation"
+type: scenario
 status: confirmed
 confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-05-25
+updated: 2026-06-04
 ---
-# Mode: Testing
+
+# Scenario Guidance: Validation
+
+`testing` is not a core lifecycle mode. Use this file only as scenario guidance for validation-focused work.
+
+## route through core modes
+- Use `execute` for scoped per-task validation, final validation, and in-scope validation fixes.
+- Use `review` to inspect validation evidence, validation gaps, risk, and MR readiness.
+- Use `plan` when validation scope requires a new decision or broader strategy.
+
 ## include
 - `layers/testing`
 - `systems/<related>`
 - `knowledge/assumptions.md`
+
 ## on_demand
 - `layers/<related>`
 - `knowledge/decisions/`
 - `knowledge/inferred.md`
-- `generated/<relevant>`
+- `.forge/generated/<relevant>`
+
 ## exclude
 - `systems/<unrelated>`
 - `layers/<unrelated>`
+
 ## token_budget
 6000
+
 ## notes
-- Own structured validation after execute; execute may do lightweight checks, review evaluates correctness/risk/governance; `Testing Result` must use one status only: `PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_RUN`.
-- When persistence helps continuity, write or reference a Testing Result Artifact with validated scope, blockers, automated/manual validation, coverage gaps, and runtime-sensitive validation.
-- Output sections: `Testing Result`, `Scope yang divalidasi`, `Automated validation`, `Environment/runtime blockers`, `Yang belum tervalidasi`, `Yang masih perlu dicek manual`, `Reviewer perlu fokus ke`, and `Risk summary`.
-- Group scope by relevant category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation; omit irrelevant groups, but do not flatten everything into one list.
-- Trace validation to the confirmed execution contract where possible: approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations.
-- For event-driven or runtime-sensitive flows, explicitly cover retryable failure, non-retryable failure, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
-- Report `CONTEXT_BUDGET_LIMITED` with missing evidence and affected validation scope, drift status, cross-repo evidence gaps, and fintech-sensitive validation gaps; payment/transaction correctness is never LOW risk.
-- Separate automated/manual/infra-dependent/production-like validation; follow existing test placement and keep test types/assets distinct.
-- If `runtime.non_interactive: false`, ask unresolved validation expectations only when needed; if `true`, emit an unresolved validation report; do not become planning, review, or redesign.
-- Check validation prerequisites and distinguish implementation failure, validation failure, tooling blocker, infra unavailable, and runtime dependency unavailable.
-- Use `PASSED` only when selected validation ran and passed; use `PARTIAL` for incomplete required coverage; use `BLOCKED_BY_ENVIRONMENT` for unavailable tooling/infra; use `NOT_RUN` when no reliable validation ran.
-- Highlight unvalidated risks, risky runtime assumptions, runtime-sensitive behavior not verified, and explicit manual actions; redact secrets and never imply full validation without evidence.
+- Validation reports use `passed`, `failed`, `partial`, `blocked_by_environment`, or `not_run` when validation is requested.
+- Separate scoped validation, final validation, manual checks, environment blockers, coverage gaps, and risks.
+- Do not imply full validation without evidence.
+- Do not become planning, execution beyond approved scope, review approval, or redesign.

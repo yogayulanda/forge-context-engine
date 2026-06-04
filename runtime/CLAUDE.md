@@ -5,25 +5,27 @@ Thin Claude entrypoint for Forge repositories. This file stores no repository co
 ## Bootstrap
 
 1. Read `.forge/forge.config.yaml` first.
-2. Read `.forge/context/00-meta/context-manifest.md` as the routing index.
-3. Follow `.forge/context/00-meta/conventions.md` as the normative operational contract.
-4. Treat `00-meta/*` and `01-core/*` as always-loaded core.
-5. Read the requested mode file from `.forge/context/modes/<mode>.md`.
-6. Load only task-relevant context from that mode's `include`, `on_demand`, `exclude`, `token_budget`, and `notes`.
+2. Apply `run.interaction` and related final run config fields.
+3. Read `.forge/context/00-meta/context-manifest.md` as the routing index.
+4. Follow `.forge/context/00-meta/conventions.md` as the normative operational contract.
+5. Treat `00-meta/*` and `01-core/*` as always-loaded core.
+6. Read the requested mode file from `.forge/context/modes/<mode>.md`.
+7. Load only task-relevant context from that mode's `include`, `on_demand`, `exclude`, `token_budget`, and notes.
 
 Keep bootstrap details quiet in normal replies. When useful, say only `Scoped context loaded` plus the few areas that affected the answer.
 
 ## Skill Entry
 
-Claude slash commands and natural language requests invoke shared Forge skills, which then invoke Forge modes: `ask`, `planning`, `implementation`, `execute`, `testing`, `review`, `incident`, and `refactor`.
+Claude slash commands and natural language requests invoke shared Forge skills, which then invoke Forge modes: `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
 
-Shared skills live under `skills/<skill>/SKILL.md`: `forge-ask`, `forge-plan`, `forge-implement`, `forge-execute`, `forge-test`, `forge-review`, `forge-incident`, and `forge-refactor`.
+Shared skills live under `skills/<skill>/SKILL.md`: `forge-init`, `forge-ask`, `forge-plan`, `forge-implementation`, `forge-execute`, `forge-review`, and `forge-verify-context`.
+
+Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route validation, incident, or refactor requests through the core lifecycle. They are not core modes.
 
 Materialized slash command wrappers live under `adapters/claude/commands/` and map to those skills. They are invocation helpers only.
 
 ## Claude Hints
 
-- Apply `runtime.non_interactive` and respect `runtime.profile` from config before mode work.
 - Preserve evidence, inference, assumption, proposed-default, and unknown boundaries from Forge core.
 - Redact secrets before output or context writes.
 - Keep responses concise, operational, repository-native, and aligned to the active mode.

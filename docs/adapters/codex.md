@@ -10,7 +10,8 @@ Codex invocation syntax may vary by surface or version. Acceptable request style
 $forge-review
 /skill forge-review
 Use Forge review mode on this branch.
-Use Forge planning mode for this change.
+Use Forge plan mode for this change.
+Use Forge execute mode for the approved ECP.
 ```
 
 The expected path is:
@@ -25,14 +26,15 @@ Codex request -> AGENTS.md -> shared skill -> .forge/context mode -> scoped repo
 
 | Mode wording | Shared skill |
 |---|---|
+| `init` | `forge-init` |
 | `ask` | `forge-ask` |
-| `planning` | `forge-plan` |
-| `implementation` | `forge-implement` |
+| `plan` | `forge-plan` |
+| `implementation` | `forge-implementation` |
 | `execute` | `forge-execute` |
-| `testing` | `forge-test` |
 | `review` | `forge-review` |
-| `incident` | `forge-incident` |
-| `refactor` | `forge-refactor` |
+| `verify-context` | `forge-verify-context` |
+
+Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route validation, incident, or refactor requests through the core lifecycle.
 
 Codex remains skills-first. There is no separate Codex command-wrapper layer unless a future Codex runtime explicitly requires one.
 
@@ -41,15 +43,15 @@ Codex remains skills-first. There is no separate Codex command-wrapper layer unl
 Good Codex request:
 
 ```text
-Use Forge execute mode for these approved task cards.
-Report changed files, validation, rollback notes, and hidden change check.
+Use Forge execute mode for this approved ECP.
+Report changed files, validation, fixes made during execute, rollback notes, and hidden change check.
 ```
 
 Good review request:
 
 ```text
 Use Forge review mode.
-Prioritize bugs, behavioral regressions, validation gaps, and MR readiness.
+Prioritize bugs, behavioral regressions, validation gaps, security, context impact, and MR readiness.
 ```
 
 ## Boundaries

@@ -7,7 +7,7 @@ The adapter is a thin instruction bridge, not a second Forge runtime and not a C
 ## Responsibility
 
 - Point Codex to `.forge/forge.config.yaml`.
-- Apply `runtime.non_interactive` and respect `runtime.profile`.
+- Apply `run.interaction` and related final run config fields.
 - Point Codex to shared skills under `runtime/skills/`.
 - Let each shared skill invoke `.forge/context/modes/<mode>.md`.
 - Load only relevant scoped repository context.
@@ -20,14 +20,15 @@ Codex should treat these as Forge skill entrypoints:
 
 | User wording | Shared skill |
 |---|---|
+| `Use Forge init mode` | `forge-init` |
 | `Use Forge ask mode` | `forge-ask` |
-| `Use Forge planning mode` | `forge-plan` |
-| `Use Forge implementation mode` | `forge-implement` |
+| `Use Forge plan mode` | `forge-plan` |
+| `Use Forge implementation mode` | `forge-implementation` |
 | `Use Forge execute mode` | `forge-execute` |
-| `Use Forge testing mode` | `forge-test` |
 | `Use Forge review mode` | `forge-review` |
-| `Use Forge incident mode` | `forge-incident` |
-| `Use Forge refactor mode` | `forge-refactor` |
+| `Use Forge verify-context mode` | `forge-verify-context` |
+
+`forge-test`, `forge-incident`, and `forge-refactor` are scenario compatibility skills, not core modes.
 
 ## Command Use
 
@@ -41,7 +42,7 @@ Command behavior must come from shared skills, local `.forge/context`, and curre
 
 Do not materialize Codex command-wrapper files unless the Codex runtime explicitly requires them later. If that becomes necessary, wrappers must remain pointers to shared skills.
 
-Execute mode requires approved task cards or an execution contract. If scope is unclear or a HIGH-risk decision lacks human approval, Codex should stop and report the blocker.
+Execute mode requires an approved ECP. If scope is unclear or a policy/high-risk decision lacks human approval, Codex should stop and report the blocker.
 
 ## Responsibility Chain
 

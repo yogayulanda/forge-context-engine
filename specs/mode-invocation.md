@@ -13,14 +13,13 @@
 
 ## 0. Purpose
 
-Mode invocation defines how an AI assistant uses Forge mode files during ask, planning, implementation task decomposition, execution, testing, review, incident, and refactor work.
+Mode invocation defines how an AI assistant uses Forge mode files during `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context` work.
 
 The protocol ensures:
 - Mode files are operational contracts, not optional hints.
 - Context loading remains scoped and delta-based.
-- `runtime.non_interactive` controls interactive vs automation-safe behavior globally.
-- `runtime.profile` labels local vs automation runtime intent without becoming a second interaction flag.
-- Decision authority and LOW/MEDIUM/HIGH risk boundaries make automation-safe behavior explicit.
+- `run.interaction` controls manual vs automation-safe behavior globally.
+- Policy-controlled high-risk decisions require human confirmation.
 - Evidence, inference, proposed-default, and unknown boundaries survive task execution.
 - Unknowns are classified into blocking, proposed-default, or informational behavior.
 - Sensitive values are redacted before output or context write.
@@ -28,7 +27,7 @@ The protocol ensures:
 - Execute reports expose status, validation, rollback, review focus, and hidden-change checks without narrative noise.
 - Runtime validation checks prerequisites before commands and separates implementation failures from environment/tooling blockers.
 - Partial, blocked, and not-validated outcomes are first-class statuses where each mode owns the vocabulary for that outcome.
-- Testing mode provides structured, contract-aware validation grouped by test scope and runtime risk.
+- Validation activity provides structured, contract-aware evidence grouped by test scope and runtime risk inside execute/review workflows.
 - Review mode behaves like a concise senior MR review with clear acceptability, severity, evidence, MR readiness, reviewer focus, and safety risk.
 - Runtime placement stays modular: global files define entry rules, mode files define mode-specific behavior.
 - Human-reviewable execution boundaries exist before AI modifies code.
@@ -60,13 +59,13 @@ Canonical lifecycle:
 
 1. Requested mode identified.
 2. `.forge/forge.config.yaml` read first.
-3. `runtime.profile`, `runtime.non_interactive`, and decision authority detected.
-4. Profile/non-interactive conflicts reported clearly, with `runtime.non_interactive` applied as the controlling behavior.
+3. `run.interaction`, output/write/failure behavior, and policy confirmation boundaries detected.
+4. `run.interaction` applied as the controlling behavior.
 5. Mode file read from `.forge/context/modes/<mode>.md`.
 6. `include`, `on_demand`, `exclude`, `token_budget`, and `notes` parsed.
 7. Scoped context loaded according to the mode delta.
-8. Task executed according to mode behavior and runtime interaction behavior. For planning, human approval of the ECP is required before implementation proceeds. For implementation, human approval of the Execution Contract is required before execute proceeds.
-9. Decision risk and authority applied before any automation-selected default.
+8. Task executed according to mode behavior and run interaction behavior. For `plan`, human approval is required before `implementation` proceeds. For `implementation`, human approval of the ECP is required before `execute` proceeds.
+9. Policy confirmation boundaries applied before any important decision.
 10. Runtime/tooling prerequisites checked before validation or testing commands when such commands depend on tooling/infra.
 11. Validation evidence separated from validation gaps, blocked commands, and manual follow-up.
 12. Evidence / inference / proposed-default / unknown boundaries preserved.
@@ -82,18 +81,18 @@ Canonical workflow:
 
 ```
 forge-plan
-→ human approval (ECP: proposed → approved)
-→ forge-implement
-→ human approval (Execution Contract: proposed → approved)
-→ forge-execute
-→ optional forge-test
-→ forge-review
-→ scoped fix loop when review returns NEEDS_CHANGES
+-> human approval (Plan: proposed -> approved)
+-> forge-implementation
+-> human approval (ECP: proposed -> approved)
+-> forge-execute
+-> forge-review
+-> optional forge-verify-context
+-> scoped fix loop when review returns needs_fix
 ```
 
-Each transition between planning output and implementation, and between implementation task cards and execution, requires explicit human approval. Assistants must not proceed to the next mode without that signal.
+Each transition between plan output and implementation, and between ECP output and execution, requires explicit human approval. Assistants must not proceed to the next mode without that signal.
 
-Ask, incident, and refactor are entry modes, not mandatory lifecycle stages. Small, well-understood changes may skip planning. Execution may operate on approved task subsets. Testing may operate independently for test-only requests.
+`ask` is an entry mode, not a mandatory lifecycle stage. Incident, refactor, and test-focused requests are workflow scenarios that use the core lifecycle modes as needed. Small, well-understood changes may skip `plan`. Execution may operate on approved task subsets.
 
 See `docs/workflow.md` for the narrative walkthrough, approval gate UX, and post-review fix loop.
 
@@ -104,16 +103,15 @@ See `docs/workflow.md` for the narrative walkthrough, approval gate UX, and post
 All modes follow these rules:
 
 - Read `.forge/forge.config.yaml` before reading the requested mode file.
-- Detect `runtime.profile`, `runtime.non_interactive`, and decision authority without requiring the user to mention them.
-- Apply `runtime.non_interactive` as the single controlling interaction flag.
+- Detect `run.interaction`, output/write/failure behavior, workflow defaults, and policy confirmation boundaries without requiring the user to mention them.
+- Apply `run.interaction` as the single controlling interaction setting.
 - Then read the requested mode file before loading mode-specific context.
 - Treat always-loaded core as already available: `00-meta/*` and `01-core/*`.
 - Treat mode files as loading deltas on top of core.
-- Treat `runtime.non_interactive: false` as the interactive default.
-- Treat `runtime.non_interactive: true` as automation-safe behavior.
-- Treat `runtime.profile: local` as human-in-the-loop profile metadata and `runtime.profile: automation` as automation-safe profile metadata.
-- Treat `runtime.profile: ci` as reserved metadata only; do not add CI/CD, pipeline, deploy, release, trigger, or executor behavior.
-- Report profile/non-interactive conflicts clearly and continue only according to `runtime.non_interactive`.
+- Treat `run.interaction: manual` as the interactive default.
+- Treat `run.interaction: auto` as automation-safe behavior.
+- Do not infer CI/CD, pipeline, deploy, release, trigger, executor, or orchestration behavior from any run setting.
+- Report unsupported or conflicting run fields clearly and continue only when the remaining policy allows it.
 - Load `include` entries normally when relevant to the task.
 - Load `on_demand` entries only when task scope requires them.
 - Do not load `exclude` entries unless the user explicitly changes scope.
@@ -123,7 +121,7 @@ All modes follow these rules:
 - Do not broad-load `.forge/context` by default.
 - Prefer direct repository evidence over broad context loading.
 - Expand context only with a concrete reason tied to task relevance, missing evidence, drift risk, cross-repo uncertainty, incident blast radius, refactor risk, or governance risk.
-- Emit `CONTEXT_BUDGET_LIMITED` when required evidence may exceed the normal scoped budget and Forge cannot safely answer, plan, execute, test, review, diagnose, or refactor without more context.
+- Emit `CONTEXT_BUDGET_LIMITED` when required evidence may exceed the normal scoped budget and Forge cannot safely answer, plan, implement, execute, review, verify context, or handle the requested scenario without more context.
 - Keep evidence-backed facts, inferences, proposed defaults, assumptions, and unknowns separate.
 - Keep proposed defaults explicitly labeled as proposed and not confirmed.
 - Redact secrets before reporting evidence, findings, plans, reviews, tests, or loaded context.
@@ -191,45 +189,30 @@ HIGH-risk governance decisions require human approval. Raw secrets and raw PII m
 
 ---
 
-## 3. Runtime Profiles, Unknown Classification, and Decision Protocol
+## 3. Run Interaction, Unknown Classification, and Decision Protocol
 
-Forge uses exactly one runtime flag for interaction behavior: `runtime.non_interactive`.
-
-`runtime.profile` is lightweight runtime profile metadata:
-
-| Profile | Meaning |
-|---|---|
-| `local` | Default human-in-the-loop workflow. Interactive-first, concise human-readable output, may ask clarification questions. Implies `runtime.non_interactive: false` unless explicitly overridden. |
-| `automation` | Non-interactive-safe workflow. Must not ask conversational questions; emits structured statuses and required decisions. Implies `runtime.non_interactive: true` unless explicitly overridden. |
-| `ci` | Reserved for future compatibility. It does not define CI/CD behavior, pipeline execution, deploy/release automation, triggers, or runtime executors. |
+Forge uses exactly one run setting for interaction behavior: `run.interaction`.
 
 | Value | Behavior |
 |---|---|
-| `false` | Interactive-first default. Forge may ask concise clarification questions for blocking decisions and continues after human confirmation. |
-| `true` | Non-interactive automation-safe behavior. Forge must not ask conversational questions and must emit structured `NEEDS_CONFIRMATION`, `BLOCKED`, or `NEEDS_HUMAN_APPROVAL` for decisions it cannot safely make. |
+| `manual` | Interactive-first default. Forge may ask concise clarification questions for blocking decisions and continues after human confirmation. |
+| `auto` | Automation-safe behavior. Forge must not ask conversational questions and must emit structured `NEEDS_CONFIRMATION`, `BLOCKED`, or `NEEDS_HUMAN_APPROVAL` for decisions it cannot safely make. |
 
-If `runtime.profile` and `runtime.non_interactive` conflict, Forge reports the conflict clearly before mode work and applies `runtime.non_interactive` as the controlling behavior. This is a validation concern, not permission to introduce another interaction flag.
+Other `run` fields shape output, write behavior, and failure handling. They do not define lifecycle stages, orchestration, CI/CD, deploy/release automation, triggers, or runtime executors.
 
-Decision authority values:
-
-| Authority | Boundary |
-|---|---|
-| `ai` | May choose only LOW-risk proposed defaults. Must not decide MEDIUM or HIGH risk behavior. |
-| `orchestrator` | May choose MEDIUM-risk operational defaults only when explicitly configured. Must emit decision trace. Must not approve HIGH-risk decisions. |
-| `human` | Required for HIGH-risk decisions and any decision whose authority is missing, disputed, or outside configured automation authority. |
+Decision authority is not an active config knob. Important decisions are governed by `policy.require_human_confirmation_for`.
 
 Decision risk levels:
 
 | Risk | Meaning | Runtime behavior |
 |---|---|---|
 | `LOW` | Reversible, local, no contract/security/data correctness impact. | AI may continue with a proposed default. |
-| `MEDIUM` | Operational behavior, config, or runtime behavior. | Orchestrator may choose only when configured; otherwise needs confirmation. |
+| `MEDIUM` | Operational behavior, config, or runtime behavior. | Needs confirmation when policy requires it or when the decision is not safely reversible. |
 | `HIGH` | Security/compliance, PII/secrets, financial correctness, destructive migration, production topology, contract authority, or rollback-risky change. | Requires human confirmation; automation stops with `NEEDS_HUMAN_APPROVAL`. |
 
-Automation-selected LOW defaults and orchestrator-selected MEDIUM decisions must include a concise decision trace:
+Automation-selected LOW defaults and confirmed important decisions must include a concise decision trace:
 - Decision.
 - Selected option.
-- Authority used.
 - Risk level.
 - Reason.
 - Affected tasks/artifacts.
@@ -250,7 +233,7 @@ When multiple blockers exist, group them as a short numbered list before options
 
 Non-interactive mode must not ask for human input conversationally. When blocking unknowns exist, emit structured status and include required decisions, recommended option, alternative when useful, authority required, risk level, and affected tasks/artifacts.
 
-Changing `runtime.non_interactive` never re-initializes context, rewrites repository cognition, invalidates assumptions, modifies inferred knowledge, or rewrites systems, layers, or core files.
+Changing `run.interaction` never re-initializes context, rewrites repository cognition, invalidates assumptions, modifies inferred knowledge, or rewrites systems, layers, or core files.
 
 ### 3.1 Proposed Default Semantics
 
@@ -341,8 +324,8 @@ Manual actions must be explicit and operational, for example: `Jalankan go test 
 
 Status claims must never imply fully validated, production-ready, or test-passed unless the report contains evidence for that claim.
 
-Testing reports must use this output order:
-1. `Testing Result`
+Validation reports inside execute/review workflows must use this output order when validation evidence is requested:
+1. `Validation Result`
 2. `Scope yang divalidasi`
 3. `Automated validation`
 4. `Environment/runtime blockers`
@@ -351,9 +334,9 @@ Testing reports must use this output order:
 7. `Reviewer perlu fokus ke`
 8. `Risk summary`
 
-Testing scope must be grouped by applicable category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation. Automated checks, manual validation, infra-dependent validation, and production-like verification must not be mixed ambiguously.
+Validation scope must be grouped by applicable category: unit, integration, e2e, smoke, rollback, migration, runtime validation, and contract validation. Automated checks, manual validation, infra-dependent validation, and production-like verification must not be mixed ambiguously.
 
-Contract-aware testing validates the confirmed execution contract where possible: approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations. Event-driven or runtime-sensitive testing must explicitly address retryable failure behavior, non-retryable failure behavior, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
+Contract-aware validation checks the approved ECP where possible: approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations. Event-driven or runtime-sensitive validation must explicitly address retryable failure behavior, non-retryable failure behavior, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
 
 Review reports must use this output order:
 1. `Review Result`
@@ -385,15 +368,15 @@ Mode-owned artifact types:
 
 | Mode | Artifact |
 |---|---|
-| `planning` | ECP Artifact |
-| `implementation` | Execution Contract Artifact |
+| `plan` | Quick Plan or SDD artifact |
+| `implementation` | ECP Artifact |
 | `execute` | Execute Result Artifact |
-| `testing` | Testing Result Artifact |
 | `review` | Review Result Artifact |
-| `incident` | Incident Artifact |
-| `refactor` | Refactor Artifact |
+| `verify-context` | Context Verification Result |
+| Incident scenario | Scenario artifact, explicitly marked as non-core lifecycle |
+| Refactor scenario | Scenario artifact, explicitly marked as non-core lifecycle |
 
-Artifact links may reference previous artifact IDs, ECP IDs, execution contract IDs, result artifact IDs, repository evidence, commits, PR/MR IDs, ADRs, and human confirmations.
+Artifact links may reference previous artifact IDs, plan IDs, ECP IDs, result artifact IDs, repository evidence, commits, PR/MR IDs, ADRs, and human confirmations.
 
 Artifact links are trace references only. They must not become orchestration, DAG, workflow, scheduler, agent-memory, execution-trigger, or dependency-management semantics.
 
@@ -411,9 +394,9 @@ Runtime placement follows these boundaries:
 - `runtime/AGENTS.md` and tool adapters keep the same thin invocation-only boundary.
 - `00-meta/conventions.md` keeps global cognition principles and mode-loading discipline.
 - `modes/<mode>.md` owns mode-specific execution and reporting behavior in `## notes`.
-- Mode-specific ask, planning, implementation, execute, testing, review, incident, and refactor behavior should not be duplicated in globally loaded conventions.
+- Mode-specific `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context` behavior should not be duplicated in globally loaded conventions.
 - Runtime, validation, drift, artifact, governance, and secret semantics are referenced from adapters, not duplicated in adapters.
-- Visible modes remain limited to `ask`, `planning`, `implementation` (user-facing `implement`), `execute`, `testing`, `review`, `incident`, and `refactor`.
+- Visible core modes remain limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
 
 This placement reduces globally loaded operational text while preserving invocation guarantees.
 
@@ -442,40 +425,42 @@ See `docs/workflow.md` for the canonical workflow narrative, approval gate UX, a
 
 | Mode | Purpose | Produces | Approval required? |
 |---|---|---|---|
+| `init` | Repository context/config creation | `.forge/context` and config | Before first use |
 | `ask` | Lightweight repo understanding | Answers from evidence | No |
-| `planning` | Strategic ECP reasoning | ECP (`status: proposed`) | Before implementation |
-| `implementation` | Human-reviewable task decomposition | Execution Contract (`status: proposed`) | Before execute |
-| `execute` | Approved repository modification | Code changes + result report | After contract approval |
-| `testing` | Structured validation depth | Testing Result artifact | No (independent) |
-| `review` | Correctness and risk assessment | Review Result artifact | No (independent) |
-| `incident` | Issue and incident diagnosis | Incident artifact | No |
-| `refactor` | Conservative behavior-preserving cleanup | Refactor artifact | Human stop for HIGH risk |
+| `plan` | Quick Plan or SDD | Plan (`status: proposed`) | Before implementation |
+| `implementation` | ECP generation | Execution Context Package (`status: proposed`) | Before execute |
+| `execute` | Approved ECP application | Code changes + result report | After ECP approval |
+| `review` | Executed-result assessment | Review Result | No (independent) |
+| `verify-context` | Context health/freshness | Context Verification Result | No |
+| Incident scenario | Issue and incident diagnosis using core modes | Scenario artifact when needed | Uses core-mode gates |
+| Refactor scenario | Conservative behavior-preserving cleanup using core modes | Scenario artifact when needed | Uses core-mode gates |
 
 ### Approval Gates
 
 Both gates are required and cannot be skipped. See `docs/workflow.md` for exact approval signal wording.
 
-- **Gate 1**: Human must explicitly approve an ECP before `forge-implement` treats it as approved. ECP artifact begins as `status: proposed`.
-- **Gate 2**: Human must explicitly approve an Execution Contract before `forge-execute` runs. Execution Contract begins as `status: proposed`.
+- **Gate 1**: Human must explicitly approve a plan before `forge-implementation` treats it as approved. Plan output begins as `status: proposed`.
+- **Gate 2**: Human must explicitly approve an ECP before `forge-execute` runs. ECP begins as `status: proposed`.
 
-`READY_FOR_EXECUTION` in implementation output is a readiness signal, not autonomous permission to execute.
+ECP readiness in implementation output is a readiness signal, not autonomous permission to execute.
 
 ### Mode Boundaries
 
+- `init` creates confirmed context/config through bounded scan and human confirmation.
 - `ask` does not plan, mutate, redesign, or run broad audits.
-- `planning` produces strategic ECP with phases; it does not emit detailed executable coding tasks.
-- `implementation` produces human-reviewable task cards; it does not modify code directly.
-- `execute` implements approved tasks; it does not redesign architecture or absorb testing/review responsibilities.
-- `testing` owns validation depth, coverage, and test-focused changes; it does not replace review mode.
-- `review` assesses correctness and risk; it does not replace testing or produce implementation task lists.
-- `incident` diagnoses symptoms to root cause; it does not redesign architecture or topology.
-- `refactor` improves code conservatively within a bounded scope; it preserves behavior and does not hide architecture changes.
+- `plan` produces Quick Plan or SDD; it does not emit detailed executable coding tasks or modify code.
+- `implementation` produces an ECP; it does not modify code directly.
+- `execute` implements approved ECP scope; it does not redesign architecture or absorb review responsibilities.
+- `review` assesses correctness, validation, security, scope, and context impact; it does not modify code by default.
+- `verify-context` checks `.forge/context` health only; it does not validate plans, ECPs, code diffs, or MR readiness.
+- Incident scenarios diagnose symptoms to root cause through `ask`, `plan`, `implementation`, `execute`, and `review` as needed; they do not become core lifecycle modes or redesign architecture.
+- Refactor scenarios improve code conservatively through `plan`, `implementation`, `execute`, and `review` as needed; they preserve behavior and do not hide architecture changes.
 
 ### Task Card Requirements
 
 Implementation `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` output must use task cards. Each card must include: Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
 
-Task cards are an output discipline only — not DAG, scheduler, agent, workflow engine, or Jira semantics.
+Task cards are an output discipline only â€” not DAG, scheduler, agent, workflow engine, or Jira semantics.
 
 ### Execute Output Order
 
@@ -549,11 +534,11 @@ The following are invalid mode invocation behaviors. See `runtime/.forge/context
 
 **Config and interaction:**
 - Ignoring the requested mode file or invoking without reading `.forge/forge.config.yaml` first.
-- Failing to detect, report, or apply `runtime.non_interactive` as the controlling flag.
-- Treating `runtime.profile` as a second interaction flag.
-- Emitting automation-style blocked reports in interactive mode instead of ask-first clarification.
-- Asking conversational questions in non-interactive mode.
-- Using reserved `ci` profile to introduce CI/CD, deploy, release, or executor behavior.
+- Failing to detect, report, or apply `run.interaction` as the controlling interaction setting.
+- Treating old runtime profile fields as active config semantics.
+- Emitting automation-style blocked reports in manual mode instead of ask-first clarification.
+- Asking conversational questions in auto mode.
+- Using run settings to introduce CI/CD, deploy, release, or executor behavior.
 - Introducing any conflicting interaction or workflow flag.
 
 **Context loading:**
@@ -564,23 +549,25 @@ The following are invalid mode invocation behaviors. See `runtime/.forge/context
 
 **Decisions and approval:**
 - Auto-approving HIGH-risk decisions.
-- Using orchestrator authority without explicit `runtime.decision_authority: orchestrator`.
-- Omitting decision trace for automation-selected LOW defaults or orchestrator-selected MEDIUM decisions.
+- Silently auto-approving important decisions covered by policy confirmation boundaries.
+- Omitting decision trace for automation-selected LOW defaults or confirmed important decisions.
 - Treating decision traces as workflow state, scheduler input, retry policy, or execution graph.
 - Treating a proposed default as confirmed.
 
 **Mode boundaries:**
-- Collapsing ask, planning, implementation, execute, testing, review, incident, and refactor into generic reasoning behavior.
-- Allowing planning to produce detailed executable coding tasks instead of strategic ECP.
+- Collapsing init, ask, plan, implementation, execute, review, and verify-context into generic reasoning behavior.
+- Treating incident, refactor, or test-focused scenarios as separate core lifecycle modes.
+- Allowing plan to produce detailed executable coding tasks instead of Quick Plan or SDD.
 - Allowing implementation mode to emit final executable tasks while critical blockers remain unresolved.
 - Allowing implementation mode to hide blocking decisions at the end of a full breakdown.
 - Marking implementation output `READY_FOR_EXECUTION` while required execution values are conditional, unavailable, or unresolved.
 - Allowing implementation to directly modify code.
-- Allowing execute to redefine approved architecture or absorb testing/review responsibilities.
-- Allowing review to become testing, replace test strategy, or produce implementation task lists.
-- Allowing ask to become planning, review, audit, or mutation.
-- Allowing incident to become speculative redesign or architecture rewrite.
-- Allowing refactor to hide behavior changes, architecture rewrites, or paradigm migrations.
+- Allowing execute to redefine approved architecture or absorb review responsibilities.
+- Allowing review to become execution, replace validation evidence, or produce implementation task lists.
+- Allowing verify-context to become code validation, MR review, or implementation planning.
+- Allowing ask to become plan, review, audit, or mutation.
+- Allowing incident scenarios to become speculative redesign or architecture rewrite.
+- Allowing refactor scenarios to hide behavior changes, architecture rewrites, or paradigm migrations.
 
 **Implementation task cards:**
 - Allowing readiness output without bounded task cards.
@@ -613,9 +600,9 @@ Mode invocation validation checks that runtime behavior follows this protocol. S
 
 **Config and bootstrap:**
 - `.forge/forge.config.yaml` read before the requested mode file.
-- `runtime.profile`, `runtime.non_interactive`, and decision authority detected.
-- `runtime.non_interactive` applied as the controlling interaction behavior.
-- Profile/non-interactive conflicts reported before mode work.
+- `run.interaction`, output/write/failure behavior, and policy confirmation boundaries detected.
+- `run.interaction` applied as the controlling interaction behavior.
+- Unsupported or conflicting run fields reported before mode work.
 - Mode file read before mode-specific context loading.
 - `include`, `on_demand`, `exclude`, `token_budget`, and `notes` considered.
 
@@ -624,7 +611,7 @@ Mode invocation validation checks that runtime behavior follows this protocol. S
 - `CONTEXT_BUDGET_LIMITED` used when required evidence exceeds scoped budget.
 
 **Mode boundary integrity:**
-- All eight modes retained distinct operational behavior per §6.
+- All seven core modes retain distinct operational behavior per section 6.
 - No mode collapsed into another or absorbed out-of-scope responsibilities.
 - Mode-specific behavior lives in mode files, not globally loaded conventions.
 
@@ -633,8 +620,8 @@ Mode invocation validation checks that runtime behavior follows this protocol. S
 - Unknowns classified as blocking, proposed-default, or informational.
 - Proposed defaults explicitly labeled; never promoted to confirmed without human confirmation.
 - HIGH-risk decisions not auto-approved; human confirmation required.
-- Decision traces present for automation-selected LOW and orchestrator-selected MEDIUM decisions.
-- Interactive mode used ask-first clarification; non-interactive mode used blocking status output.
+- Decision traces present for automation-selected LOW defaults and confirmed important decisions.
+- Manual mode used ask-first clarification; auto mode used blocking status output.
 
 **Implementation correctness:**
 - Implementation blocked correctly when critical blockers exist; final task cards absent from blocked output.

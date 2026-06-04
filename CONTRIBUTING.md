@@ -44,7 +44,7 @@ Good reports include:
 - the expected output
 - the actual confusing or unsafe output
 - relevant repository/context evidence
-- whether the issue affected planning, implementation, execution, testing, review, incident, or refactor work
+- whether the issue affected plan, implementation, execution, review, verify-context, or a workflow scenario such as incident/refactor/test-focused work
 
 Keep examples sanitized. Do not include production secrets, customer data, private URLs, or credentials.
 
@@ -53,8 +53,8 @@ Keep examples sanitized. Do not include production secrets, customer data, priva
 - Keep patches small.
 - Prefer explicit wording over abstraction.
 - Add or update validation rules when a recurring failure is found.
-- Preserve `runtime.non_interactive` as the single controlling interaction flag.
-- Keep `runtime.profile` as metadata only.
+- Preserve `run.interaction` as the single controlling interaction setting.
+- Keep important decisions governed by policy confirmation boundaries, not by a runtime decision-authority knob.
 - Keep artifacts bounded, mode-owned, and non-authoritative.
 - Do not add new lifecycle modes, statuses, artifact types, or workflows unless repeated real-world evidence justifies the change.
 

@@ -29,7 +29,7 @@ Index and routing map for the entire context system. Not a knowledge source.
 3. `00-meta/conventions.md`
 4. `00-meta/glossary.md` *(if exists)*
 5. `01-core/*`
-6. `modes/<default_mode>.md` → resolve delta
+6. `modes/<workflow.default_mode>.md` resolves the mode delta
 
 ## Always Loaded
 
@@ -59,11 +59,11 @@ Load based on task type. Do not load all for every task.
 |---|---|
 | `layers/<layer>` | Mode referencing that layer |
 | `systems/<unit>` | Mode + task intent on that unit |
-| `knowledge/decisions/` | `planning`, `implementation`, `execute`, `testing`, `review`, `refactor`; on-demand in `ask`/`incident` |
-| `knowledge/assumptions.md`, `unknowns.md` | `planning`, `testing`; on-demand in `ask`/`implementation`/`execute`/`review`/`incident` |
-| `knowledge/inferred.md` | `ask`, `implementation`, `execute`, `testing`, `incident`; on-demand in `review`/`refactor` |
-| `generated/*` | On-demand |
-| `generated/artifacts/*` | Explicit reference, mode handoff, or task relevance only |
+| `knowledge/decisions/` | `plan`, `implementation`, `execute`, `review`; on-demand in `ask` |
+| `knowledge/assumptions.md`, `unknowns.md` | `plan`; on-demand in `ask`/`implementation`/`execute`/`review`/`verify-context` |
+| `knowledge/inferred.md` | `ask`, `implementation`, `execute`; on-demand in `plan`/`review`/`verify-context` |
+| `.forge/generated/*` | On-demand |
+| `.forge/context-patches/*` | Explicit reference, context impact, or `verify-context` only |
 
 ## Never Auto-Loaded
 
@@ -79,7 +79,7 @@ Load based on task type. Do not load all for every task.
 - `source: human` files not written by AI.
 - `modes/*` files never list `00-meta/*` or `01-core/*` (delta only).
 - Lifecycle artifacts are non-authoritative generated continuity helpers; artifact links never imply workflow, DAG, orchestration, agent memory, or execution-trigger semantics.
-- Runtime profile is metadata only; `runtime.non_interactive` remains the controlling interaction flag and automation-safe behavior never implies orchestration, agents, CI/CD, deploy, triggers, or executors.
+- `run.interaction` is the controlling interaction setting and automation-safe behavior never implies orchestration, agents, CI/CD, deploy, triggers, or executors.
 
 ## File Registry
 

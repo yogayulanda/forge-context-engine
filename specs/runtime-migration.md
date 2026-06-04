@@ -50,7 +50,7 @@ Examples:
 - `skills/`
 - `adapters/`
 - Optional runtime/config metadata when schema-compatible
-- `.forge/forge.config.yaml` runtime behavior keys, including `runtime.profile`, `runtime.non_interactive`, and `runtime.decision_authority`
+- `.forge/forge.config.yaml` final v0.3.0 config keys: `forge`, `run`, `workflow`, `context`, `policy`, `team`, `artifacts`, and `tools`
 
 Purpose:
 - Operational behavior.
@@ -106,7 +106,7 @@ Runtime migration must be narrow. A repository that needs full context reconstru
 Runtime migration must:
 - Preserve local evidence.
 - Preserve inferred, assumption, confirmation, and unknown boundaries.
-- Preserve repository cognition when changing `runtime.profile`, `runtime.non_interactive`, or `runtime.decision_authority`; they control operational interaction and decision-boundary behavior only.
+- Preserve repository cognition when migrating legacy config fields such as `runtime.profile`, `runtime.non_interactive`, or `runtime.decision_authority`; these are compatibility inputs only and must map to final v0.3.0 config vocabulary.
 - Preserve secret-safety boundaries: raw secrets must not be printed, copied, summarized, or migrated into runtime-managed files.
 - Preserve audit/history semantics.
 - Preserve repository topology reasoning.
@@ -116,10 +116,11 @@ Runtime migration must:
 - Keep mode files as loading deltas.
 - Preserve canonical mode schema: `include`, `on_demand`, `exclude`, `token_budget`, `notes`.
 - Preserve numeric-only `token_budget`.
-- Use only `runtime.non_interactive` for interaction behavior; `runtime.profile` is metadata and must not become an alternate or overlapping flag.
-- Preserve supported runtime profiles: `local`, `automation`, and reserved `ci`.
-- Preserve decision authority values: `ai`, `orchestrator`, and `human`.
-- Report profile/non-interactive conflicts clearly instead of silently changing behavior.
+- Use `run.interaction` for interaction behavior.
+- Use `policy.require_human_confirmation_for` for important human-confirmation boundaries.
+- Use `workflow.default_mode` and `workflow.disabled_modes` for workflow configuration.
+- Use `artifacts.output_dir`, `artifacts.patch_dir`, `artifacts.temp_dir`, and `artifacts.cache_dir` for artifact and local-data paths.
+- Report legacy-to-final config conflicts clearly instead of silently changing behavior.
 
 Runtime migration must not:
 - Re-run initialization.
@@ -149,11 +150,12 @@ After runtime migration:
 | Mode schema | Every mode file exposes `## include`, `## on_demand`, `## exclude`, `## token_budget`, `## notes` |
 | Token budget | `token_budget` contains only a decimal integer |
 | Runtime parity | Refreshed runtime-managed files match the selected runtime source |
-| Interaction flag | `runtime.non_interactive` exists, is boolean, and defaults to `false` in runtime templates |
-| Runtime profile | `runtime.profile` is `local`, `automation`, or reserved `ci`; runtime templates default to `local` |
-| Decision authority | `runtime.decision_authority` is `ai`, `orchestrator`, or `human`; runtime templates default to `ai` |
-| Profile conflict | `local` + `non_interactive: true`, or `automation` + `non_interactive: false`, is reported clearly |
-| Conflicting flags | No alternate or overlapping interaction/workflow flags exist |
+| Interaction flag | `run.interaction` is `manual` or `auto` |
+| Run behavior | `run.output`, `run.output_detail`, `run.write_behavior`, and `run.failure_behavior` use final v0.3.0 allowed values |
+| Workflow config | `workflow.default_mode` references a final core mode and `workflow.disabled_modes` exists |
+| Team workflow | `team.context_update_flow` is `reviewable_patch` and `team.require_context_impact_check` is `true` |
+| Artifact paths | `.forge/generated`, `.forge/context-patches`, `.forge/temp`, and `.forge/cache` are separated by config |
+| Legacy config conflict | Old fields such as `runtime.profile`, `non_interactive`, `decision_authority`, `loading.default_mode`, and `apply_allowed` are removed, mapped, or explicitly marked legacy/compatibility |
 | Repository cognition | Repository-owned cognition files are unchanged unless explicitly and separately approved |
 | Application code | No application code changed |
 | Folder structure | No runtime, context, tooling, or application folder redesign occurred |
@@ -206,7 +208,7 @@ These are future compatibility directions only. This specification does not impl
 
 A runtime migration is complete when:
 - Required runtime-managed files are refreshed from the selected runtime source.
-- Existing repositories may adopt `runtime.non_interactive` by refreshing runtime-managed files only.
+- Existing repositories may adopt final `run.interaction` behavior by refreshing runtime-managed files only.
 - Repository-owned cognition files are preserved.
 - Validation expectations pass.
 - Any required re-audit is recorded or completed.

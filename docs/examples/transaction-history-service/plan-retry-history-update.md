@@ -1,4 +1,4 @@
-# Planning Retry History Update
+# Plan Retry History Update
 
 Use this step after the current flow is understood and a bounded change needs engineering shape.
 
@@ -9,7 +9,7 @@ The team wants a safer retry history update path for inbound events. The desired
 ## Example Forge Prompt
 
 ```text
-Use Forge planning mode for a bounded retry history update in this service.
+Use Forge plan mode for a bounded retry history update in this service.
 
 Preserve:
 - public event schema

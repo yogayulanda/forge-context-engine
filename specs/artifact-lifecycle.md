@@ -15,7 +15,7 @@
 
 This document defines small, human-readable lifecycle artifacts that preserve engineering continuity across Forge modes and sessions.
 
-Artifacts are supporting engineering records. They help engineers and assistants connect planning, implementation, execution, testing, review, incident, and refactor work without reconstructing the same context repeatedly.
+Artifacts are supporting engineering records. They help engineers and assistants connect plan, implementation, execution, review, verify-context, and scenario work without reconstructing the same context repeatedly.
 
 Artifacts are NOT:
 - Source of truth over code, repository docs, ADRs, or human confirmations.
@@ -47,10 +47,22 @@ Artifacts are persisted only when useful for lifecycle continuity.
 Default location:
 
 ```
-.forge/context/generated/artifacts/
+.forge/generated/
 ```
 
 The folder is created on demand. Artifact files use Markdown with front matter and concise sections. They are append-friendly, reviewable in diffs, and replaceable/discardable.
+
+Artifact storage policy:
+
+| Path | Policy |
+|---|---|
+| `.forge/context` | Committed curated context source of truth |
+| `.forge/context-patches` | Reviewable context update proposals |
+| `.forge/generated` | Generated artifacts committed manually when relevant |
+| `.forge/temp` | Ignored local-only scratch |
+| `.forge/cache` | Ignored local-only cache |
+
+Generated artifacts must never be confused with curated context. Context changes that should become durable source of truth go through `.forge/context-patches` review before promotion to `.forge/context`.
 
 Recommended filename:
 
@@ -64,7 +76,7 @@ Recommended artifact ID:
 artifact.<type>.<short-topic>.r<N>
 ```
 
-`generated/artifacts/*` remains generated context. It is loaded only by explicit reference, mode handoff, or task relevance.
+`.forge/generated/*` remains generated artifact output. It is loaded only by explicit reference, mode handoff, or task relevance.
 
 ---
 
@@ -91,44 +103,46 @@ Artifacts must stay concise. Store decisions, blockers, boundaries, evidence ref
 
 ## 4. Artifact Types
 
-### 4.1 ECP Artifact
+### 4.1 Plan Artifact
 
-Produced by: planning mode.
+Produced by: plan mode.
 
 Purpose:
-- Preserve approved engineering intent.
-- Preserve confirmed decisions.
-- Preserve boundaries and blockers.
+- Preserve reviewable engineering intent before implementation.
+- Preserve plan shape: Quick Plan or SDD.
+- Preserve risks, options, boundaries, and blockers.
 
 Minimum contents:
 - Title.
 - Status.
-- Confirmed decisions.
+- Plan type: Quick Plan or SDD.
+- Reason for chosen type.
+- Required decisions.
 - Blockers.
-- Approved boundaries.
+- Boundaries.
 - Linked systems/layers.
 - Revision timestamp or reference.
 
-**ECP status vocabulary:**
+**Plan status vocabulary:**
 
 | Status | Meaning |
 |---|---|
-| `proposed` | Planning output produced; awaiting human review and approval |
-| `approved` | Human has explicitly accepted this as the basis for implementation |
+| `proposed` | Plan output produced; awaiting human review and approval |
+| `approved` | Human has explicitly accepted this as the basis for implementation mode |
 | `superseded` | Replaced by a newer revision |
 | `rejected` | Human declined this direction |
 
 Rules:
-- A newly produced ECP artifact must use `status: proposed`.
-- Only the human may transition an ECP to `approved`.
-- An AI assistant must not self-promote an ECP from `proposed` to `approved`.
+- A newly produced Plan artifact must use `status: proposed`.
+- Only the human may transition a Plan artifact to `approved`.
+- An AI assistant must not self-promote a Plan artifact from `proposed` to `approved`.
 
-### 4.2 Execution Contract Artifact
+### 4.2 ECP Artifact
 
 Produced by: implementation mode.
 
 Purpose:
-- Persist the execution-ready task contract.
+- Persist the execution-ready context package produced from an approved plan.
 
 Minimum contents:
 - Readiness status.
@@ -137,19 +151,21 @@ Minimum contents:
 - Stop conditions.
 - Do-not-change boundaries.
 - Acceptance criteria.
-- Derived-from ECP reference.
+- Validation requirements.
+- Security constraints.
+- Derived-from approved Plan reference.
 
-**Execution Contract status vocabulary:**
+**ECP status vocabulary:**
 
 | Status | Meaning |
 |---|---|
 | `proposed` | Task cards produced by implementation mode; awaiting human review |
-| `approved` | Human has confirmed these task cards are safe to execute |
+| `approved` | Human has confirmed the ECP is safe to execute |
 | `blocked` | Blockers remain unresolved; not execution-ready |
 | `superseded` | Replaced by a revised contract |
 
 Rules:
-- A newly produced Execution Contract must use `status: proposed`.
+- A newly produced ECP must use `status: proposed`.
 - Only the human may transition it to `approved`.
 - An AI assistant must not self-promote from `proposed` to `approved`.
 
@@ -168,15 +184,15 @@ Minimum contents:
 - Rollback notes.
 - Unchanged boundaries.
 
-### 4.4 Testing Result Artifact
+### 4.4 Validation Result Artifact
 
-Produced by: testing mode.
+Produced by: execute/review workflow when scoped validation evidence needs a separate handoff record.
 
 Purpose:
 - Preserve validation evidence.
 
 Minimum contents:
-- Testing result.
+- Validation result.
 - Validated scope.
 - Blockers.
 - Automated/manual validation.
@@ -198,9 +214,9 @@ Minimum contents:
 - Rollback/safety notes.
 - Suggested next action.
 
-### 4.6 Incident Artifact
+### 4.6 Incident Scenario Artifact
 
-Produced by: incident mode.
+Produced by: incident workflow scenario when diagnosis and mitigation need a separate handoff record.
 
 Purpose:
 - Preserve diagnosis and mitigation flow.
@@ -213,9 +229,9 @@ Minimum contents:
 - Rollback possibility.
 - Next checks.
 
-### 4.7 Refactor Artifact
+### 4.7 Refactor Scenario Artifact
 
-Produced by: refactor mode.
+Produced by: refactor workflow scenario when technical-debt intent needs a separate handoff record.
 
 Purpose:
 - Preserve technical debt proposal or refactor intent.
@@ -233,9 +249,9 @@ Minimum contents:
 
 Artifacts may reference:
 - Previous artifact IDs.
+- Plan artifact IDs.
 - ECP artifact IDs.
-- Execution contract artifact IDs.
-- Execute, testing, review, incident, or refactor result references.
+- Execute, review, verify-context, or scenario result references.
 - Repository evidence paths, commits, PR/MR IDs, ADRs, or human confirmation references.
 
 Artifact links are trace references only.
@@ -261,7 +277,7 @@ Artifacts are lifecycle helpers with these semantics:
 - Discardable: deleting an artifact must not remove repository truth.
 - Bounded: no long conversational dumps or broad historical summaries.
 - Explicitly non-authoritative over repository evidence.
-- Producing an artifact does not imply approval. A newly produced ECP or Execution Contract is `proposed` until the human explicitly approves it.
+- Producing an artifact does not imply approval. A newly produced Plan or ECP is `proposed` until the human explicitly approves it.
 - Artifact status promotion from `proposed` to `approved` requires explicit human confirmation; it is not a side-effect of artifact creation or assistant output.
 
 Revision references may use `r1`, `r2`, or date-based references. Revisions should preserve the reason for change when it affects execution or review continuity.
@@ -287,13 +303,11 @@ Artifacts should use concise engineering language, stable references, and direct
 
 | Mode | Artifact |
 |---|---|
-| `planning` | ECP Artifact |
-| `implementation` | Execution Contract Artifact |
+| `plan` | Quick Plan or SDD |
+| `implementation` | Execution Context Package |
 | `execute` | Execute Result Artifact |
-| `testing` | Testing Result Artifact |
 | `review` | Review Result Artifact |
-| `incident` | Incident Artifact |
-| `refactor` | Refactor Artifact |
+| `verify-context` | Context Verification Result |
 
 Ask mode does not produce lifecycle artifacts by default. It may reference existing artifacts when directly relevant to a lightweight question.
 

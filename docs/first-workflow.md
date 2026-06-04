@@ -36,12 +36,12 @@ No files are changed.
 Human request:
 
 ```text
-Use Forge planning mode for a bounded retry behavior improvement.
+Use Forge plan mode for a bounded retry behavior improvement.
 Do not change the public event schema.
 Preserve existing handler -> service -> repository boundaries.
 ```
 
-Expected `planning` output:
+Expected `plan` output:
 
 - goal of the change
 - affected flow and files
@@ -57,17 +57,17 @@ State after this step:
 Planning
 ```
 
-The plan may be persisted as an ECP artifact if continuity helps, but the artifact is only a handoff record. A newly produced ECP has `status: proposed` until the human explicitly approves it.
+The plan may be persisted as a Quick Plan or SDD artifact if continuity helps, but the artifact is only a handoff record. A newly produced plan has `status: proposed` until the human explicitly approves it.
 
 ## Human Approval — Plan
 
-After reviewing the planning output, approve explicitly before continuing:
+After reviewing the plan output, approve explicitly before continuing:
 
 ```text
 "Approved. Use Forge implementation mode for the retry plan."
 ```
 
-The assistant must not proceed to implementation until this signal is given. Reference the ECP artifact ID in the next request if continuity is useful.
+The assistant must not proceed to implementation until this signal is given. Reference the plan artifact ID in the next request if continuity is useful.
 
 State after this step:
 
@@ -88,20 +88,20 @@ Expected `implementation` output:
 
 - readiness status
 - execution values being used
-- task cards with likely files
+- ECP task cards with likely files
 - dependency order
 - acceptance criteria
 - test expectations
 - stop conditions
 
-If retry/DLQ contract, idempotency behavior, or runtime config is unclear, Forge should return `NEEDS_CONFIRMATION` instead of pretending the task is ready. A newly produced Execution Contract has `status: proposed` until the human explicitly approves it.
+If retry/DLQ contract, idempotency behavior, or runtime config is unclear, Forge should return `NEEDS_CONFIRMATION` instead of pretending the task is ready. A newly produced ECP has `status: proposed` until the human explicitly approves it.
 
-## Human Approval — Task Cards
+## Human Approval - ECP
 
-After reviewing the implementation task cards, approve explicitly before execution:
+After reviewing the implementation ECP, approve explicitly before execution:
 
 ```text
-"Approved. Use Forge execute mode for task cards IMP-001 and IMP-002."
+"Approved. Use Forge execute mode for ECP ecp.retry-plan.r1."
 ```
 
 The assistant must not execute code changes until this signal is given.
@@ -117,7 +117,7 @@ Implementation → Approved
 Human request:
 
 ```text
-Use Forge execute mode for these approved task cards.
+Use Forge execute mode for the approved ECP.
 Keep the diff minimal and do not change event schema, deployment, or unrelated files.
 ```
 
@@ -139,18 +139,18 @@ Executing -> Validating
 
 Files may be modified only inside the approved boundary.
 
-## Testing
+## Validation Inside Execute
 
 Human request:
 
 ```text
-Use Forge testing mode to validate the retry change.
+Use Forge execute mode to run scoped validation for the retry change.
 Separate unit, integration, runtime-sensitive, and manual validation.
 ```
 
-Expected `testing` output:
+Expected validation output inside `execute`:
 
-- one testing status
+- one validation status for requested checks
 - automated checks run
 - environment blockers
 - unvalidated scope
@@ -162,7 +162,7 @@ State after this step:
 Validating
 ```
 
-Testing does not become a redesign or review mode.
+Validation does not become a redesign or review mode.
 
 ## Review
 
@@ -223,12 +223,11 @@ Reviewing -> Completed
 | Step | Main output | Mutation allowed? |
 |---|---|---|
 | `ask` | Evidence-based understanding | No |
-| `planning` | ECP (`status: proposed`) | No |
-| human approval — plan | ECP transitions to `approved` | N/A |
-| `implementation` | Execution Contract (`status: proposed`) | No |
-| human approval — task cards | Execution Contract transitions to `approved` | N/A |
+| `plan` | Quick Plan or SDD (`status: proposed`) | No |
+| human approval - plan | Plan transitions to approved implementation input | N/A |
+| `implementation` | ECP (`status: proposed`) | No |
+| human approval - ECP | ECP transitions to approved execution input | N/A |
 | `execute` | Bounded repository changes and validation report | Yes, inside approved scope |
-| `testing` | Structured validation result | Maybe, if test changes are the scoped task |
 | `review` | MR readiness and findings | No, unless separately asked to execute fixes |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
 

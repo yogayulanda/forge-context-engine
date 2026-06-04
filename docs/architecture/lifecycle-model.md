@@ -1,44 +1,46 @@
 # Lifecycle Model
 
-Forge lifecycle modes separate different engineering jobs so one assistant response does not blur understanding, planning, coding, validation, and review.
+Forge lifecycle modes separate different engineering jobs so one assistant response does not blur initialization, understanding, planning, ECP preparation, execution, review, and context verification.
 
-## Visible Modes
+## Core Modes
 
 | Mode | Owns | Does not own |
 |---|---|---|
-| `ask` | Understanding current behavior and context. | Planning, mutation, broad audit. |
-| `planning` | Engineering change plan. | Detailed executable task cards or code changes. |
-| `implementation` | Task cards, execution values, stop conditions. | Code changes. |
-| `execute` | Approved repository changes. | Redesigning the plan or approving missing high-risk decisions. |
-| `testing` | Structured validation. | MR approval or architecture redesign. |
-| `review` | Correctness, risk, validation honesty, MR readiness. | Running the full test strategy or mutating code by default. |
-| `incident` | Diagnosis, mitigation, rollback possibility, next checks. | Speculative redesign or unsupported root-cause claims. |
-| `refactor` | Bounded behavior-preserving cleanup. | Architecture rewrite or hidden behavior change. |
+| `init` | Creating confirmed repository context and Forge config. | Dumping the whole repository into context or making hidden decisions. |
+| `ask` | Understanding current behavior and context from scoped evidence. | Planning, mutation, broad audit, or ECP creation. |
+| `plan` | Quick Plan or SDD with scope, risk, evidence, validation, and status. | Detailed executable task cards or code changes. |
+| `implementation` | Execution Context Package from an approved plan. | Code changes, commits, pushes, merges, deploys, or applying patches. |
+| `execute` | Approved ECP application within explicit boundaries. | Redesigning the plan or approving missing high-risk decisions. |
+| `review` | Executed-result review: correctness, scope, validation, security, and context impact. | Mutating code by default or replacing execution. |
+| `verify-context` | `.forge/context` health, freshness, and consistency only. | Plan readiness, ECP completeness, code diff correctness, MR readiness, or general validation. |
+
+## Scenarios, Not Core Modes
+
+Incident response, behavior-preserving refactors, and test-focused work are workflow scenarios. They use the core modes as needed: usually `ask`, `plan`, `implementation`, `execute`, and `review`. Validation work happens inside `execute` and `review`, with deeper test planning treated as a scoped validation activity rather than a core lifecycle mode.
 
 ## Human-Directed Transitions
 
 A common path is:
 
 ```text
-ask -> planning -> implementation -> execute -> testing -> review
+init -> ask -> plan -> implementation -> execute -> review -> verify-context
 ```
 
 These transitions are human-directed. Forge does not automatically advance modes, approve risky decisions, open PRs, deploy, or merge.
 
 ## Handoff Artifacts
 
-Artifacts under `.forge/context/generated/artifacts/` can record:
+Artifacts can record:
 
-- ECP
-- Execution Contract
-- Execute Result
-- Testing Result
+- Quick Plan or SDD
+- Execution Context Package
+- Execution Report
 - Review Result
-- Incident
-- Refactor
+- Context Verification Result
+- Context patch proposal
 
 Artifacts are optional continuity helpers. Links between artifacts are trace references only, not workflow state, dependency graphs, triggers, or orchestration.
 
 ## Status Honesty
 
-Forge reports blockers and validation limits explicitly. Missing tools or infrastructure are environment blockers. Missing contracts, approval, ownership, or runtime behavior are work blockers. Unvalidated changes must not be reported as fully validated.
+Forge reports blockers and validation limits explicitly. Missing tools or infrastructure are environment blockers. Missing contracts, approval, ownership, runtime behavior, or context freshness are work blockers. Unvalidated changes must not be reported as fully validated.

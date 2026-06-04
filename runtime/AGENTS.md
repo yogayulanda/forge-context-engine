@@ -10,14 +10,15 @@ When the user says "Use Forge <mode> mode", resolve the request to the matching 
 
 | User wording | Shared skill | Use for |
 |---|---|---|
+| `init` | `forge-init` | Repository context/config initialization |
 | `ask` | `forge-ask` | Repository understanding |
-| `planning` | `forge-plan` | ECP/change planning |
-| `implementation` | `forge-implement` | Execution task cards |
-| `execute` | `forge-execute` | Bounded code changes |
-| `testing` | `forge-test` | Structured validation |
-| `review` | `forge-review` | MR-style review |
-| `incident` | `forge-incident` | Diagnosis and mitigation |
-| `refactor` | `forge-refactor` | Bounded technical debt work |
+| `plan` | `forge-plan` | Quick Plan or SDD |
+| `implementation` | `forge-implementation` | ECP generation |
+| `execute` | `forge-execute` | Approved ECP execution |
+| `review` | `forge-review` | Executed-result review |
+| `verify-context` | `forge-verify-context` | Context health/freshness only |
+
+Scenario compatibility prompts such as `forge-test`, `forge-incident`, and `forge-refactor` route into the core lifecycle and are not core modes.
 
 Codex invocation syntax may vary by surface or version. Accept `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review mode" when they resolve to the same shared skill.
 
@@ -25,7 +26,7 @@ Codex invocation syntax may vary by surface or version. Accept `$forge-review`, 
 
 1. Read the matching shared skill under `runtime/skills/<skill>/SKILL.md`.
 2. Read `.forge/forge.config.yaml` first.
-3. Apply `runtime.non_interactive` and respect `runtime.profile`.
+3. Apply `run.interaction` and related final run config fields.
 4. Read `.forge/context/00-meta/conventions.md`.
 5. Read `.forge/context/00-meta/context-manifest.md` only as the routing index.
 6. Read `.forge/context/modes/<mode>.md` for the requested mode.
@@ -51,7 +52,7 @@ Responsibilities:
 - Keep repository-owned cognition in `.forge/context`; skills are reusable behavior layers only.
 - Preserve evidence, inference, assumption, proposed-default, and unknown boundaries.
 - Treat generated artifacts as non-authoritative handoff records.
-- Require human approval for HIGH-risk decisions.
+- Require human approval for policy-covered important decisions and high-risk changes.
 - Do not assume facts across repositories.
 - Redact secrets before output or context writes.
 - Do not duplicate lifecycle semantics, governance rules, mode behavior, or repo-specific cognition in this adapter.
@@ -59,9 +60,9 @@ Responsibilities:
 
 ## Execute Mode
 
-For `execute`, require an approved execution contract or task cards. Stop if scope is unclear, required values are missing, or a HIGH-risk decision lacks human approval.
+For `execute`, require an approved ECP. Stop if scope is unclear, required values are missing, evidence contradicts the ECP, or a policy/high-risk decision lacks human approval.
 
-Report changed files, validation performed, validation gaps, rollback notes when relevant, and whether any failure was implementation failure or environment/tooling failure.
+Report changed files, validation performed, validation gaps, fixes made during execute, rollback notes when relevant, and whether any failure was implementation failure or environment/tooling failure.
 
 ## Output
 

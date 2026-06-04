@@ -17,10 +17,10 @@ Expected output:
 - DLQ evidence or unknowns
 - current validation gaps
 
-## Planning
+## Plan
 
 ```text
-Use Forge planning mode for improving retry behavior in this consumer.
+Use Forge plan mode for improving retry behavior in this consumer.
 Preserve the public event schema and existing service boundary.
 Cover validation, rollback, and out-of-scope changes.
 ```
@@ -38,21 +38,21 @@ Expected output:
 
 ```text
 Use Forge implementation mode for the approved retry plan.
-Produce task cards and stop if retry/DLQ contract values are missing.
+Produce an ECP and stop if retry/DLQ contract values are missing.
 ```
 
 Expected output:
 
 - readiness status
 - execution values used
-- task cards
+- ECP task cards
 - stop conditions
 - test expectations
 
 ## Execute
 
 ```text
-Use Forge execute mode for the approved retry task cards.
+Use Forge execute mode for the approved retry ECP.
 Keep the diff minimal and do not change schema, deployment, or unrelated handlers.
 ```
 

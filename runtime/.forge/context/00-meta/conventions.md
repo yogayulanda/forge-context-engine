@@ -110,12 +110,12 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 ## Mode Invocation
 
 - Modes are loading deltas on top of always-loaded core.
-- Read `.forge/forge.config.yaml` before mode execution and apply `runtime.non_interactive`.
+- Read `.forge/forge.config.yaml` before mode execution and apply `run.interaction`.
 - Mode files are authoritative for mode-specific execution behavior.
-- Visible modes are limited to `ask`, `planning`, `implementation` (invoked as implement), `execute`, `testing`, `review`, `incident`, and `refactor`.
-- `ask` owns lightweight repo understanding; `planning` owns strategic ECP reasoning; `implementation` owns human-reviewable task decomposition; `execute` owns approved repository modification; `testing` owns testing strategy/test changes; `review` owns correctness and risk review; `incident` owns issue diagnosis; `refactor` owns conservative behavior-preserving technical debt work.
-- Keep mode responsibilities distinct: ask does not plan or mutate; planning does not emit detailed coding tasks; implementation does not modify code; execute does not redesign; testing owns validation depth; review owns post-change risk assessment; incident does not redesign; refactor preserves behavior.
-- Test placement is convention-sensitive: unit tests are usually colocated, while non-unit tests may use a top-level `testing/` structure; testing mode owns detailed placement guidance.
+- Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
+- `init` owns confirmed repo context/config creation; `ask` owns evidence-aware understanding; `plan` owns Quick Plan or SDD; `implementation` owns ECP generation; `execute` owns approved ECP application; `review` owns executed-result review; `verify-context` owns context health/freshness only.
+- Keep mode responsibilities distinct: ask does not plan or mutate; plan does not emit executable patches; implementation does not modify code; execute does not redesign; review does not modify code by default; verify-context does not validate plan/ECP/code/MR readiness.
+- Test placement is convention-sensitive; validation is handled inside execute/review or as a workflow activity, not as a core lifecycle mode.
 - Load only context required by the task; do not broad-load `.forge/context` by default.
 - Preserve evidence, inference, and unknown boundaries.
 - In normal interactive output, keep loading details quiet. A short `Scoped context loaded` line is enough when helpful.
@@ -131,7 +131,7 @@ Tool adapters such as `CLAUDE.md`, `AGENTS.md`, and `adapters/<tool>/` are invoc
 
 See `conventions-validation.md` for full validation status vocabulary, prerequisite checks, and section structure.
 
-Summary: Validation reporting must never imply success without evidence. Canonical statuses: Execute (`SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, `NOT_VALIDATED`), Testing (`PASSED`, `FAILED`, `PARTIAL`, `BLOCKED_BY_ENVIRONMENT`, `NOT_RUN`), Review (`APPROVED`, `NEEDS_CHANGES`, `BLOCKED`, `PARTIAL_REVIEW`), Implementation (`NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, `READY_FOR_EXECUTION`).
+Summary: Validation reporting must never imply success without evidence. Execute performs scoped validation for changed work; review checks validation evidence and gaps. Deeper test strategy is a validation activity rather than a core lifecycle mode.
 
 ## Artifact Lifecycle Semantics
 
@@ -147,24 +147,14 @@ Summary: HIGH-risk decisions require human approval. Raw secrets and raw PII mus
 
 ## Runtime Interaction Behavior
 
-Forge uses one controlling runtime flag for interaction behavior: `runtime.non_interactive`.
-
-`runtime.profile` is descriptive runtime profile metadata, not a second interaction flag.
-
-| Profile | Meaning |
-|---|---|
-| `local` | Default human-in-the-loop workflow. Interactive-first; may ask clarification questions. Implies `runtime.non_interactive: false` unless explicitly overridden. |
-| `automation` | Non-interactive-safe workflow. Must not ask conversational questions; emits structured statuses. Implies `runtime.non_interactive: true` unless explicitly overridden. |
-| `ci` | Reserved for future use. Does not add CI/CD, pipeline, release, deploy, executor, trigger, or workflow behavior. |
+Forge uses `run.interaction` as the controlling interaction setting.
 
 | Value | Behavior |
 |---|---|
-| `false` | Default interactive behavior. Ask concise clarification questions for blocking decisions; continue after human confirmation. |
-| `true` | Automation-safe behavior. Do not ask conversational questions; emit structured `NEEDS_CONFIRMATION`, `BLOCKED`, or `NEEDS_HUMAN_APPROVAL`. |
+| `manual` | Default interactive behavior. Ask concise clarification questions for blocking decisions; continue after human confirmation. |
+| `auto` | Automation-safe behavior. Do not ask conversational questions; emit structured required decisions and blocking statuses. |
 
-If `runtime.profile` and `runtime.non_interactive` conflict, report the conflict clearly before mode work and apply `runtime.non_interactive` as the controlling behavior.
-
-See `specs/mode-invocation.md` §3 for full decision authority, risk levels, and automation semantics.
+Important decisions are governed by policy, not by an active decision-authority config knob. Domain rule, data mutation, architecture boundary, external contract, security boundary, and migration changes require human confirmation.
 
 ## Unknown Decision Semantics
 
@@ -295,7 +285,7 @@ When initializing on a repo that already has AI/context artifacts (`.ai/`, `.cla
 | `proposed-default` | Work may continue using a labeled safe default | Low-risk reversible operational choice |
 | `informational` | Work may continue without a default | Optional optimization, future topology possibility, non-critical ambiguity |
 
-AI sorts unknowns by classification during planning mode. Blocking unknowns must be surfaced before implementation or release.
+AI sorts unknowns by classification during plan mode. Blocking unknowns must be surfaced before implementation or release.
 
 ## Glossary Signal Rule
 

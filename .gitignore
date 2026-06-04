@@ -23,12 +23,14 @@ scratch/
 tmp/
 logs/
 
-# Forge generated/temp context
+# Forge local-only runtime data
+.forge/temp/
+.forge/cache/
+runtime/.forge/temp/
+runtime/.forge/cache/
+
+# Legacy compatibility paths from pre-0.3.0 context layout
 .forge/context/temp/
 !.forge/context/temp/.gitkeep
-.forge/context/generated/*
-!.forge/context/generated/.gitkeep
 runtime/.forge/context/temp/
 !runtime/.forge/context/temp/.gitkeep
-runtime/.forge/context/generated/*
-!runtime/.forge/context/generated/.gitkeep

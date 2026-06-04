@@ -22,22 +22,25 @@ Skills are not:
 
 `.forge/context` remains the source of truth for repository intelligence, lifecycle semantics, governance rules, artifact boundaries, and mode-owned behavior.
 
-## Invocation
+## Final Core Skills
 
-Tool syntax may differ, but behavior is shared:
-
-| Tool | Examples |
+| Mode | Skill |
 |---|---|
-| Claude | `/forge-review`, `/forge-plan` |
-| Codex | `$forge-review`, `/skill forge-review`, future-compatible `/forge-review` |
-| GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask` prompt files |
-| Future tools | Tool-specific syntax that resolves to the same `runtime/skills/<skill>/SKILL.md` |
+| `init` | `forge-init` |
+| `ask` | `forge-ask` |
+| `plan` | `forge-plan` |
+| `implementation` | `forge-implementation` |
+| `execute` | `forge-execute` |
+| `review` | `forge-review` |
+| `verify-context` | `forge-verify-context` |
+
+Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route into the core lifecycle. They are not core modes.
 
 ## Loading
 
 Each skill must:
 - Read `.forge/forge.config.yaml` first.
-- Apply `runtime.non_interactive` and respect `runtime.profile`.
+- Apply `run.interaction`, `run.output`, `run.output_detail`, `run.write_behavior`, and `run.failure_behavior`.
 - Load `.forge/context/00-meta/conventions.md`.
 - Use `.forge/context/00-meta/context-manifest.md` only as a routing index.
 - Load the matching `.forge/context/modes/<mode>.md`.

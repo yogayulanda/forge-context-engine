@@ -10,6 +10,8 @@
 | Bahasa | Bahasa Indonesia |
 | Cakupan tooling | Agnostik tooling, kompatibel Claude/Codex/GitHub Copilot/Cursor |
 
+> **Perubahan v1.0:** mode inti Forge distandarkan menjadi `init`, `ask`, `plan`, `implementation`, `execute`, `review`, dan `verify-context`. `planning` menjadi `plan`; `testing`, `incident`, dan `refactor` menjadi aktivitas/skenario workflow, bukan mode inti lifecycle.
+
 > **Perubahan v0.4 → v0.5:** `profiles/` diganti menjadi **`modes/`** (penamaan lebih natural — AI bekerja dalam "mode planning", "mode review", dst). **`base.md` dihapus** beserta mekanisme `extends` — inti yang selalu termuat (`00-meta/*` + `01-core/*`) sudah dijamin oleh konvensi numbering & urutan bootstrap, sehingga tidak perlu didaftar ulang dalam file mode. Mode kini hanya mendeklarasikan *delta*-nya. Rincian di Lampiran B.
 
 ---
@@ -28,8 +30,8 @@ Keputusan struktural inti:
 6. **Enam keadaan pengetahuan dipisah tegas** — fakta-manusia, inferensi-AI, asumsi, unknown, keputusan, konfirmasi.
 7. **Context loading modes** — `modes/` mendeklarasikan *delta* konteks yang dimuat per jenis pekerjaan, di atas inti yang selalu termuat.
 8. **Token-efficient by design** — selective loading; tanpa duplikasi lintas zona; konten unit dihasilkan saat init.
-9. **Artifact lifecycle minimal** — artifact mode-handoff berada di `generated/artifacts/`, kecil, dapat dibuang, dan tidak pernah mengalahkan source of truth repository.
-10. **Runtime profile bounded** — `runtime.profile` membedakan local vs automation-safe, tetapi `runtime.non_interactive` tetap flag kontrol interaksi tunggal.
+9. **Artifact lifecycle minimal** — artifact mode-handoff berada di `.forge/generated/`, kecil, dapat dibuang, dan tidak pernah mengalahkan source of truth repository.
+10. **Run behavior bounded** — `run.interaction` membedakan manual vs automation-safe; keputusan penting tetap dibatasi policy human confirmation.
 11. **Future intelligence semantics** — scoped loading lebih cerdas, drift terdeteksi, awareness lintas-repo dibatasi evidence, tanpa RAG/vector DB/knowledge graph/memory persisten.
 12. **Fintech-grade governance ringan** — sinyal risiko PII/secrets, financial correctness, idempotency, retry/replay, rollback, transaction consistency, auditability, observability, dan blast radius tanpa birokrasi audit.
 
@@ -326,22 +328,21 @@ Mode tidak pernah mendaftar `00-meta/*` atau `01-core/*` — hanya delta-nya. Ha
 
 | Mode | include (delta di atas inti) |
 |---|---|
+| `init` | Bounded repo scan context, config draft, ambiguity/decision evidence |
 | `ask` | Lightweight repo understanding: `layers/<terkait>`, `systems/<terkait>`, `inferred` |
-| `planning` | Strategic ECP: `knowledge/*`, ringkasan `layers/*` |
-| `implementation` | Human-reviewable task breakdown: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
-| `execute` | Repository modification from approved tasks: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
-| `testing` | Structured validation/test changes: `layers/testing`, `systems/<terkait>`, `knowledge/assumptions` |
-| `review` | Correctness/risk review: `layers/security` + `layers/<terkait>`, `knowledge/decisions/*` |
-| `incident` | Bug/issue diagnosis: affected systems/layers, logs/configs/contracts on demand |
-| `refactor` | Conservative behavior-preserving debt work: related systems/layers, decisions, tests/call sites on demand |
+| `plan` | Quick Plan atau SDD: `knowledge/*`, risk policy, ringkasan `layers/*` |
+| `implementation` | Execution Context Package: approved plan, related systems/layers, decisions, validation commands |
+| `execute` | Approved ECP execution: `layers/<aktif>`, `systems/<terkait>`, `knowledge/decisions/*`, `inferred` |
+| `review` | Executed-result review: validation evidence, security/risk, context impact |
+| `verify-context` | Context health/freshness only: source paths, metadata, affected context cards |
 
-Alur operasional baku: `planning -> implementation -> execute -> testing -> review`. `ask`, `incident`, dan `refactor` adalah mode masuk operasional, bukan tahap wajib lifecycle. Tugas kecil boleh melewati `planning`; `execute` boleh mengerjakan subset tugas yang sudah disetujui; `testing` boleh berjalan mandiri untuk permintaan test-only.
+Alur operasional baku: `init -> ask -> plan -> implementation -> execute -> review -> verify-context`. `init` dipakai saat membuat context/config; `verify-context` dipakai ketika kesehatan `.forge/context` perlu dicek. Tugas kecil boleh melewati `plan` bila scope sudah jelas, tetapi approval gate manusia tetap berlaku sebelum execution.
 
-Mode `testing` memisahkan hasil, scope tervalidasi, automated validation, manual validation, environment/runtime blockers, coverage gap, reviewer focus, dan risk summary. Scope testing dikelompokkan secara operasional (unit, integration, e2e, smoke, rollback, migration, runtime validation, contract validation) dan tidak boleh menyiratkan validasi penuh tanpa evidence.
+Validation bukan mode inti lifecycle. `execute` menjalankan scoped validation untuk area yang berubah, dan `review` menilai bukti validation serta gap yang tersisa. Incident response, refactor, dan test-focused work adalah skenario workflow yang memakai mode inti sesuai kebutuhan.
 
-Mode `review` berperilaku seperti review MR senior: status jelas, kesiapan MR eksplisit, temuan dikelompokkan `CRITICAL`/`MAJOR`/`MINOR`/`INFO`, temuan besar wajib berbasis evidence, dan fokus reviewer menyorot risiko kontrak, boundary, safety, rollback, serta validasi tanpa berubah menjadi testing mode.
+Mode `review` berperilaku seperti review MR senior: status jelas, kesiapan MR eksplisit, temuan dikelompokkan `CRITICAL`/`MAJOR`/`MINOR`/`INFO`, temuan besar wajib berbasis evidence, dan fokus reviewer menyorot risiko kontrak, boundary, safety, rollback, serta validation gap tanpa berubah menjadi execution.
 
-`loading.default_mode` di `forge.config.yaml` menetapkan mode default.
+`workflow.default_mode` di `forge.config.yaml` menetapkan mode default.
 
 ### 7.4 Intelligence & governance semantics
 
@@ -359,21 +360,19 @@ Forge boleh berkembang menuju kecerdasan yang lebih matang, tetapi tetap semanti
 
 **Fintech-grade governance** adalah sinyal risiko operasional untuk area relevan: PII/sensitive data, secrets/credentials, financial correctness, idempotency, retry safety, replay safety, rollback safety, transaction consistency, auditability, observability, dan blast radius. HIGH-risk governance issue membutuhkan approval manusia. Secret/PII mentah tidak boleh dilog atau disimpan. Payment/transaction correctness tidak pernah dianggap LOW risk. Output governance harus ringkas, evidence-based, dan operasional, bukan esai compliance.
 
-### 7.5 Runtime profile & decision authority
+### 7.5 Run behavior & policy
 
-Forge mendukung profile runtime ringan:
+Forge memakai `run` untuk perilaku runtime, bukan untuk mendefinisikan pekerjaan lifecycle.
 
-| Profile | Makna |
+| Field | Makna |
 |---|---|
-| `local` | Default human-in-the-loop; interaktif, ringkas, boleh bertanya klarifikasi. |
-| `automation` | Non-interactive-safe; tidak bertanya conversational, mengeluarkan status terstruktur dan required decisions. |
-| `ci` | Reserved untuk masa depan; tidak menambah CI/CD, pipeline, deploy, trigger, atau executor behavior. |
+| `run.interaction` | `manual` boleh bertanya ke developer; `auto` tidak bertanya conversational dan mengeluarkan `required_decisions`. |
+| `run.output` | `human`, `markdown`, atau `json`. |
+| `run.output_detail` | `compact`, `standard`, atau `full`. |
+| `run.write_behavior` | `readonly`, `draft`, atau `confirmed_apply`. |
+| `run.failure_behavior` | `stop`, `warn_continue`, atau `report_only`. |
 
-`runtime.non_interactive` tetap flag kontrol perilaku. `local` mengimplikasikan `false` kecuali dioverride eksplisit; `automation` mengimplikasikan `true` kecuali dioverride eksplisit. Konflik harus dilaporkan jelas.
-
-Decision authority dibatasi ke `ai`, `orchestrator`, dan `human`. AI hanya boleh memilih default `LOW` yang reversible/local dan tidak berdampak pada kontrak/security/data correctness. Orchestrator hanya boleh memilih default operasional `MEDIUM` bila dikonfigurasi eksplisit dan harus mengeluarkan decision trace. Risiko `HIGH` selalu butuh human confirmation dan memakai status `NEEDS_HUMAN_APPROVAL` pada automation-safe flow.
-
-Decision trace tetap ringkas: decision, selected option, authority used, risk level, reason, affected tasks/artifacts. Trace ini bukan workflow state, dependency graph, scheduler input, atau trigger eksekusi.
+Decision authority tidak menjadi knob config aktif. Keputusan penting diatur oleh policy: domain rule, data mutation, architecture boundary, external contract, security boundary, dan migration changes membutuhkan human confirmation.
 
 ### 7.6 Artifact lifecycle mode-handoff
 
@@ -383,15 +382,13 @@ Tipe artifact dibatasi:
 
 | Mode | Artifact |
 |---|---|
-| `planning` | ECP Artifact |
-| `implementation` | Execution Contract Artifact |
+| `plan` | Quick Plan atau SDD |
+| `implementation` | Execution Context Package |
 | `execute` | Execute Result Artifact |
-| `testing` | Testing Result Artifact |
 | `review` | Review Result Artifact |
-| `incident` | Incident Artifact |
-| `refactor` | Refactor Artifact |
+| `verify-context` | Context Verification Result |
 
-Artifact boleh mereferensikan artifact sebelumnya, ECP ID, execution contract ID, evidence repository, commit, PR/MR, ADR, atau konfirmasi manusia. Link ini hanya trace reference: bukan workflow, bukan DAG, bukan orchestration, bukan trigger eksekusi, bukan agent memory.
+Artifact boleh mereferensikan artifact sebelumnya, plan ID, ECP ID, result artifact ID, evidence repository, commit, PR/MR, ADR, atau konfirmasi manusia. Link ini hanya trace reference: bukan workflow, bukan DAG, bukan orchestration, bukan trigger eksekusi, bukan agent memory.
 
 Artifact harus kecil, human-readable, append-friendly, replaceable, discardable, dan mudah direview. Artifact tidak boleh menyimpan chain-of-thought tersembunyi, secret mentah, riwayat percakapan, summary panjang generik, memory AI persisten, atau knowledge graph.
 

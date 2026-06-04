@@ -2,7 +2,7 @@
 
 Commands are lightweight tool entrypoints. They invoke shared Forge skills; they do not replace Forge.
 
-Natural language such as "Use Forge review mode" or "Use Forge planning mode" is equivalent to invoking the matching shared skill, such as `forge-review` or `forge-plan`.
+Natural language such as "Use Forge review mode" or "Use Forge plan mode" is equivalent to invoking the matching shared skill, such as `forge-review` or `forge-plan`.
 
 Final architecture:
 
@@ -27,33 +27,41 @@ Invoke shared skill: runtime/skills/<skill>/SKILL.md
 The shared skill owns Purpose, Load, Invocation, Focus, Output, and Do NOT.
 ```
 
-## Mode Mapping
+## Core Mode Mapping
 
 | Mode | Shared skill | Intent |
 |---|---|---|
+| `init` | `forge-init` | Repository context/config initialization |
 | `ask` | `forge-ask` | Repository understanding |
-| `planning` | `forge-plan` | ECP/change planning |
-| `implementation` | `forge-implement` | Execution task cards |
-| `execute` | `forge-execute` | Bounded code changes |
-| `testing` | `forge-test` | Structured validation |
-| `review` | `forge-review` | MR-style review |
-| `incident` | `forge-incident` | Diagnosis and mitigation |
-| `refactor` | `forge-refactor` | Bounded technical debt work |
+| `plan` | `forge-plan` | Quick Plan or SDD |
+| `implementation` | `forge-implementation` | ECP generation |
+| `execute` | `forge-execute` | Approved ECP execution |
+| `review` | `forge-review` | Executed-result review |
+| `verify-context` | `forge-verify-context` | Context health/freshness only |
 
-For `execute`, the `forge-execute` skill requires approved task cards or an execution contract, stops on unclear scope, stops on HIGH-risk decisions without human approval, and reports validation honestly.
+Scenario compatibility skills:
+
+| Scenario | Shared skill | Routes to |
+|---|---|---|
+| Validation-focused work | `forge-test` | `execute` / `review` |
+| Incident/regression diagnosis | `forge-incident` | `ask` / `plan` / `implementation` / `execute` / `review` |
+| Behavior-preserving cleanup | `forge-refactor` | `plan` / `implementation` / `execute` / `review` |
+
+For `execute`, the `forge-execute` skill requires an approved ECP, stops on unclear scope, stops on policy/high-risk decisions without human approval, and reports validation honestly.
 
 ## Naming
 
-Shared skills:
+Core shared skills:
 
+- `forge-init`
 - `forge-ask`
 - `forge-plan`
-- `forge-implement`
+- `forge-implementation`
 - `forge-execute`
-- `forge-test`
 - `forge-review`
-- `forge-incident`
-- `forge-refactor`
+- `forge-verify-context`
+
+Compatibility aliases such as `forge-implement`, `forge-test`, `forge-incident`, and `forge-refactor` must remain thin pointers into the final lifecycle.
 
 Tool-specific surfaces may expose equivalent names, such as Claude `/forge-review`, Codex `$forge-review`, Codex `/skill forge-review`, GitHub Copilot `/forge-review` prompt files, or future-compatible `/forge-review`.
 

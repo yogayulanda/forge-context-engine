@@ -1,15 +1,15 @@
 # Execute Bounded Change
 
-Use this step only when task cards or an execution contract are approved.
+Use this step only when an ECP is approved.
 
 ## Scenario
 
-The engineer has approved task cards for a narrow retry history update. The assistant may now modify the repository inside the approved file and behavior boundary.
+The engineer has approved an ECP for a narrow retry history update. The assistant may now modify the repository inside the approved file and behavior boundary.
 
 ## Example Forge Prompt
 
 ```text
-Use Forge execute mode for task cards TH-1 and TH-2.
+Use Forge execute mode for ECP ecp.retry-history.r1.
 
 Approved boundary:
 - update the inbound event handler and history service only
@@ -45,7 +45,7 @@ Run the narrow validation available in this repository and report environment bl
 
 ## What Should Stop The Workflow
 
-- Approved task cards are missing.
+- Approved ECP is missing.
 - Execution requires a new contract decision.
 - The assistant needs to alter schema, deployment, build pipeline, or unrelated components.
 - Required tooling is missing and the result would otherwise imply validation passed.
@@ -54,7 +54,7 @@ Run the narrow validation available in this repository and report environment bl
 ## What Should Remain Out Of Scope
 
 - plan redesign
-- additional task cards not approved by the engineer
+- additional ECP tasks not approved by the engineer
 - producer service changes
 - release or deployment behavior
 - background job or timed-run design

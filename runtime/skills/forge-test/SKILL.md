@@ -1,19 +1,19 @@
 # forge-test
 
 ## Purpose
-Use Forge testing mode to plan, run, or assess structured validation.
+Scenario compatibility skill for validation-focused work.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `runtime.non_interactive` and respect `runtime.profile`. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/testing.md`. Load only scoped code, tests, contracts, and artifacts needed for validation.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/testing.md` as scenario guidance.
 
 ## Invocation
-Use when the user asks for validation strategy, test implementation guidance, running tests, coverage gaps, or post-execution validation evidence.
+Use only when an older prompt asks for `forge-test` or when the user explicitly asks for validation strategy/evidence. Route actual lifecycle work through `execute` and `review`.
 
 ## Focus
-Separate automated, manual, environment-dependent, and production-like validation. Check prerequisites before running commands that depend on tooling or infrastructure.
+Separate scoped validation, final validation, manual checks, environment blockers, coverage gaps, and risks.
 
 ## Output
-Return testing-mode status, executed checks, failures, blocked checks, coverage gaps, unvalidated risks, and reviewer focus.
+Return validation guidance or evidence report. Point to `execute` for approved code/validation changes and `review` for MR readiness and risk assessment.
 
 ## Do NOT
-Do not collapse into review mode, claim success without evidence, treat environment failure as implementation failure, broad-load context, or add CI/CD/runtime execution semantics.
+Do not present testing as a core lifecycle mode, claim success without evidence, treat environment failure as implementation failure, broad-load context, or add CI/CD/runtime execution semantics.

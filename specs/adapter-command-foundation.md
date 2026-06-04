@@ -224,7 +224,7 @@ tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -
 - `.forge/context` owns repository-native truth.
 - Mode files own lifecycle loading deltas and operational semantics.
 - Shared skills own reusable invocation wording.
-- `runtime.non_interactive` remains the single interaction behavior switch.
+- `run.interaction` remains the single interaction behavior setting.
 - Adapters own only tool-specific invocation shape.
 - Commands remain short and task-facing.
 - A command that works in multiple repositories must change behavior only because `.forge/context` differs.
@@ -319,20 +319,21 @@ Commands may provide aliases for tool-specific invocation surfaces.
 Canonical skill naming:
 
 ```text
+forge-init
 forge-ask
 forge-plan
-forge-implement
+forge-implementation
 forge-execute
-forge-test
 forge-review
-forge-incident
-forge-refactor
+forge-verify-context
 ```
+
+Compatibility scenario skills may exist for older prompts: `forge-test`, `forge-incident`, `forge-refactor`, and `forge-implement`. They must route into the final lifecycle and must not define core modes.
 
 Tool syntax examples:
 - Claude: `/forge-review`, `/forge-plan`
 - Codex: `$forge-review`, `/skill forge-review`, future-compatible `/forge-review`
-- Scoped variants: `forge:review:security`, `forge:testing:contract`
+- Scoped variants: `forge:review:security`, `forge:execute:contract-validation`
 
 Scope suffixes must describe loading or output focus. They must not imply new modes.
 
@@ -515,7 +516,7 @@ Any skill, adapter, or command foundation change must validate:
 - No alternate runtime/platform layer is introduced.
 - `.forge/context` remains the source of truth.
 - Mode files remain the source of lifecycle loading semantics.
-- `runtime.non_interactive` remains the single interaction behavior switch.
+- `run.interaction` remains the single interaction behavior setting.
 - Repository-native behavior is preserved.
 - Skill files contain no repository intelligence.
 - Tool-specific files contain no repository intelligence.

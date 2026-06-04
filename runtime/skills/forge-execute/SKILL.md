@@ -1,19 +1,19 @@
 # forge-execute
 
 ## Purpose
-Execute an approved Forge task card set or execution contract within bounded scope.
+Apply an approved ECP into code within explicit boundaries.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `runtime.non_interactive` and respect `runtime.profile`. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/execute.md`. Load the approved execution contract or task cards and only scoped repository context needed for execution.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction`, `run.write_behavior`, and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/execute.md`. Load the approved ECP and only scoped repository context needed for execution.
 
 ## Invocation
-Use only when the human has explicitly approved task cards from `forge-implement`, provided a confirmed Execution Contract, or approved a specific bounded task subset. `Approved` means the human has reviewed the task cards and confirmed it is safe to proceed. A proposed Execution Contract without human approval is not sufficient.
+Use only when the human has explicitly approved an ECP. ECP readiness is not execution approval.
 
 ## Focus
-Modify only approved scope with minimal diffs, preserving formatting and line endings. Stop on unclear scope, missing execution values, unresolved contract blockers, residual review blockers, or HIGH-risk decisions without human approval. Distinguish implementation failures from environment/tooling failures.
+Modify only approved scope with minimal diffs. Run scoped per-task validation, fix ordinary in-scope failures when safe, run final validation, and stop on scope/domain/security/evidence/environment blockers.
 
 ## Output
-Return execute-mode result with status, changed files grouped by responsibility, validation performed, validation gaps, manual checks, rollback notes, intentionally unchanged scope, reviewer focus, hidden-change check, and a short recommended next action. When API/docs/contracts changed, state the source files checked.
+Return execute-mode report with status, changed files, commands run, validation results, fixes made during execute, deviations from ECP, blocked items, risks, and next mode `review`.
 
 ## Do NOT
-Do not redefine approved architecture, expand scope silently, broad-load context, run autonomous chains, add schedulers, introduce CI/CD/deploy behavior, or treat execution as an orchestration platform.
+Do not redefine approved architecture, expand scope silently, ignore validation failure, commit, push, merge, deploy, change secrets, add schedulers, introduce CI/CD/deploy behavior, or treat execution as orchestration.

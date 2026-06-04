@@ -1,8 +1,8 @@
 # Forge Context Engine
 
-Forge is an AI-native engineering workflow system focused on bounded engineering cognition for real-world software development.
+Forge is a developer workflow framework for AI coding tools.
 
-It helps engineers and AI assistants work with repository context in a disciplined way: scoped evidence, clear lifecycle modes, explicit uncertainty, and reviewable engineering outputs. Forge is for teams that want AI-assisted planning, implementation guidance, execution reporting, testing, review, incident diagnosis, and refactoring with visible human control.
+It helps engineers and AI assistants work with repository context in a disciplined way: scoped evidence, explicit lifecycle modes, ambiguity and risk gates, AI-tool-ready Execution Context Packages, bounded execution, security-aware review, and context health verification.
 
 Forge v1 is the lifecycle foundation: a context structure, mode protocol, validation rules, shared skills, thin adapters, and lightweight handoff artifacts.
 
@@ -16,16 +16,21 @@ repository evidence -> scoped context -> one lifecycle mode -> reviewable engine
 
 A human asks for one kind of work, Forge loads the matching context, and the output stays tied to code, docs, ADRs, explicit confirmations, and visible unknowns.
 
+The standard lifecycle is:
+
+```text
+init -> ask -> plan -> implementation -> execute -> review -> verify-context
+```
+
 The practical rule is simple:
 
-- Use `ask` to understand.
-- Use `planning` to shape a change.
-- Use `implementation` to turn approved intent into executable task cards.
-- Use `execute` to modify the repository within approved boundaries.
-- Use `testing` to validate.
-- Use `review` to decide MR readiness.
-- Use `incident` when something is broken.
-- Use `refactor` for bounded behavior-preserving cleanup.
+- Use `init` to create confirmed repository context and config.
+- Use `ask` to understand current behavior from context and scoped evidence.
+- Use `plan` to shape a Quick Plan or SDD.
+- Use `implementation` to turn an approved plan into an Execution Context Package.
+- Use `execute` to apply an approved ECP within explicit boundaries.
+- Use `review` to inspect the executed result, validation evidence, security, and context impact.
+- Use `verify-context` to check `.forge/context` health and freshness only.
 
 ## How Forge Works Operationally
 
@@ -34,7 +39,7 @@ Forge has three lightweight parts:
 | Part | Role | Boundary |
 |---|---|---|
 | `.forge/context` | Repo-local conventions, mode files, scoped knowledge, and optional handoff artifacts. | Code, docs, ADRs, and human decisions still win. |
-| Lifecycle modes | Separate understanding, planning, implementation breakdown, execution, testing, review, incident diagnosis, and refactoring. | Each mode owns one kind of work. |
+| Lifecycle modes | Separate init, understanding, planning, ECP preparation, execution, review, and context verification. | Each mode owns one kind of work. |
 | Skills and adapters | Let Claude, Codex, GitHub Copilot, Cursor, and other tools invoke the same Forge behavior. | Tool files stay thin invocation surfaces. |
 
 In normal use, the assistant reads the Forge config, reads the requested mode, loads only task-relevant context, checks current repository evidence, and returns a concise engineering output for that mode.
@@ -45,7 +50,7 @@ In normal use, the assistant reads the Forge config, reads the requested mode, l
 2. Keep `runtime/.forge/context` as the starting `.forge/context` structure for that repository.
 3. Keep `CLAUDE.md` and/or `AGENTS.md` as thin tool entrypoints when those tools are used.
 4. Ask a scoped first question, such as: `Use Forge ask mode to explain how this service handles retries.`
-5. For a change, move through the smallest useful lifecycle path, usually `ask -> planning -> implementation -> execute -> testing -> review`.
+5. For a change, move through the smallest useful lifecycle path, usually `ask -> plan -> implementation -> execute -> review`.
 
 For a practical setup walkthrough, see [Getting Started](docs/getting-started.md).
 
@@ -67,36 +72,28 @@ Most feature and bug work follows this shape:
 ```text
 Bug or feature request
 -> ask: understand current behavior and evidence
--> planning: propose the engineering change plan
--> implementation: produce task cards and stop conditions
+-> plan: propose the engineering change plan
+-> implementation: produce the ECP and stop conditions
 -> execute: apply the approved repository changes
--> testing: run or define validation
--> review: assess MR readiness
+-> review: assess MR readiness, validation evidence, security, and context impact
+-> verify-context: check context health when context may be stale or affected
 -> merge: handled by the team outside Forge
 ```
 
-Small changes may skip `planning` when the scope is obvious. `incident` and `refactor` are entry modes for diagnosis and bounded cleanup.
+Small changes may skip `plan` when the scope is obvious. Incident response, refactoring, and test-focused work are workflow scenarios that use the same core lifecycle modes rather than separate core modes.
 
 Forge does not automatically advance from one step to another, approve risky choices, open PRs, deploy code, or merge changes.
 
-## Runtime Profiles
+## Runtime Behavior
 
-Forge uses one controlling interaction flag:
+Forge uses `run.interaction` as the interaction control:
 
 | Setting | Behavior |
 |---|---|
-| `runtime.non_interactive: false` | Local, interactive work. Forge may ask concise clarification questions for blocking decisions. |
-| `runtime.non_interactive: true` | Automation-safe behavior. Forge does not ask conversational questions; it emits structured statuses and required decisions. |
+| `run.interaction: manual` | Local, interactive work. Forge may ask concise clarification questions for blocking decisions. |
+| `run.interaction: auto` | Automation-safe behavior. Forge does not ask conversational questions; it emits structured required decisions and blocking statuses. |
 
-`runtime.profile` is metadata:
-
-| Profile | Meaning |
-|---|---|
-| `local` | Normal human-in-the-loop profile. |
-| `automation` | Automation-safe usage. |
-| `ci` | Reserved metadata only; it does not add CI/CD or executor behavior. |
-
-High-risk decisions require human approval. In automation-safe flows, Forge uses blocking or approval statuses instead of inventing answers.
+High-risk decisions require human approval by policy. In automation-safe flows, Forge uses blocking or approval statuses instead of inventing answers.
 
 ## Repository Structure
 
@@ -108,7 +105,9 @@ High-risk decisions require human approval. In automation-safe flows, Forge uses
 | `runtime/AGENTS.md` | Thin Codex-compatible adapter pointing to `.forge/`. |
 | `runtime/adapters/` | Thin tool compatibility notes and shared command conventions. |
 | `runtime/.forge/context/` | Canonical Forge context skeleton. |
-| `runtime/.forge/context/generated/artifacts/` | Optional lifecycle handoff artifacts, created on demand. |
+| `.forge/generated` | Generated artifacts, committed manually when relevant. |
+| `.forge/context-patches` | Reviewable context update proposals. |
+| `.forge/temp`, `.forge/cache` | Local-only temporary/cache data. |
 | `docs/` | First-use guides, examples, adapter onboarding, and concise architecture notes. |
 | `specs/` | Normative specifications for initialization, validation, mode invocation, artifacts, migration, lifecycle, and adapters. |
 | `validation-cases/` | Focused cases used to validate Forge cognition patterns. |
@@ -118,9 +117,9 @@ High-risk decisions require human approval. In automation-safe flows, Forge uses
 
 Forge v1 status:
 
-- lifecycle foundation complete
+- full-version lifecycle foundation being aligned to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`
 - mode boundaries stabilized
-- runtime profile and non-interactive semantics bounded
+- manual and automation-safe interaction semantics bounded through `run.interaction`
 - artifact lifecycle defined
 - validation rules consolidated
 - ready for real-world pilot usage

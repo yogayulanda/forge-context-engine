@@ -1,19 +1,19 @@
 # forge-refactor
 
 ## Purpose
-Evaluate or carry out bounded, behavior-preserving cleanup using Forge refactor mode.
+Scenario compatibility skill for behavior-preserving cleanup.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `runtime.non_interactive` and respect `runtime.profile`. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/refactor.md`. Load only scoped evidence for the affected behavior, tests, dependencies, and risk boundaries.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/refactor.md` as scenario guidance.
 
 ## Invocation
-Use when the user asks for technical-debt cleanup, structure improvement, simplification, or behavior-preserving refactor analysis.
+Use only when the user asks for bounded refactor work or an older prompt invokes `forge-refactor`.
 
 ## Focus
-Preserve behavior. Identify safe changes, risky boundaries, validation needs, and out-of-scope redesigns.
+Route refactor work through `plan`, `implementation`, `execute`, and `review`; preserve behavior; classify risk; require plan/ECP approval for high-risk work.
 
 ## Output
-Return refactor-mode output with target area, evidence, proposed safe changes, risks, validation expectations, and explicit non-goals.
+Return scenario guidance, risk classification, evidence needed for behavior preservation, and recommended next core mode.
 
 ## Do NOT
-Do not hide behavior changes, rewrite architecture, change contracts without approval, modify unrelated code, broad-load context, or turn refactoring into autonomous cleanup.
+Do not present refactor as a core lifecycle mode, hide behavior changes, perform architecture rewrites, or apply unapproved cleanup.

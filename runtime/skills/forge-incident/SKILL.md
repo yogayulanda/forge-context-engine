@@ -1,19 +1,19 @@
 # forge-incident
 
 ## Purpose
-Diagnose incidents, regressions, or production-like symptoms using Forge incident mode.
+Scenario compatibility skill for incident, regression, or production-like symptom work.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `runtime.non_interactive` and respect `runtime.profile`. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/incident.md`. Load only scoped evidence tied to the symptom, affected flow, blast radius, and likely rollback or mitigation path.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/incident.md` as scenario guidance.
 
 ## Invocation
-Use when the user reports a bug, outage, regression, failed validation, unexpected behavior, or operational symptom requiring diagnosis.
+Use only when the user asks for incident/regression diagnosis or an older prompt invokes `forge-incident`.
 
 ## Focus
-Separate observed facts, hypotheses, missing evidence, impact, mitigation, rollback possibility, and next checks.
+Diagnose from evidence, distinguish symptoms from likely/possible causes, preserve uncertainty, and route remediation through `plan`, `implementation`, `execute`, and `review`.
 
 ## Output
-Return incident-mode diagnosis with current evidence, likely cause or unknowns, impact, mitigation, validation checks, and follow-up decisions.
+Return diagnosis, evidence, unknowns, mitigation options, rollback considerations, and recommended next core mode.
 
 ## Do NOT
-Do not speculate beyond evidence, redesign architecture, modify code without approved execution scope, broad-load unrelated context, or create incident automation/orchestration semantics.
+Do not present incident as a core lifecycle mode, redesign architecture, invent topology, apply fixes without approved plan/ECP flow, or copy raw secrets.

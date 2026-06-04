@@ -7,17 +7,19 @@ This document is the canonical reference for the Forge end-to-end engineering wo
 ## The Workflow
 
 ```text
-forge-plan
-→ human approval
-→ forge-implement
-→ human approval
-→ forge-execute
-→ optional forge-test
-→ forge-review
-→ scoped fix loop if needed
+forge-init
+-> forge-ask
+-> forge-plan
+-> human approval
+-> forge-implementation
+-> human approval
+-> forge-execute
+-> forge-review
+-> forge-verify-context when context health may be affected
+-> scoped fix loop if needed
 ```
 
-Each step produces a defined output. Each transition between planning and implementation, and between implementation and execution, requires explicit human approval. No assistant may self-approve either transition.
+Each step produces a defined output. Each transition between plan and implementation, and between implementation and execution, requires explicit human approval. No assistant may self-approve either transition.
 
 ---
 
@@ -25,58 +27,60 @@ Each step produces a defined output. Each transition between planning and implem
 
 | Step | Output | Mutation? |
 |---|---|---|
-| `forge-plan` | ECP (`status: proposed`) | No |
-| human approval | ECP transitions to `approved` | N/A |
-| `forge-implement` | Execution Contract (`status: proposed`) | No |
-| human approval | Execution Contract transitions to `approved` | N/A |
+| `forge-init` | Confirmed `.forge/context` and `forge.config.yaml` | Drafts context/config; finalizes only after confirmation |
+| `forge-ask` | Evidence-aware answer | No |
+| `forge-plan` | Quick Plan or SDD (`status: proposed`) | No |
+| human approval | Plan transitions to approved implementation input | N/A |
+| `forge-implementation` | Execution Context Package (`status: proposed`) | No |
+| human approval | ECP transitions to approved execution input | N/A |
 | `forge-execute` | Code changes + validation report | Yes, inside approved scope |
-| `forge-test` (optional) | Structured validation result | Maybe, if test changes are in scope |
-| `forge-review` | MR readiness + findings | No |
+| `forge-review` | MR readiness + findings + context impact | No |
+| `forge-verify-context` | Context health/freshness result | No |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
 
 ---
 
 ## Approval Gate UX
 
-### Gate 1 — Plan approval
+### Gate 1 - Plan approval
 
-After `forge-plan` produces an ECP, the human must review and explicitly approve before implementation begins.
+After `forge-plan` produces a Quick Plan or SDD, the human must review and explicitly approve before implementation begins.
 
 Minimal approval signals:
 
-```
+```text
 Approved. Use Forge implementation mode for the retry plan.
 ```
 
-```
-Approved. Use Forge implementation mode for ECP ecp.retry-plan.r1.
+```text
+Approved. Use Forge implementation mode for plan retry-plan.r1.
 ```
 
 Rules:
 - The human must explicitly approve.
-- Invoking `forge-implement` without a prior approval signal means the assistant should treat the input as a new direct request, not a pre-approved plan.
-- The assistant must not infer approval from ECP artifact creation alone.
+- Invoking `forge-implementation` without a prior approval signal means the assistant should treat the input as a new direct request, not a pre-approved plan.
+- The assistant must not infer approval from plan artifact creation alone.
 - Affirmative language such as "looks good" or "that makes sense" is not a formal approval signal.
 
-### Gate 2 — Task card approval
+### Gate 2 - ECP approval
 
-After `forge-implement` produces an Execution Contract with task cards, the human must review and explicitly approve before execution begins.
+After `forge-implementation` produces an Execution Context Package, the human must review and explicitly approve before execution begins.
 
 Minimal approval signals:
 
-```
-Approved. Use Forge execute mode for task cards IMP-001 and IMP-002.
+```text
+Approved. Use Forge execute mode for ECP ecp.retry-plan.r1.
 ```
 
-```
-Approved. Execute the confirmed execution contract from the last forge-implement output.
+```text
+Approved. Execute the confirmed ECP from the last forge-implementation output.
 ```
 
 Rules:
-- The human must explicitly approve task cards, an Execution Contract, or a named bounded task subset.
-- A proposed Execution Contract is not sufficient for execution without human confirmation.
-- The assistant must not execute immediately after producing task cards.
-- `READY_FOR_EXECUTION` in implementation output is a readiness signal, not autonomous permission to execute.
+- The human must explicitly approve the ECP or a named bounded ECP subset.
+- A proposed ECP is not sufficient for execution without human confirmation.
+- The assistant must not execute immediately after producing an ECP.
+- ECP readiness in implementation output is a readiness signal, not autonomous permission to execute.
 
 ---
 
@@ -84,46 +88,49 @@ Rules:
 
 | Mode | Skip when |
 |---|---|
-| `forge-ask` | Intent is already clear; no understanding gaps |
-| `forge-plan` | Change is simple, bounded, well-understood, no architectural risk |
-| `forge-test` | Lightweight validation from execute is sufficient; no new test changes needed |
-| Human approval gates | **Never.** Approval between plan → implement and implement → execute is always required. |
+| `forge-init` | The repository already has confirmed Forge context/config. |
+| `forge-ask` | Intent is already clear; no understanding gaps. |
+| `forge-plan` | Change is simple, bounded, well-understood, no architectural risk. |
+| `forge-verify-context` | No context card or source evidence could be affected. |
+| Human approval gates | **Never.** Approval between plan -> implementation and implementation -> execute is always required. |
+
+---
+
+## Scenario Workflows
+
+Not every task starts at `forge-plan`.
+
+| Situation | Entry point |
+|---|---|
+| Understanding code or current state | `forge-ask` |
+| Active incident or production failure | Incident scenario: `ask` -> `plan` -> `implementation` -> `execute` -> `review` as needed |
+| Behavior-preserving cleanup | Refactor scenario: `plan` -> `implementation` -> `execute` -> `review` as needed |
+| Clear, bounded, well-understood change | `forge-implementation` directly, then human approval before execute |
+| Non-trivial change needing architectural shape | `forge-plan` |
+
+Validation is a workflow activity inside `execute` and `review`, not a separate core lifecycle mode.
 
 ---
 
 ## Post-Review Fix Loop
 
-When `forge-review` returns `NEEDS_CHANGES`:
+When `forge-review` returns findings that need fixes:
 
 ```text
-forge-review (NEEDS_CHANGES)
-→ human reviews findings
-→ human approves fix scope
-→ forge-implement for new task cards, OR forge-execute for small bounded fixes
-→ optional forge-test
-→ forge-review
+forge-review
+-> human reviews findings
+-> human approves fix scope
+-> forge-implementation for new ECP, OR forge-execute for small bounded fixes
+-> forge-review
+-> forge-verify-context if context health may be affected
 ```
 
 Guidance:
 
-- For `CRITICAL` or `MAJOR` findings: use `forge-implement` to produce fix task cards for the finding scope. Get human approval. Then use `forge-execute`.
-- For `MINOR` findings: the human may request `forge-execute` directly with the precise fix scope named.
+- For critical or major findings: use `forge-implementation` to produce a fix ECP for the finding scope. Get human approval. Then use `forge-execute`.
+- For minor findings: the human may request `forge-execute` directly with the precise fix scope named.
 - The human must approve the fix scope before execute runs, the same as the main workflow.
 - `forge-review` when re-invoked should verify prior findings are resolved or explicitly still open.
 - Review findings do not automatically become execute tasks. The human names the fix scope.
-
----
-
-## Entry Points
-
-Not every change starts at `forge-plan`.
-
-| Situation | Entry point |
-|---|---|
-| Understanding code or current state | `forge-ask` |
-| Active incident or production failure | `forge-incident` |
-| Behavior-preserving cleanup | `forge-refactor` |
-| Clear, bounded, well-understood change | `forge-implement` directly |
-| Non-trivial change needing architectural shape | `forge-plan` |
 
 See `docs/mode-selection.md` for the full decision guide.

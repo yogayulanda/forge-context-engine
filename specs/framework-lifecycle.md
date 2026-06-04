@@ -24,7 +24,7 @@ It defines:
 - Repository-wide engineering style conventions for AI-generated code.
 - Runtime validation and partial/blocking execution semantics.
 - Minimal artifact lifecycle semantics for continuity across modes and sessions.
-- Bounded runtime profile, decision authority, and automation-safe approval semantics.
+- Bounded run interaction, policy-based human confirmation, and automation-safe approval semantics.
 - Lightweight future-facing intelligence and fintech-grade governance semantics without automation.
 
 This document does NOT:
@@ -131,25 +131,22 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `shared-runtime != deployable-service`
 - `local-context-first discovery works`
 - `ask-mode answers repo-understanding questions without planning or mutation`
-- `planning-mode emits ECP, not PRD prose`
-- `planning-mode adapts sections to active layers`
-- `planning-mode scopes on-demand loading to the change`
-- `implementation-mode emits executable task breakdown, not code changes`
-- `execute-mode modifies repositories only from approved tasks`
+- `plan-mode emits Quick Plan or SDD, not PRD prose`
+- `plan-mode adapts sections to active layers`
+- `plan-mode scopes on-demand loading to the change`
+- `implementation-mode emits an Execution Context Package, not code changes`
+- `execute-mode modifies repositories only from approved ECP scope`
 - `execute-mode reports SUCCESS only with validation evidence`
 - `execute-mode distinguishes PARTIAL_SUCCESS, BLOCKED, BLOCKED_BY_ENVIRONMENT, and NOT_VALIDATED`
 - `mode outputs stay human-readable, scannable, and operational`
-- `testing-mode owns structured validation, scope grouping, test strategy, mocks/fakes/stubs, coverage, and regression validation`
-- `testing-mode reports PASSED, FAILED, PARTIAL, BLOCKED_BY_ENVIRONMENT, or NOT_RUN with prerequisite checks and required testing sections`
-- `testing-mode validates confirmed contracts, rollback assumptions, retry/DLQ/idempotency behavior, runtime boundaries, and non-regression expectations where relevant`
-- `review-mode validates execute results without replacing testing mode`
+- `execute/review validation reporting owns structured validation, scope grouping, test strategy, mocks/fakes/stubs, coverage, and regression validation where relevant`
+- `review-mode validates execute results without replacing execute mode`
 - `review-mode rejects hidden success and unsupported fully-validated/test-passed claims`
 - `review-mode produces senior MR-review output with status, MR readiness, severity-grouped evidence findings, reviewer focus, and safety notes`
 - `review-mode checks architecture/contract drift and relevant safety risks without redesigning lifecycle or replacing post-change human responsibility`
-- `incident-mode diagnoses bugs/issues without speculative redesign`
-- `refactor-mode preserves behavior and stays bounded`
-- `runtime.non_interactive` controls interaction behavior without rewriting repository cognition
-- `runtime.profile` labels local/automation behavior while `runtime.non_interactive` remains the controlling interaction flag
+- `incident scenarios diagnose bugs/issues without speculative redesign`
+- `refactor scenarios preserve behavior and stay bounded`
+- `run.interaction` controls interaction behavior without rewriting repository cognition
 - `NEEDS_HUMAN_APPROVAL` blocks HIGH-risk automation decisions until human confirmation
 - `CONTEXT_BUDGET_LIMITED` reports when safe scoped reasoning needs more evidence than normal budget
 - `drift-detection prefers current repository evidence over stale context/artifacts`
@@ -199,7 +196,7 @@ A cognition pattern reaches `cognition-validated` when Forge produces the expect
 - The case is repository-neutral enough to test framework cognition.
 - The case has regression value.
 
-For mode benchmarks, expected behavior should verify ask-mode repo understanding without mutation, structured Engineering Change Plan output, layer-adaptive sections, scoped loading and `CONTEXT_BUDGET_LIMITED` behavior, evidence/inference/unknown separation, implementation task decomposition, execute-mode repository modification boundaries, grouped file-change reporting, explicit runtime prerequisite checks, partial/blocking/not-validated status semantics, concise blocker/confirmation UX, testing-mode structured validation sections, testing scope categories, contract-aware runtime-sensitive coverage, review-mode MR readiness, severity-grouped findings, reviewer focus, architecture/contract drift checks, safety notes, incident-mode diagnosis boundaries with cause confidence, refactor-mode behavior preservation and risk classification, fintech governance risk signals, and rejection of unsupported backend-only, topology, broad-loading, stale-artifact, cross-repo-assumption, generic-audit, testing-plan, fully-validated, production-ready, or test-passed claims.
+For mode benchmarks, expected behavior should verify init-mode context/config creation, ask-mode repo understanding without mutation, plan-mode Quick Plan or SDD output, layer-adaptive sections, scoped loading and `CONTEXT_BUDGET_LIMITED` behavior, evidence/inference/unknown separation, implementation-mode ECP generation, execute-mode approved-ECP boundaries, grouped file-change reporting, explicit runtime prerequisite checks, partial/blocking/not-validated status semantics, concise blocker/confirmation UX, validation scope categories, contract-aware runtime-sensitive coverage, review-mode MR readiness, severity-grouped findings, reviewer focus, architecture/contract drift checks, security/context-impact notes, verify-context context-health boundaries, incident/refactor scenario safety, fintech governance risk signals, and rejection of unsupported backend-only, topology, broad-loading, stale-artifact, cross-repo-assumption, generic-audit, fully-validated, production-ready, or test-passed claims.
 
 For engineering-style benchmarks, expected behavior should verify pragmatic idiomatic implementation, natural operational naming, repository-first test placement, minimal safe improvement, and rejection of unnecessary abstraction, academic wording, competing coding paradigms, or unrelated mass refactor.
 
@@ -317,13 +314,13 @@ Runtime implementation must not be used to discover core cognition semantics.
 
 Automation may encode mature cognition behavior. It must not replace semantic validation.
 
-Runtime profile semantics may make local/manual and automation-safe behavior clearer. They do not create orchestration authority. Automation-safe decisions remain bounded by LOW/MEDIUM/HIGH risk, explicit authority, decision trace, and human approval for HIGH-risk changes.
+Run interaction semantics may make local/manual and automation-safe behavior clearer. They do not create orchestration authority. Automation-safe decisions remain bounded by policy, required decisions, and human approval for high-risk changes.
 
 ---
 
 ## 10. Artifact Lifecycle Boundary
 
-Lifecycle artifacts may preserve concise planning, implementation, execution, testing, review, incident, and refactor handoff records.
+Lifecycle artifacts may preserve concise plan, implementation, execution, review, verify-context, and scenario handoff records.
 
 Valid artifact use:
 - Preserve approved engineering intent and confirmed decisions.

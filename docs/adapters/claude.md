@@ -10,6 +10,7 @@ Common requests:
 /forge-plan
 /forge-review
 Use Forge ask mode to explain this service flow.
+Use Forge verify-context mode to check context freshness.
 ```
 
 The expected path is:
@@ -23,7 +24,7 @@ Claude request -> CLAUDE.md or command wrapper -> shared skill -> .forge/context
 `CLAUDE.md` tells Claude to:
 
 - read `.forge/forge.config.yaml`
-- apply `runtime.non_interactive`
+- apply `run.interaction` and related final run config fields
 - read conventions and the routing manifest
 - read the requested mode file
 - load only task-relevant context
@@ -36,13 +37,13 @@ Slash command wrappers under `adapters/claude/commands/` are invocation helpers 
 Use natural, bounded prompts:
 
 ```text
-Use Forge planning mode for this retry improvement.
+Use Forge plan mode for this retry improvement.
 Preserve the public event schema and list validation needed.
 ```
 
 ```text
 Use Forge review mode on this branch.
-Focus on correctness, validation honesty, and MR readiness.
+Focus on correctness, validation honesty, security, context impact, and MR readiness.
 ```
 
 ## Boundaries
