@@ -21,6 +21,11 @@ forge-init
 
 Each step produces a defined output. Each transition between plan and implementation, and between implementation and execution, requires explicit human approval. No assistant may self-approve either transition.
 
+Saved artifact continuity is optional:
+- default behavior is chat output first
+- save to `.forge/generated/...` only when requested or approved
+- generated artifacts are reusable working files, not curated context
+
 For multi-repo work, this workflow still runs in bounded scope:
 - repo-scoped work starts from the current service repo context
 - cross-repo planning may load workspace context first, then only the relevant linked service contexts
@@ -42,6 +47,15 @@ For multi-repo work, this workflow still runs in bounded scope:
 | `forge-review` | Verdict + diff reviewed + findings + validation assessment + context impact | No |
 | `forge-verify-context` | Context health/freshness result | No |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
+
+Optional saved artifact paths:
+
+```text
+.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md
+.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md
+.forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md
+.forge/generated/reviews/YYYY-MM-DD-<slug>-review.md
+```
 
 ---
 
@@ -66,6 +80,7 @@ Rules:
 - Invoking `forge-implementation` without a prior approval signal means the assistant should treat the input as a new direct request, not a pre-approved plan.
 - The assistant must not infer approval from plan artifact creation alone.
 - Affirmative language such as "looks good" or "that makes sense" is not a formal approval signal.
+- Continuing from a saved plan still requires checking that the artifact is a plan, that it still matches current evidence, and that approval exists.
 
 ### Gate 2 - ECP approval
 
@@ -86,6 +101,24 @@ Rules:
 - A proposed ECP is not sufficient for execution without human confirmation.
 - The assistant must not execute immediately after producing an ECP.
 - ECP readiness in implementation output is a readiness signal, not autonomous permission to execute.
+- Continuing from a saved ECP still requires checking that the artifact is an ECP, that it still matches current evidence, and that approval exists.
+
+## Continue From Saved Artifact
+
+Supported mapping:
+- plan artifact -> `forge-implementation`
+- ECP artifact -> `forge-execute`
+- execution report artifact -> `forge-review`
+- review report artifact -> follow-up `forge-plan` work or a `.forge/context-patches/...` proposal
+
+Guardrails:
+- read the referenced artifact first
+- verify the artifact type matches the requested mode
+- verify the artifact still has enough evidence and approved scope
+- check for material source or context drift when evidence is available
+- block or request more context when the artifact is stale or ambiguous
+- do not execute from a plan artifact directly
+- do not mutate `.forge/context` from generated artifact content alone
 
 ---
 

@@ -48,6 +48,9 @@ Convert developer intent into a reviewable Quick Plan or SDD.
 - State assumptions explicitly when the request is ambiguous, even for small changes.
 - Keep small-change output concise, but still include acceptance criteria and validation commands.
 - Prefer the smallest relevant code surface and evidence set that can support the plan.
+- Default to chat output; save a plan artifact only when the user explicitly asks or approves persistence.
+- When saving, use `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md` and avoid overwriting an existing artifact without explicit approval.
+- Saved plans are working artifacts only; they are not approved by creation alone and are not durable context.
 - Do not edit code.
 
 ## outputs

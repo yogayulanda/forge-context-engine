@@ -31,6 +31,7 @@ Use Forge when you want:
 - explicit plan and execution approval gates
 - repo-local context instead of tool-local memory
 - reviewable plans, ECPs, execution reports, and review reports
+- cross-session and cross-tool continuation from saved generated artifacts
 
 Skip Forge when you only need a one-off chat answer with no repo context or lifecycle continuity.
 
@@ -165,6 +166,7 @@ Use Forge review mode to review the executed health check change.
 - `.forge/temp` and `.forge/cache` are local-only.
 - `.forge/context` is the curated source of truth.
 - `.forge/generated` is for working artifacts when requested or approved.
+- saved artifact directories are `.forge/generated/plans/`, `.forge/generated/ecp/`, `.forge/generated/reports/`, and `.forge/generated/reviews/`
 - `.forge/context-patches` is for reviewable context promotion.
 
 ## Generated Artifacts And Context Patches
@@ -173,7 +175,22 @@ Artifact policy is chat first.
 
 - Plans, ECPs, execution reports, and review reports are not saved by default.
 - Save working artifacts under `.forge/generated/...` only when requested or approved.
+- Use human-readable dated kebab-case filenames with an artifact-type suffix and do not overwrite an existing artifact without approval.
 - Durable context updates go through reviewed `.forge/context-patches/...` before promotion into `.forge/context`.
+
+Continuation mapping:
+- saved plan artifact -> `implementation`
+- saved ECP artifact -> `execute`
+- saved execution report artifact -> `review`
+- saved review report artifact -> follow-up planning or context patch proposal
+
+Continuation guardrails:
+- read the artifact first
+- verify type-to-mode fit
+- verify scope, approval state, and evidence are still sufficient
+- block or request more context when the artifact is stale or ambiguous
+- do not execute from a plan artifact directly
+- do not mutate `.forge/context` from generated artifact content alone
 
 Optional artifact flow:
 
@@ -226,7 +243,7 @@ Then move through the normal path when a change is needed:
 
 ## Status
 
-- Current release focus: v0.7 lifecycle dogfood hardening.
+- Current release focus: v0.10 artifact continuity.
 - Validated against a real Go repository.
 - CLI install/update and lifecycle contracts are working.
 - Further polish can continue without changing the lifecycle semantics.

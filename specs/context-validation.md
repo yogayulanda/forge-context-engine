@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 3.9 |
+| Version | 3.10 |
 | Date | 2026-06-05 |
 | Status | `decision` — finalized for forge-context-engine v0.3.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.3 · `specs/artifact-lifecycle.md` v1.3 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.5 · `specs/artifact-lifecycle.md` v1.5 |
 
 > **v2.5 -> v2.6 changes:** Human UX refinement for mode outputs: concise operational wording, quieter runtime internals, clearer confirmation prompts, grouped file-change reporting, and execute reports focused on result/validation/rollback. No lifecycle redesign, tooling, automation, runtime executors, orchestration, or new folders.
 > **v2.6 -> v2.7 changes:** Implementation readiness now requires bounded ECP structure for `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION`, with explicit guardrails, acceptance criteria, validation expectations, and blocker gates. No tooling, orchestration, agents, schedulers, workflow engines, DAGs, Jira integration, or story points.
@@ -23,6 +23,7 @@
 > **v3.6 -> v3.7 changes:** Adds execute hardening validation for minimal diffs, finalization checks, contract-source checks, review-loop closure, and concise recommended next action. No lifecycle redesign, modes, orchestration, memory, agents, runtime executors, deploy, CI/CD, or autonomous chaining added.
 > **v3.7 -> v3.8 changes:** Clarifies curated context quality rules so `.forge/context` stays durable, evidence-backed, compact, and distinct from generated artifacts and reviewed context-patch proposals. No lifecycle redesign, new CLI commands, runtime agent behavior, or structured v0.8B context-impact workflow added.
 > **v3.8 -> v3.9 changes:** Adds a lightweight `Context Impact` review contract, reviewable context-patch proposal expectations, and bounded verify-context quality/patch validation rules. No lifecycle redesign, new CLI commands, runtime agent behavior, or automatic context promotion added.
+> **v3.9 -> v3.10 changes:** Adds generated artifact continuity validation for saved artifact directories, naming, metadata, mode mapping, no-auto-save behavior, no-overwrite-without-approval, and stale-artifact blocking. No new lifecycle modes, runtime agent behavior, schedulers, CI/CD, memory, or vector storage added.
 
 ---
 

@@ -3,19 +3,19 @@
 | Field | Value |
 |---|---|
 | Document | Forge Artifact Lifecycle Specification |
-| Version | 1.4 |
+| Version | 1.5 |
 | Date | 2026-06-05 |
 | Status | `decision` |
-| Scope | Minimal lifecycle artifacts for mode continuity |
+| Scope | Minimal generated artifact continuity for lifecycle handoff |
 | Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `runtime/.forge/context/00-meta/conventions.md` |
 
 ---
 
 ## 0. Purpose
 
-This document defines small, human-readable lifecycle artifacts that preserve engineering continuity across Forge modes and sessions.
+This document defines small, human-readable generated artifacts that preserve engineering continuity across Forge modes, sessions, and tools.
 
-Artifacts are supporting engineering records. They help engineers and assistants connect plan, implementation, execution, review, verify-context, and scenario work without reconstructing the same context repeatedly.
+Artifacts are supporting engineering records. They help engineers and assistants connect plan, implementation, execution, and review work without reconstructing the same context repeatedly.
 
 Artifacts are NOT:
 - Source of truth over code, repository docs, ADRs, or human confirmations.
@@ -33,7 +33,7 @@ Repository evidence remains authoritative.
 When an artifact conflicts with code, repository docs, ADRs, or explicit human confirmation:
 - Code wins for implementation facts.
 - ADRs or human confirmations win for approved intent.
-- The artifact is stale, partial, or superseded.
+- The artifact is stale, partial, ambiguous, or superseded.
 - The conflict must be surfaced as a validation or review concern when it affects execution safety.
 
 Artifacts may summarize approved intent and results, but they never override repository truth.
@@ -48,11 +48,11 @@ Default behavior is chat output first. Forge should not auto-write a Markdown ar
 
 Default persisted location:
 
-```
+```text
 .forge/generated/
 ```
 
-The folder is created on demand. Artifact files use Markdown with front matter and concise sections. They are append-friendly, reviewable in diffs, and replaceable/discardable.
+The folder is created on demand. Artifact files use Markdown with a small metadata header and concise sections. They are human-readable, append-friendly, reviewable in diffs, and replaceable or discardable.
 
 Artifact storage policy:
 
@@ -60,7 +60,7 @@ Artifact storage policy:
 |---|---|
 | `.forge/context` | Committed curated context source of truth |
 | `.forge/context-patches` | Reviewable context update proposals |
-| `.forge/generated` | Generated artifacts committed manually when relevant |
+| `.forge/generated` | Generated working artifacts committed manually when relevant |
 | `.forge/temp` | Ignored local-only scratch |
 | `.forge/cache` | Ignored local-only cache |
 
@@ -68,44 +68,49 @@ Generated artifacts must never be confused with curated context. Context changes
 
 Context quality boundary:
 - `.forge/context` is for durable, repo-specific, evidence-backed, compact knowledge that remains useful beyond one task.
-- `.forge/generated/...` is for working artifacts such as plans, ECPs, execution reports, review reports, and other temporary continuity records.
+- `.forge/generated/...` is for working artifacts such as plans, ECPs, execution reports, and review reports.
 - `.forge/context-patches/...` is for proposed durable context updates that still require review.
 - A generated artifact is not automatically promoted into `.forge/context`.
 - A context patch is not accepted context until it is reviewed and promoted.
 - Raw logs, scratchpads, one-off plans, temporary ECPs, and long reports stay out of curated context unless reduced into durable evidence-backed context.
 
-Context maintenance cadence:
-- `Context Impact Check` is a small per-task review concern.
-- `Context Quality Audit` is a larger milestone/release/manual concern.
-- Normal daily review should not become a full context quality audit.
-
 Persist only when one of these is true:
 - The user explicitly asks to save or create the artifact.
-- The work is medium/large and the user approves saving for continuity.
-- The artifact is needed for multi-session or multi-agent continuation.
+- The work is medium or large and the user approves saving for continuity.
+- The artifact is needed for multi-session or multi-tool continuation.
 
 Do not persist artifacts during read-only modes by default. If a read-only mode is explicitly asked to save its output, save only to `.forge/generated/...` and keep the mode's no-code-change boundary intact.
 
-Recommended persisted paths:
+Saved artifact directories:
 
 ```text
-.forge/generated/plans/<date>-<slug>.md
-.forge/generated/ecp/<date>-<slug>.md
-.forge/generated/reports/<date>-<slug>-execution.md
-.forge/generated/reviews/<date>-<slug>-review.md
+.forge/generated/plans/
+.forge/generated/ecp/
+.forge/generated/reports/
+.forge/generated/reviews/
 ```
 
-Recommended filename:
+Generated artifact types:
+- `plan`
+- `ecp`
+- `execution_report`
+- `review_report`
 
-```
-<artifact-type>-<short-topic>-<revision>.md
+Recommended naming pattern:
+
+```text
+.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md
+.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md
+.forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md
+.forge/generated/reviews/YYYY-MM-DD-<slug>-review.md
 ```
 
-Recommended artifact ID:
-
-```
-artifact.<type>.<short-topic>.r<N>
-```
+Naming rules:
+- Use lowercase kebab-case for `<slug>`.
+- Include the creation date in `YYYY-MM-DD` format.
+- Include the artifact type suffix in the filename.
+- Avoid ambiguous names such as `latest.md`, `current.md`, or `final.md`.
+- Do not overwrite an existing generated artifact without explicit human approval.
 
 `.forge/generated/*` remains generated artifact output. It is loaded only by explicit reference, mode handoff, or task relevance.
 
@@ -117,48 +122,35 @@ Recommended context patch path:
 .forge/context-patches/<date>-<slug>.md
 ```
 
-Suggested patch shape:
-
-```text
-# Context Patch Proposal: <title>
-
-Target context files:
-- .forge/context/...
-
-Reason:
-...
-
-Evidence:
-- file/path:line or command/result summary
-
-Proposed update:
-...
-
-Confidence:
-high | medium | low
-
-Promotion notes:
-- Requires human review before merging into `.forge/context`.
-```
-
 ---
 
-## 3. Common Artifact Fields
+## 3. Metadata Header Contract
 
-Every persisted artifact should include:
+Persisted artifacts should include a small metadata header. This is recommended for saved artifacts and unnecessary for normal chat-only responses.
 
-- `artifact_id`
-- `artifact_type`
-- `status`
-- `produced_by_mode`
-- `derived_from`
-- `created_at` or `updated_at`
-- `repo_reference`
-- `summary`
-- `boundaries`
-- `links`
+Recommended shape:
 
-Statuses should be operational and mode-specific. Avoid broad lifecycle vocabulary that implies autonomous state management.
+```yaml
+---
+forge_artifact:
+  type: plan | ecp | execution_report | review_report
+  lifecycle_mode: plan | implementation | execute | review
+  status: ready_for_implementation | ecp_ready | completed | accepted | needs_follow_up | blocked
+  created_for: "<short task title>"
+  source_context:
+    - ".forge/context/..."
+  source_artifacts:
+    - ".forge/generated/..."
+  next_mode: implementation | execute | review | none
+  context_impact: true | false | unknown
+---
+```
+
+Metadata guidance:
+- Keep the block minimal and readable.
+- `source_context` and `source_artifacts` may be empty lists when there is nothing relevant to cite.
+- Status values should remain operational and mode-specific. They must not imply autonomous workflow state.
+- Use `context_impact: unknown` when the saved artifact does not carry enough evidence to conclude whether durable context should change.
 
 Artifacts must stay concise. Store decisions, blockers, boundaries, evidence references, validation results, and follow-up actions only when they are needed for engineering continuity.
 
@@ -177,7 +169,13 @@ Default behavior:
 Purpose:
 - Preserve reviewable engineering intent before implementation.
 - Preserve plan shape: Quick Plan or SDD.
-- Preserve risks, options, boundaries, and blockers.
+- Preserve risks, boundaries, and blockers.
+
+Recommended save path:
+
+```text
+.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md
+```
 
 Minimum contents:
 - Title.
@@ -187,69 +185,52 @@ Minimum contents:
 - Required decisions.
 - Blockers.
 - Boundaries.
-- Linked systems/layers.
+- Linked systems or layers.
 - Revision timestamp or reference.
-
-**Plan status vocabulary:**
-
-| Status | Meaning |
-|---|---|
-| `proposed` | Plan output produced; awaiting human review and approval |
-| `approved` | Human has explicitly accepted this as the basis for implementation mode |
-| `superseded` | Replaced by a newer revision |
-| `rejected` | Human declined this direction |
-
-Rules:
-- A newly produced Plan artifact must use `status: proposed`.
-- Only the human may transition a Plan artifact to `approved`.
-- An AI assistant must not self-promote a Plan artifact from `proposed` to `approved`.
 
 ### 4.2 ECP Artifact
 
 Produced by: implementation mode.
 
 Default behavior:
-- Emit the ECP/readiness package in chat.
+- Emit the ECP or readiness package in chat.
 - Persist only when requested or approved for continuity.
 
 Purpose:
-- Persist the execution-ready context package produced from an approved plan.
+- Preserve the execution-ready context package produced from an approved plan.
+
+Recommended save path:
+
+```text
+.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md
+```
 
 Minimum contents:
 - Readiness status.
-- Task cards.
-- Dependency order.
+- Task sequence.
 - Stop conditions.
 - Do-not-change boundaries.
 - Acceptance criteria.
 - Validation requirements.
 - Security constraints.
-- Derived-from approved Plan reference.
+- Derived-from approved plan reference.
 
-**ECP status vocabulary:**
-
-| Status | Meaning |
-|---|---|
-| `proposed` | Task cards produced by implementation mode; awaiting human review |
-| `approved` | Human has confirmed the ECP is safe to execute |
-| `blocked` | Blockers remain unresolved; not execution-ready |
-| `superseded` | Replaced by a revised contract |
-
-Rules:
-- A newly produced ECP must use `status: proposed`.
-- Only the human may transition it to `approved`.
-- An AI assistant must not self-promote from `proposed` to `approved`.
-
-### 4.3 Execute Result Artifact
+### 4.3 Execution Report Artifact
 
 Produced by: execute mode.
 
 Default behavior:
 - Report execution in chat.
-- Persist when requested, approved, or useful for follow-up review/continuity.
+- Persist when requested, approved, or useful for follow-up review continuity.
 
 Purpose:
 - Preserve the actual implementation result.
+
+Recommended save path:
+
+```text
+.forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md
+```
 
 Minimum contents:
 - Execution result.
@@ -259,22 +240,7 @@ Minimum contents:
 - Rollback notes.
 - Unchanged boundaries.
 
-### 4.4 Validation Result Artifact
-
-Produced by: execute/review workflow when scoped validation evidence needs a separate handoff record.
-
-Purpose:
-- Preserve validation evidence.
-
-Minimum contents:
-- Validation result.
-- Validated scope.
-- Blockers.
-- Automated/manual validation.
-- Coverage gaps.
-- Runtime-sensitive validation.
-
-### 4.5 Review Result Artifact
+### 4.4 Review Report Artifact
 
 Produced by: review mode.
 
@@ -283,7 +249,13 @@ Default behavior:
 - Persist only when requested or approved.
 
 Purpose:
-- Preserve MR/review findings.
+- Preserve review findings for follow-up work.
+
+Recommended save path:
+
+```text
+.forge/generated/reviews/YYYY-MM-DD-<slug>-review.md
+```
 
 Minimum contents:
 - Review Report.
@@ -291,56 +263,77 @@ Minimum contents:
 - Mode Boundary.
 - Diff Reviewed.
 - Summary.
-- Critical/major findings.
+- Critical, major, or minor findings.
 - Validation result assessment.
 - Lifecycle boundary assessment.
-- Security / risk assessment.
+- Security or risk assessment.
 - Context impact.
 - Recommended next step.
 
-Review result artifacts must name the diff surface reviewed. If no diff or changed-file evidence is available, the artifact must say so explicitly and should usually preserve a `needs_more_validation` outcome rather than imply complete review coverage.
-
-Recommended next-step wording must preserve human control. It must not imply that Forge will commit, push, merge, or open MR/PR actions automatically.
-
-### 4.6 Incident Scenario Artifact
-
-Produced by: incident workflow scenario when diagnosis and mitigation need a separate handoff record.
-
-Purpose:
-- Preserve diagnosis and mitigation flow.
-
-Minimum contents:
-- Incident summary.
-- Likely root cause.
-- Affected systems.
-- Mitigation.
-- Rollback possibility.
-- Next checks.
-
-### 4.7 Refactor Scenario Artifact
-
-Produced by: refactor workflow scenario when technical-debt intent needs a separate handoff record.
-
-Purpose:
-- Preserve technical debt proposal or refactor intent.
-
-Minimum contents:
-- Problem areas.
-- Proposed safe improvements.
-- Risk areas.
-- Out-of-scope redesigns.
-- Recommended execution boundaries.
+Review report artifacts must name the diff surface reviewed. If no diff or changed-file evidence is available, the artifact must say so explicitly and should usually preserve a `needs_more_validation` style outcome rather than imply complete review coverage.
 
 ---
 
-## 5. Linking Rules
+## 5. Continue-From-Artifact Workflow
+
+Saved artifacts are continuity helpers, not autonomous instructions.
+
+Supported mode mapping:
+- Saved `plan` artifact -> `implementation` mode may continue from it and produce an ECP.
+- Saved `ecp` artifact -> `execute` mode may continue from it and implement the approved scope.
+- Saved `execution_report` artifact -> `review` mode may continue from it and assess the result.
+- Saved `review_report` artifact -> may guide follow-up planning or a `.forge/context-patches/...` proposal, but it must not auto-apply context changes.
+
+Continuation examples:
+
+```text
+Use Forge implementation mode from .forge/generated/plans/2026-06-05-add-export-plan.md
+Use Forge execute mode from .forge/generated/ecp/2026-06-05-add-export-ecp.md
+Use Forge review mode from .forge/generated/reports/2026-06-05-add-export-execution-report.md
+```
+
+Required continuation checks:
+- Read the referenced artifact first.
+- Verify the artifact type matches the requested lifecycle mode.
+- Verify the artifact still has enough evidence, scope, and approval context for safe continuation.
+- Check for material repository or context drift when evidence is available.
+- Stay inside the artifact's approved scope.
+- Do not silently expand scope.
+- Do not execute from a plan artifact directly; execution still requires an approved ECP.
+- Do not mutate `.forge/context` based only on generated artifact content.
+
+When a saved artifact is stale, ambiguous, contradicted by current evidence, or lacks required approval state:
+- Return a blocked or needs-more-context style outcome for the current mode.
+- Explain what evidence, approval, or refreshed artifact is missing.
+
+---
+
+## 6. Save Behavior
+
+Default behavior:
+- Respond in chat.
+
+Save only when:
+- The user explicitly asks to save.
+- The user asks for a saved artifact such as a saved plan, saved ECP, saved execution report, or saved review report.
+- The user asks for `write this to .forge/generated/...` or equivalent wording.
+- The workflow needs a saved artifact for continuity and the user approves that persistence.
+
+Do not:
+- Auto-save every plan, ECP, execution report, or review report.
+- Save temporary scratchpads as generated artifacts.
+- Save raw logs as artifacts unless they are summarized into a human-readable report.
+- Overwrite an existing generated artifact without explicit approval.
+- Promote saved artifacts into `.forge/context`.
+
+---
+
+## 7. Linking Rules
 
 Artifacts may reference:
-- Previous artifact IDs.
-- Plan artifact IDs.
-- ECP artifact IDs.
-- Execute, review, verify-context, or scenario result references.
-- Repository evidence paths, commits, PR/MR IDs, ADRs, or human confirmation references.
+- Previous artifact paths.
+- Plan, ECP, execution report, or review report artifact paths.
+- Repository evidence paths, commits, PR or MR IDs, ADRs, or human confirmation references.
 
 Artifact links are trace references only.
 
@@ -351,28 +344,11 @@ They must NOT:
 - Trigger execution.
 - Replace task approval.
 
-Use shallow links. Prefer direct parent/current-result links over long chains.
+Use shallow links. Prefer direct parent or current-result links over long chains.
 
 ---
 
-## 6. Lifecycle Semantics
-
-Artifacts are lifecycle helpers with these semantics:
-
-- Append-friendly: revisions may add clearer status, result, or follow-up.
-- Reviewable: engineers can inspect and diff them.
-- Replaceable: a newer artifact may supersede an older one.
-- Discardable: deleting an artifact must not remove repository truth.
-- Bounded: no long conversational dumps or broad historical summaries.
-- Explicitly non-authoritative over repository evidence.
-- Producing an artifact does not imply approval. A newly produced Plan or ECP is `proposed` until the human explicitly approves it.
-- Artifact status promotion from `proposed` to `approved` requires explicit human confirmation; it is not a side-effect of artifact creation or assistant output.
-
-Revision references may use `r1`, `r2`, or date-based references. Revisions should preserve the reason for change when it affects execution or review continuity.
-
----
-
-## 7. Content Boundaries
+## 8. Content Boundaries
 
 Artifacts must NOT contain:
 - Hidden chain-of-thought.
@@ -383,25 +359,24 @@ Artifacts must NOT contain:
 - Knowledge graph terminology or structure.
 - Agent memory, autonomous memory, workflow engine, or orchestration concepts.
 
-Artifacts should use concise engineering language, stable references, and direct evidence/status wording. Avoid abstract lifecycle commentary when a blocker, decision, validation result, or changed boundary is enough.
+Artifacts should use concise engineering language, stable references, and direct evidence or status wording. Avoid abstract lifecycle commentary when a blocker, decision, validation result, or changed boundary is enough.
 
 ---
 
-## 8. Mode Ownership
+## 9. Mode Ownership
 
-| Mode | Artifact |
+| Mode | Saved artifact type |
 |---|---|
-| `plan` | Quick Plan or SDD |
-| `implementation` | Execution Context Package |
-| `execute` | Execute Result Artifact |
-| `review` | Review Result Artifact |
-| `verify-context` | Context Verification Result |
+| `plan` | `plan` |
+| `implementation` | `ecp` |
+| `execute` | `execution_report` |
+| `review` | `review_report` |
 
 Ask mode does not produce lifecycle artifacts by default. It may reference existing artifacts when directly relevant to a lightweight question.
 
 ---
 
-## 9. Future Compatibility Boundary
+## 10. Future Compatibility Boundary
 
 This specification gives future automation stable artifact boundaries, but it does not implement automation.
 

@@ -119,6 +119,19 @@ Manual setup remains available when you want to copy runtime files directly.
 
    You do not need to append `Do not edit files` for `plan` or `implementation`. That wording is still allowed as a safety probe, but the mode contract already enforces the no-edit boundary.
 
+7. Save generated artifacts only when you actually need continuity.
+
+   Recommended saved artifact paths:
+
+   ```text
+   .forge/generated/plans/YYYY-MM-DD-<slug>-plan.md
+   .forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md
+   .forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md
+   .forge/generated/reviews/YYYY-MM-DD-<slug>-review.md
+   ```
+
+   Default behavior is still chat output first. Saved artifacts are working files only; they are not `.forge/context`, and they are not auto-promoted into durable context.
+
 ## CLAUDE.md And AGENTS.md Usage
 
 Use `CLAUDE.md` for Claude-compatible assistants. It should be a thin wrapper that tells the assistant to:
@@ -182,6 +195,14 @@ A first real change usually looks like this:
 8. `verify-context`: run when source changes may affect curated context.
 
 Small, low-risk edits can skip `plan` when the scope is obvious. Risky, ambiguous, contract-heavy, or production-sensitive work should not skip plan.
+
+Saved artifact continuation examples:
+
+```text
+Use Forge implementation mode from .forge/generated/plans/2026-06-05-add-export-plan.md
+Use Forge execute mode from .forge/generated/ecp/2026-06-05-add-export-ecp.md
+Use Forge review mode from .forge/generated/reports/2026-06-05-add-export-execution-report.md
+```
 
 Next, read [First Workflow](first-workflow.md) to see this path end to end, then use [Mode Selection](mode-selection.md) when you need to choose the smallest fitting lifecycle mode.
 

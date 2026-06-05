@@ -48,6 +48,8 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 
 ## behavior
 - Check goal alignment, scope drift, lifecycle boundary compliance, validation evidence, risk/safety, security, and context impact.
+- If the user references a saved execution report artifact, read it first and verify it is an execution report artifact before continuing.
+- Check whether the saved report still has enough evidence and whether current repository/context evidence materially contradicts it; if so, return `needs_more_validation` or `blocked`.
 - Inspect security-sensitive areas when relevant: auth/authz, input validation, sensitive data exposure, secret handling, injection risk, IDOR, SSRF, file upload, and OWASP-relevant risks.
 - Assess whether follow-up execute work or a context patch is needed.
 - Run a small per-task Context Impact Check; do not turn routine review into a full context quality audit.
@@ -58,6 +60,8 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 - Treat validation gaps as review findings without becoming execute mode.
 - When reviewing executed changes, name the exact diff surface reviewed under `Diff Reviewed`.
 - If no diff or changed-file evidence is available, say that explicitly and usually return `needs_more_validation`.
+- Default to chat output; save a review report only when the user explicitly asks or approves persistence.
+- When saving, use `.forge/generated/reviews/YYYY-MM-DD-<slug>-review.md` and avoid overwriting an existing artifact without explicit approval.
 - Do not fix code directly.
 
 ## outputs
@@ -112,3 +116,4 @@ When `update_needed: true`, the suggested patch proposal should be human-reviewa
 - `request_changes` -> bounded fix scope through `implementation` or `execute` after human approval.
 - `needs_more_validation` -> `execute` or manual validation activity.
 - `blocked` -> human decision, `plan`, or context patch depending on blocker type.
+- A saved review report may inform follow-up planning or a context patch proposal, but it must not auto-apply context changes.

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 3.4 |
+| Version | 3.5 |
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
@@ -43,6 +43,7 @@ v3.1 clarifies that Claude, Codex, shared skills, and tool-specific adapters are
 v3.2 hardens bounded execution against unintended file churn, residual review blockers, and contract-source drift, and adds one concise recommended next action to lifecycle outputs. It does not add modes, orchestration, agents, memory, schedulers, CI/CD, deploy logic, runtime executors, or autonomous chaining.
 v3.3 clarifies read-only mode boundaries, normal prompt UX for plan/implementation/review, `ui.language` behavior for narration versus project artifacts, and chat-first artifact persistence. It does not add modes, CLI redesign, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
 v3.4 adds a lightweight `Context Impact` review contract, reviewable `.forge/context-patches/...` proposal shape, and bounded verify-context patch/quality checks. It does not add modes, CLI commands, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
+v3.5 clarifies saved generated artifact directories, naming, minimal metadata, save-on-request behavior, and safe continue-from-artifact checks for cross-session and cross-tool handoff. It does not add runtime agent behavior, schedulers, CI/CD, memory, vector storage, or new lifecycle modes.
 
 This document does NOT:
 - Redesign Forge architecture.
@@ -76,7 +77,8 @@ Canonical lifecycle:
 15. Loading details reported only as concise scoped-context confirmation when useful.
 16. Mode sufficiency evaluated when it affects the result.
 17. Lifecycle artifacts referenced or written only when useful for bounded continuity.
-18. Read-only mode boundaries are enforced by the selected mode contract; users do not need to restate "Do not edit files" for normal plan, implementation, or review usage.
+18. Saved artifact continuation checks performed before reusing a plan, ECP, execution report, or review report across sessions or tools.
+19. Read-only mode boundaries are enforced by the selected mode contract; users do not need to restate "Do not edit files" for normal plan, implementation, or review usage.
 
 Mode invocation is successful only when the assistant can explain what mattered for the task, what evidence was missing, and whether the selected mode was enough. Normal interactive output should not expose full runtime/bootstrap detail.
 
@@ -94,6 +96,14 @@ forge-plan
 ```
 
 Each transition between plan output and implementation, and between ECP output and execution, requires explicit human approval. Assistants must not proceed to the next mode without that signal.
+
+Artifact continuity rules:
+- Default behavior remains chat output first.
+- Save generated artifacts only when requested or approved.
+- Saved artifacts live under `.forge/generated/plans/`, `.forge/generated/ecp/`, `.forge/generated/reports/`, and `.forge/generated/reviews/`.
+- Before continuing from a saved artifact, read it, verify type-to-mode fit, verify approval or scope state, and check for stale or contradictory evidence when available.
+- Plan artifact -> implementation, ECP artifact -> execute, execution report artifact -> review, review report artifact -> follow-up planning or context patch proposal.
+- Generated artifacts remain working files only; they are not automatically promoted into `.forge/context`.
 
 Read-only core mode UX:
 - `plan` is read-only by definition.

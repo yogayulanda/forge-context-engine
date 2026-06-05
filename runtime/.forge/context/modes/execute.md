@@ -43,12 +43,16 @@ Apply an approved ECP into code within explicit boundaries.
 - `run.write_behavior`.
 
 ## behavior
+- If the user references a saved ECP artifact, read it first and verify it is an ECP artifact before continuing.
+- Check whether the saved ECP still has enough evidence and whether current repository/context evidence materially contradicts it; if so, stop with `blocked`, `blocked_by_environment`, or `not_validated` instead of guessing.
 - Execute task by task with minimal diffs and repository-native style.
 - Run scoped validation after each task for the changed area.
 - Fix ordinary in-scope failures such as typos, formatting issues, missing imports, small logic bugs, or assertion mismatches.
 - Stop on scope, domain, security, contract, migration, infra, evidence, or environment blockers.
 - Run final validation after all approved tasks complete.
 - Preserve validation honesty: changed code without reliable validation is `not_validated`.
+- Default to chat output; save an execution report only when the user explicitly asks or approves persistence.
+- When saving, use `.forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md` and avoid overwriting an existing artifact without explicit approval.
 
 ## outputs
 - Execution Report.
@@ -71,6 +75,7 @@ Apply an approved ECP into code within explicit boundaries.
 
 ## boundaries
 - Execute is the only core mode that may edit files, and only within the approved ECP/scope boundary.
+- Do not execute from a saved plan artifact directly; execution still requires an approved ECP.
 - Do not expand scope silently.
 - Do not commit, push, merge, deploy, change secrets, or change CI/CD/infra unless explicitly approved in the ECP.
 - Do not ignore failed validation.

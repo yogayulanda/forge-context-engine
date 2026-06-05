@@ -64,9 +64,28 @@ Normal prompt UX:
 
 - `.forge/context` is the committed curated source of truth.
 - `.forge/context-patches` contains reviewable context update proposals.
-- `.forge/generated` contains generated artifacts only.
+- `.forge/generated` contains generated working artifacts only.
+- Saved artifact directories are `.forge/generated/plans/`, `.forge/generated/ecp/`, `.forge/generated/reports/`, and `.forge/generated/reviews/`.
+- Save artifacts only when requested or approved. Default behavior is chat output first.
+- Continue from a saved artifact only after reading it, verifying type-to-mode fit, and checking for stale or contradictory evidence.
 - `.forge/temp` and `.forge/cache` are local-only and must not be pushed.
 - Adapters are entrypoints only. They do not own lifecycle, policy, validation, artifact, or repository-cognition semantics.
+
+Artifact continuation examples:
+
+```text
+Use Forge implementation mode from .forge/generated/plans/2026-06-05-add-export-plan.md
+Use Forge execute mode from .forge/generated/ecp/2026-06-05-add-export-ecp.md
+Use Forge review mode from .forge/generated/reports/2026-06-05-add-export-execution-report.md
+```
+
+Continuation guardrails:
+- Read the referenced artifact first.
+- Verify the artifact type matches the requested lifecycle mode.
+- Verify the artifact still has enough scope, evidence, and approval state for safe continuation.
+- Check for material drift when repository or context evidence contradicts the artifact.
+- Do not execute from a plan artifact directly.
+- Do not mutate `.forge/context` based only on generated artifact content.
 
 ## Target repo surface
 

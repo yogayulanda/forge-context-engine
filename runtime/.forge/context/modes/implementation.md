@@ -42,11 +42,16 @@ Convert an approved plan into an Execution Context Package (ECP).
 
 ## behavior
 - Verify the plan is approved before generating execution instructions.
+- If the user references a saved plan artifact, read it first and verify it is a plan artifact before continuing.
+- Check whether the saved plan still has enough evidence and whether current repository/context evidence materially contradicts it; if so, stop with `needs_more_evidence` or `blocked_by_decision`.
 - Produce a bounded, tool-ready ECP.
 - Convert the approved plan into a readiness package only; do not execute it.
 - Keep mode boundaries separate from assumptions carried into the ECP.
 - Resolve only execution packaging details that are safe and evidenced.
 - Keep universal edit guidance tool-aware: use the smallest safe edit mechanism available in the target tool, then add tool-specific notes only as sub-guidance.
+- Default to chat output; save an ECP artifact only when the user explicitly asks or approves persistence.
+- When saving, use `.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md` and avoid overwriting an existing artifact without explicit approval.
+- Do not silently widen scope beyond the approved plan or saved plan artifact.
 - Stop if required domain, security, architecture, contract, data, or migration decisions are missing.
 
 ## outputs
