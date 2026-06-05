@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Mode: Plan
@@ -44,19 +44,24 @@ Convert developer intent into a reviewable Quick Plan or SDD.
 - Choose SDD for domain, data, public API, security/auth, database migration, multi-system, high-risk, ambiguous, roadmap, or major architecture work.
 - Show selected plan type and reason.
 - Preserve evidence, assumptions, unknowns, and decisions needed.
+- State assumptions explicitly when the request is ambiguous, even for small changes.
+- Keep small-change output concise, but still include acceptance criteria and validation commands.
+- Prefer the smallest relevant code surface and evidence set that can support the plan.
 - Do not edit code.
 
 ## outputs
 Quick Plan:
 - Plan type selected: Quick Plan.
 - Reason.
+- Assumptions.
 - Goal.
 - Scope.
 - Non-goals.
 - Relevant Context / Evidence.
 - Likely Changes.
 - Risks.
-- Validation.
+- Acceptance Criteria.
+- Validation Commands.
 - Next Step.
 - Status.
 
@@ -76,15 +81,15 @@ SDD:
 - MVP Path.
 - Full-Version Path.
 - Acceptance Criteria.
-- Validation Plan.
+- Validation Commands.
 - Implementation Split.
+- Next Step.
 - Status.
 
 ## status values
 - `ready_for_implementation`
 - `blocked_by_decision`
-- `needs_more_evidence`
-- `not_recommended`
+- `needs_more_context`
 
 ## boundaries
 - Do not edit code.
@@ -95,5 +100,4 @@ SDD:
 ## next mode transitions
 - `ready_for_implementation` -> human approval -> `implementation`.
 - `blocked_by_decision` -> developer decision.
-- `needs_more_evidence` -> scoped evidence gathering or `ask`.
-- `not_recommended` -> stop or revise intent.
+- `needs_more_context` -> scoped evidence gathering or `ask`.

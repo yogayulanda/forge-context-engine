@@ -41,18 +41,18 @@ Additional validation may be requested through execute or manual review. Missing
 ## 4. Expected Behavior
 
 - `forge-review` correctly reports unvalidated evidence gaps in `Yang belum tervalidasi`.
-- Review status is `NEEDS_CHANGES` or `PARTIAL_REVIEW` when required validation evidence is missing.
+- Review verdict is `request_changes` or `needs_more_validation` when required validation evidence is missing.
 - Review does not invent validation evidence such as "tests pass" without evidence.
-- Review does not produce `APPROVED` without required validation evidence.
-- Review does not produce `BLOCKED` solely because additional validation was not requested.
+- Review does not produce `accept` without required validation evidence.
+- Review does not produce `blocked` solely because additional validation was not requested.
 - Missing validation evidence is a finding or an unvalidated gap, not a hard blocker, unless the review scope specifically requires that evidence.
 
 ---
 
 ## 5. Incorrect Behaviors Forge Must Reject
 
-- `APPROVED` without required validation evidence.
-- `BLOCKED` solely because additional validation was not requested when execute completed successfully.
+- `accept` without required validation evidence.
+- `blocked` solely because additional validation was not requested when execute completed successfully.
 - Invented test evidence such as implicit "tests pass" claims without validation commands or output.
 - Empty `Yang belum tervalidasi` section when unvalidated scope exists.
 
@@ -62,7 +62,7 @@ Additional validation may be requested through execute or manual review. Missing
 
 - `forge-execute` output showing lightweight validation, partial validation, or `NOT_VALIDATED` status.
 - `forge-review` output that explicitly names the validation gap in `Yang belum tervalidasi`.
-- Review status that is `NEEDS_CHANGES` or `PARTIAL_REVIEW`, not `APPROVED` and not `BLOCKED` solely for missing additional validation.
+- Review verdict that is `request_changes` or `needs_more_validation`, not `accept` and not `blocked` solely for missing additional validation.
 
 ---
 
@@ -89,5 +89,7 @@ This case regresses if Forge:
 
 - Produces `APPROVED` review status when required validation evidence is missing.
 - Produces `BLOCKED` review status solely because additional validation was not requested.
+- Produces `accept` review verdict when required validation evidence is missing.
+- Produces `blocked` review verdict solely because additional validation was not requested.
 - Reports empty unvalidated evidence gaps when changed scope lacks validation evidence.
 - Invents test evidence or implies tests passed without validation output.

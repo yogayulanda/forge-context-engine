@@ -36,12 +36,13 @@ Legacy names such as `planning`, `testing`, `incident`, and `refactor` are not a
 
 1. Read `.forge/forge.config.yaml`.
 2. Apply `run.interaction`, `workflow.default_mode`, and `policy.require_human_confirmation_for`.
-3. Read `.forge/context/00-meta/conventions.md`.
-4. Use `.forge/context/00-meta/context-manifest.md` only as a routing index.
-5. Read `.forge/context/modes/<mode>.md` for the requested mode.
-6. Load only scoped repository context relevant to the task.
+3. Resolve the requested core mode or compatibility/scenario guidance and read only that contract file.
+4. Read `.forge/context/00-meta/conventions.md` when task behavior, output shape, evidence handling, validation reporting, risk boundaries, or language rules need it.
+5. Load scoped convention files only when relevant to the task category.
+6. Use `.forge/context/00-meta/context-manifest.md` only as a routing index when navigation help is needed.
+7. Load only the smallest relevant repository evidence and scoped `.forge/context` needed for the task.
 
-Do not broad-load `.forge/context`.
+Do not broad-load `.forge/context`, do not load every mode file by default, and do not load compatibility/scenario files unless the request or evidence makes them relevant. For small plans, inspect the smallest relevant code surface first. If context remains insufficient, state what is missing instead of reading everything.
 
 ## Source of truth
 

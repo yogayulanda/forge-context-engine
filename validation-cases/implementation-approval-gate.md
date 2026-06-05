@@ -41,6 +41,8 @@ forge-implementation invoked with approved plan
 
 - ECP artifact uses `status: proposed` when first produced.
 - Assistant signals that the ECP is ready for human review, not automatically ready for execution.
+- ECP output remains read-only and does not edit, stage, commit, push, or apply changes.
+- ECP output includes exact likely files, task sequence, acceptance criteria, validation commands, stop conditions, and expected execution report format.
 - `forge-execute` is not invoked until the human explicitly approves the ECP or a named bounded ECP subset.
 - If `forge-execute` is invoked without a human approval signal, the assistant should request an explicit approval signal before proceeding.
 

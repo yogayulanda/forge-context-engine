@@ -81,17 +81,17 @@ Human request:
 
 ```text
 Use Forge implementation mode for the approved retry plan.
-Produce task cards and stop conditions before coding.
+Produce an ECP/readiness package and stop conditions before coding.
 ```
 
 Expected `implementation` output:
 
 - readiness status
 - execution values being used
-- ECP task cards with likely files
-- dependency order
+- ECP with likely files
+- task sequence
 - acceptance criteria
-- test expectations
+- validation commands
 - stop conditions
 
 If retry/DLQ contract, idempotency behavior, or runtime config is unclear, Forge should return `NEEDS_CONFIRMATION` instead of pretending the task is ready. A newly produced ECP has `status: proposed` until the human explicitly approves it.
@@ -201,7 +201,7 @@ For `CRITICAL` or `MAJOR` findings:
 Scope: only the files identified in the review finding."
 ```
 
-Get implementation task cards. Human approves. Execute. Then re-review.
+Get the implementation ECP/readiness package. Human approves. Execute. Then re-review.
 
 For `MINOR` findings:
 

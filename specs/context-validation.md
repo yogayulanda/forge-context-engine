@@ -10,7 +10,7 @@
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.2 · `specs/artifact-lifecycle.md` v1.0 |
 
 > **v2.5 -> v2.6 changes:** Human UX refinement for mode outputs: concise operational wording, quieter runtime internals, clearer confirmation prompts, grouped file-change reporting, and execute reports focused on result/validation/rollback. No lifecycle redesign, tooling, automation, runtime executors, orchestration, or new folders.
-> **v2.6 -> v2.7 changes:** Implementation readiness now requires deterministic task cards for `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION`, with explicit dependencies, guardrails, acceptance criteria, validation expectations, and blocker gates. No tooling, orchestration, agents, schedulers, workflow engines, DAGs, Jira integration, or story points.
+> **v2.6 -> v2.7 changes:** Implementation readiness now requires bounded ECP structure for `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION`, with explicit guardrails, acceptance criteria, validation expectations, and blocker gates. No tooling, orchestration, agents, schedulers, workflow engines, DAGs, Jira integration, or story points.
 > **v2.7 -> v2.8 changes:** Execute reports require explicit result status, responsibility-grouped files, visible validation failures, operational rollback, unchanged-boundary reporting, reviewer focus, hidden-change checks, and quiet internals. No lifecycle redesign, tooling, orchestration, agents, deploy workflow, or runtime executor changes.
 > **v2.8 -> v2.9 changes:** Runtime validation now requires prerequisite checks, standardized execute/testing/review statuses, formal partial/blocking/not-validated semantics, separated validation reporting, explicit manual actions, and invalid-output rules for hidden success. No orchestration, deploy workflow, CI pipeline logic, agents, or workflow engines.
 > **v2.9 -> v3.0 historical note:** Earlier validation work added structured testing sections, scope categories, contract-aware validation, runtime-sensitive retry/DLQ/idempotency coverage, manual vs automated separation, and reviewer-visible coverage gaps. In the current lifecycle, validation is an activity inside execute/review workflows, not a core lifecycle mode.
@@ -179,13 +179,13 @@ Use this as:
 | F60 | Normal interactive mode output avoids large runtime/internal dumps and audit/RFC-style narrative when concise operational structure is enough | warning | manual |
 | F61 | Execute output prioritizes result, implemented changes, validation, not-validated items, manual checks, rollback, intentionally unchanged scope, reviewer focus, and hidden-change checks | warning | manual |
 | F62 | Human-facing section names are scannable and operational, e.g. `Yang berhasil diubah`, `File yang berubah`, `Validasi`, `Yang belum tervalidasi`, `Yang masih perlu dicek manual`, `Cara rollback perubahan ini`, `Yang sengaja tidak diubah`, `Reviewer perlu fokus ke`, and `Hidden change check` | warning | manual |
-| F63 | `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` implementation output includes task cards instead of document-style breakdowns | error | manual |
-| F64 | Every implementation task card includes Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation | error | manual |
-| F65 | Task card priority uses only `P0`, `P1`, `P2`, or `P3`; impact uses only `HIGH`, `MEDIUM`, or `LOW`; dependencies reference task IDs or `none` | error | manual |
-| F66 | Risky implementation tasks include explicit `Do Not Change` guardrails for runtime, data, contract, security, broad refactor, or destructive boundaries | error | manual |
-| F67 | Multi-step implementation output includes Dependency Order and Parallelization Notes using task IDs | error | manual |
-| F68 | Final executable task cards are not emitted while critical blockers remain unresolved, including non-interactive blocked reports | error | manual |
-| F69 | Implementation task cards remain output structure only and do not introduce tooling, orchestration, agents, schedulers, workflow engines, DAG systems, Jira integration, story points, or sprint planning | error | manual |
+| F63 | `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` implementation output includes bounded ECP/readiness structure instead of vague prose | error | manual |
+| F64 | Implementation readiness output includes Goal, Approved Scope, Non-goals, Assumptions, Exact Likely Files, Task Sequence, Acceptance Criteria, Validation Commands, and Stop Conditions | error | manual |
+| F65 | Implementation readiness output keeps sequencing bounded and human-reviewable rather than inventing workflow-engine metadata | error | manual |
+| F66 | Risky implementation readiness output includes explicit guardrails for runtime, data, contract, security, broad refactor, or destructive boundaries | error | manual |
+| F67 | Multi-step implementation output preserves dependency/order clarity when relevant without requiring orchestration semantics | error | manual |
+| F68 | Final execution-ready ECP output is not emitted while critical blockers remain unresolved, including non-interactive blocked reports | error | manual |
+| F69 | Implementation readiness output remains handoff structure only and does not introduce tooling, orchestration, agents, schedulers, workflow engines, DAG systems, Jira integration, story points, or sprint planning | error | manual |
 | F70 | Execute output starts with `Execution Result` and one clear status: `SUCCESS`, `PARTIAL_SUCCESS`, `BLOCKED`, `BLOCKED_BY_ENVIRONMENT`, or `NOT_VALIDATED` | error | manual |
 | F71 | Execute changed files are grouped by responsibility: Runtime / Bootstrap, Adapter / Handler, Service / Domain, Persistence, Config / Docs, or Tests | error | manual |
 | F72 | Failed, skipped, partial, or not-run validation is highlighted in `Validasi` with command, result, reason, and remaining unvalidated scope | error | manual |
@@ -633,13 +633,13 @@ ANTI-DUPLICATION
 [ ] F60 normal interactive output avoids runtime/internal dumps and RFC/audit narrative
 [ ] F61 execute output prioritizes result, changes, validation, manual checks, rollback, unchanged scope, reviewer focus, hidden-change checks
 [ ] F62 section names are scannable and operational
-[ ] F63 ready/partial implementation output uses task cards
-[ ] F64 task cards include required fields
-[ ] F65 task card priority, impact, and dependencies use allowed values
-[ ] F66 risky task cards include Do Not Change guardrails
-[ ] F67 multi-step output includes Dependency Order and Parallelization Notes
-[ ] F68 executable task cards are not emitted while critical blockers remain
-[ ] F69 task cards do not introduce tooling/orchestration/agents/workflows
+[ ] F63 ready/partial implementation output uses bounded ECP/readiness structure
+[ ] F64 implementation readiness output includes required fields
+[ ] F65 implementation sequencing stays bounded and human-reviewable
+[ ] F66 risky implementation output includes explicit guardrails
+[ ] F67 multi-step output preserves dependency/order clarity when relevant
+[ ] F68 execution-ready ECP output is not emitted while critical blockers remain
+[ ] F69 implementation readiness output does not introduce tooling/orchestration/agents/workflows
 [ ] F70 execute output starts with Execution Result and clear status
 [ ] F71 execute changed files are grouped by responsibility
 [ ] F72 failed/skipped/partial validation is highlighted with command, result, reason, and unvalidated scope

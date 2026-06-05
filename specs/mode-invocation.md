@@ -87,7 +87,7 @@ forge-plan
 -> forge-execute
 -> forge-review
 -> optional forge-verify-context
--> scoped fix loop when review returns needs_fix
+-> scoped fix loop when review returns request_changes
 ```
 
 Each transition between plan output and implementation, and between ECP output and execution, requires explicit human approval. Assistants must not proceed to the next mode without that signal.
@@ -106,7 +106,7 @@ All modes follow these rules:
 - Detect `run.interaction`, output/write/failure behavior, workflow defaults, and policy confirmation boundaries without requiring the user to mention them.
 - Apply `run.interaction` as the single controlling interaction setting.
 - Then read the requested mode file before loading mode-specific context.
-- Treat always-loaded core as already available: `00-meta/*` and `01-core/*`.
+- Treat relevant core context as selectively loadable from `00-meta/*` and `01-core/*`.
 - Treat mode files as loading deltas on top of core.
 - Treat `run.interaction: manual` as the interactive default.
 - Treat `run.interaction: auto` as automation-safe behavior.
@@ -448,19 +448,19 @@ ECP readiness in implementation output is a readiness signal, not autonomous per
 
 - `init` creates confirmed context/config through bounded scan and human confirmation.
 - `ask` does not plan, mutate, redesign, or run broad audits.
-- `plan` produces Quick Plan or SDD; it does not emit detailed executable coding tasks or modify code.
-- `implementation` produces an ECP; it does not modify code directly.
+- `plan` produces Quick Plan or SDD with explicit assumptions when ambiguity exists, plus acceptance criteria and validation commands even for small plans; it does not emit detailed executable coding tasks or modify code.
+- `implementation` produces an ECP/readiness package with exact likely files, task sequence, coding rules, safety constraints, acceptance criteria, validation commands, stop conditions, and expected execution report format; it does not modify code directly.
 - `execute` implements approved ECP scope; it does not redesign architecture or absorb review responsibilities.
-- `review` assesses correctness, validation, security, scope, and context impact; it does not modify code by default.
+- `review` assesses goal alignment, scope drift, lifecycle boundary compliance, validation evidence, security/risk boundaries, and context impact using verdicts `accept`, `request_changes`, `needs_more_validation`, or `blocked`; it does not modify code by default.
 - `verify-context` checks `.forge/context` health only; it does not validate plans, ECPs, code diffs, or MR readiness.
 - Incident scenarios diagnose symptoms to root cause through `ask`, `plan`, `implementation`, `execute`, and `review` as needed; they do not become core lifecycle modes or redesign architecture.
 - Refactor scenarios improve code conservatively through `plan`, `implementation`, `execute`, and `review` as needed; they preserve behavior and do not hide architecture changes.
 
-### Task Card Requirements
+### ECP Output Requirements
 
-Implementation `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION` output must use task cards. Each card must include: Task ID, Title, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Out Of Scope, Derived From, Acceptance Criteria, and Test Expectation.
+Implementation output must remain read-only and package execution readiness rather than apply changes. ECP output must include: Goal, Approved Scope, Non-goals, Assumptions, Relevant Context/Evidence, Exact Files Likely To Change, Task Sequence, Coding Rules, Safety/Security Constraints, Acceptance Criteria, Validation Commands, Stop Conditions, and Expected Execution Report Format.
 
-Task cards are an output discipline only â€” not DAG, scheduler, agent, workflow engine, or Jira semantics.
+Task sequencing is an output discipline only, not DAG, scheduler, agent, workflow engine, or Jira semantics.
 
 ### Execute Output Order
 
@@ -486,12 +486,15 @@ After architecture reasoning, unknown classification, and task-card decompositio
 
 Forge preserves a loading-delta philosophy:
 
-- Core context is always loaded.
+- Core context is loaded selectively from the relevant adapter, mode, and evidence path.
 - Mode files describe only what changes for that mode.
 - Modes do not re-list core.
+- Adapters start from `.forge/adapter.md`, then the requested mode contract.
 - Related layers and systems are loaded by task relevance, not by default breadth.
 - `on_demand` is a conditional expansion path, not a second default include list.
 - `exclude` protects unrelated context from accidental loading.
+- Compatibility/scenario files are loaded only when requested or clearly relevant.
+- Small plans should inspect the smallest relevant code surface before expanding context.
 
 Broad-loading the entire context tree is a violation unless the user requests a whole-repo/context audit or the task explicitly requires full coverage.
 
@@ -569,11 +572,11 @@ The following are invalid mode invocation behaviors. See `runtime/.forge/context
 - Allowing incident scenarios to become speculative redesign or architecture rewrite.
 - Allowing refactor scenarios to hide behavior changes, architecture rewrites, or paradigm migrations.
 
-**Implementation task cards:**
-- Allowing readiness output without bounded task cards.
-- Allowing ready task cards without task ID, priority, impact, dependencies, acceptance criteria, or risky-change guardrails.
+**Implementation readiness package:**
+- Allowing readiness output without bounded ECP structure.
+- Allowing ready ECP output without exact likely files, task sequence, acceptance criteria, validation commands, or risky-change guardrails.
 - Allowing interactive implementation confirmation without `NEEDS_CONFIRMATION`, Recommended/Alternative choices, and clear numbered reply instructions.
-- Treating task cards as DAG, scheduler, agent, Jira, story-point, or workflow-engine semantics.
+- Treating ECP sequencing as DAG, scheduler, agent, Jira, story-point, or workflow-engine semantics.
 
 **Output and evidence:**
 - Inventing topology, ownership, contracts, APIs, databases, or business rules without evidence.
@@ -624,10 +627,10 @@ Mode invocation validation checks that runtime behavior follows this protocol. S
 - Manual mode used ask-first clarification; auto mode used blocking status output.
 
 **Implementation correctness:**
-- Implementation blocked correctly when critical blockers exist; final task cards absent from blocked output.
+- Implementation blocked correctly when critical blockers exist; final ECP readiness output absent from blocked output.
 - Implementation confirmation used `NEEDS_CONFIRMATION`, Recommended/Alternative choices, and numbered reply instructions.
 - `READY_FOR_EXECUTION` used only with concrete execution values.
-- Task cards include all required fields (Task ID, Priority, Impact, Scope, Depends On, Parallel Safe, Goal, Why, Likely Files, Do Not Change, Acceptance Criteria, Test Expectation).
+- ECP output includes required readiness fields such as Goal, Scope, Assumptions, Exact Likely Files, Task Sequence, Acceptance Criteria, Validation Commands, and Stop Conditions.
 
 **Execute correctness:**
 - One clear status used; `SUCCESS` only when reliable validation evidence exists.

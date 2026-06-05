@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Mode: Review
@@ -35,43 +35,41 @@ updated: 2026-06-04
 6000
 
 ## purpose
-Inspect executed result against approved plan, ECP, validation evidence, risk policy, security expectations, and context impact.
+Inspect a plan, ECP, or executed result against goal alignment, scope boundaries, validation evidence, risk policy, security expectations, lifecycle compliance, and context impact.
 
 ## inputs
-- Approved plan.
-- ECP.
-- Execution report.
-- Git diff / changed files.
-- Validation results.
+- Approved plan when available.
+- ECP when available.
+- Execution report when available.
+- Git diff / changed files when available.
+- Validation results when available.
 - Relevant `.forge/context`.
 - Policy config.
 
 ## behavior
-- Check goal alignment, scope compliance, code quality/repo style, validation evidence, risk/safety, security, and context impact.
+- Check goal alignment, scope drift, lifecycle boundary compliance, validation evidence, risk/safety, security, and context impact.
 - Inspect security-sensitive areas when relevant: auth/authz, input validation, sensitive data exposure, secret handling, injection risk, IDOR, SSRF, file upload, and OWASP-relevant risks.
+- Assess whether follow-up execute work or a context patch is needed.
 - Treat validation gaps as review findings without becoming execute mode.
 - Do not fix code directly.
 
 ## outputs
-- Review Result.
-- Status.
+- Verdict.
 - Summary.
 - Critical Findings.
 - Major Findings.
 - Minor Findings.
-- Validation Evidence.
-- Security Review.
+- Validation Result Assessment.
+- Lifecycle Boundary Assessment.
+- Security / Risk Assessment.
 - Context Impact.
-- Recommendation.
-- Next Mode.
+- Recommended Next Step.
 
-## status values
-- `ready_for_mr`
-- `needs_fix`
-- `needs_validation`
-- `needs_context_update`
-- `blocked_by_decision`
-- `unsafe`
+## verdict values
+- `accept`
+- `request_changes`
+- `needs_more_validation`
+- `blocked`
 
 ## boundaries
 - Do not edit code, produce an ECP, or run broad implementation planning.
@@ -79,9 +77,7 @@ Inspect executed result against approved plan, ECP, validation evidence, risk po
 - Do not replace current repository evidence with stale context/artifacts.
 
 ## next mode transitions
-- `needs_fix` -> `execute`.
-- `needs_validation` -> `execute`.
-- `needs_context_update` -> context patch / `verify-context`.
-- `blocked_by_decision` -> `plan`.
-- `unsafe` -> stop / redesign.
-- `ready_for_mr` -> MR-ready.
+- `accept` -> merge/MR decision outside Forge, or `verify-context` if context may need refresh.
+- `request_changes` -> bounded fix scope through `implementation` or `execute` after human approval.
+- `needs_more_validation` -> `execute` or manual validation activity.
+- `blocked` -> human decision, `plan`, or context patch depending on blocker type.

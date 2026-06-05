@@ -41,6 +41,7 @@ task arrives
 
 - `conventions.md` acts as a short index and global convention entrypoint.
 - Assistants load scoped convention files based on task need, not by default.
+- Assistants start from `.forge/adapter.md` and the requested mode contract, then load conventions only when task rules require them.
 - Output formatting and style questions load `conventions-language.md`.
 - Evidence, citation, or constraint extraction questions load `conventions-evidence.md`.
 - Risk-sensitive, governance, approval, or secret-handling questions load `conventions-risk.md`.
@@ -53,6 +54,7 @@ task arrives
 ## 5. Incorrect Behaviors Forge Must Reject
 
 - Always loading every scoped convention file regardless of task type.
+- Loading every mode file before deciding which one is relevant.
 - Keeping `conventions.md` as a giant duplicated full manual (defeats scoped loading).
 - Losing important conventions during extraction (conventions must be findable via references).
 - Reintroducing long convention blocks inside `specs/mode-invocation.md`.

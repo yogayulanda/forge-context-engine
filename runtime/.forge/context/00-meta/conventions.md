@@ -9,7 +9,7 @@ evidence:
   - { type: doc, ref: ../../../FORGE-CONTEXT-ARCHITECTURE.md }
   - { type: doc, ref: ../../../../specs/artifact-lifecycle.md }
 owner: forge-context-engine
-updated: 2026-06-03
+updated: 2026-06-05
 ---
 
 # Context System Conventions
@@ -20,7 +20,7 @@ Rules for **managing the context system itself**. Not product engineering princi
 
 | Attribute | Value |
 |---|---|
-| Source of truth | Normative. Always loaded. |
+| Source of truth | Normative. Load when task behavior, policy, or reporting rules need it. |
 | AI writable | No |
 | Human confirmation | Required for any change |
 | Populated | Final in runtime; minor adaptation during target repo init |
@@ -75,18 +75,22 @@ review_by: YYYY-MM-DD  # optional
 | `unknown` | Acknowledged gap; **guessing forbidden** | — |
 | `deprecated` | No longer applies; not loaded | — |
 
-## Always-Loaded Core
+## Core Loading Baseline
 
-`00-meta/*` + `01-core/*`. Modes **never** re-list core — delta only.
+Start from `.forge/adapter.md`, then the requested mode or relevant compatibility/scenario guidance. Load only the relevant `00-meta/*` and `01-core/*` entries needed to execute that request safely. Modes **never** re-list core — delta only.
 
 ## Scoped Loading Semantics
 
 Context loading is relevance-first, evidence-first, and bounded by task scope.
 
 - Prefer direct repository evidence over broad context scans.
+- Start with the requested mode contract and smallest relevant code surface before expanding into more context files.
 - Do not load the entire `.forge/context` tree by default.
+- Do not load every mode file by default.
+- Do not load compatibility/scenario files unless the request or evidence makes them relevant.
 - Load `include` entries only when relevant to the task; load `on_demand` entries only when they answer a concrete evidence need.
 - Expand context only with a clear reason, such as contract ambiguity, ownership uncertainty, drift risk, cross-repo reference, incident blast-radius check, or governance risk.
+- If a small plan can be grounded with one or two files plus the mode contract, stop there.
 - If required evidence is outside the normal scoped budget, report `CONTEXT_BUDGET_LIMITED` and explain what evidence is missing or why expansion is needed.
 - `token_budget` is a target operating range for concise work, not a blind hard cap. Exceeding normal scoped budget is allowed only when safe reasoning requires more evidence.
 - Even under `CONTEXT_BUDGET_LIMITED`, broad-load-everything remains forbidden.
@@ -116,6 +120,7 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 - `init` owns confirmed repo context/config creation; `ask` owns evidence-aware understanding; `plan` owns Quick Plan or SDD; `implementation` owns ECP generation; `execute` owns approved ECP application; `review` owns executed-result review; `verify-context` owns context health/freshness only.
 - Keep mode responsibilities distinct: ask does not plan or mutate; plan does not emit executable patches; implementation does not modify code; execute does not redesign; review does not modify code by default; verify-context does not validate plan/ECP/code/MR readiness.
 - Test placement is convention-sensitive; validation is handled inside execute/review or as a workflow activity, not as a core lifecycle mode.
+- Start from `.forge/adapter.md`, then load only the requested mode contract; bring in `conventions.md` and scoped convention files only when the task needs their rules.
 - Load only context required by the task; do not broad-load `.forge/context` by default.
 - Preserve evidence, inference, and unknown boundaries.
 - In normal interactive output, keep loading details quiet. A short `Scoped context loaded` line is enough when helpful.

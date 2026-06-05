@@ -29,7 +29,7 @@ Legacy or scenario files such as:
 - `incident.md`
 - `refactor.md`
 
-may remain only as compatibility, scenario, or historical guidance. They must not be presented as active core modes.
+may remain only as compatibility, scenario, or historical guidance. They must not be presented as active core modes, and where applicable they should point tools back to the active core lifecycle (`planning` -> `plan`, validation/testing -> `execute`/`review`, `incident` -> scenario guidance only, `refactor` -> scenario guidance only).
 
 ## Incorrect Behaviors Forge Must Reject
 

@@ -7,12 +7,12 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Scenario Guidance: Validation
 
-`testing` is not a core lifecycle mode. Use this file only as scenario guidance for validation-focused work.
+`testing` is not a core lifecycle mode. Use this file only as compatibility, scenario, or historical guidance for validation-focused work.
 
 ## route through core modes
 - Use `execute` for scoped per-task validation, final validation, and in-scope validation fixes.

@@ -8,10 +8,10 @@ Forge lifecycle modes separate different engineering jobs so one assistant respo
 |---|---|---|
 | `init` | Creating confirmed repository context and Forge config. | Dumping the whole repository into context or making hidden decisions. |
 | `ask` | Understanding current behavior and context from scoped evidence. | Planning, mutation, broad audit, or ECP creation. |
-| `plan` | Quick Plan or SDD with scope, risk, evidence, validation, and status. | Detailed executable task cards or code changes. |
+| `plan` | Quick Plan or SDD with scope, assumptions, acceptance criteria, validation commands, and status. | Detailed executable task cards or code changes. |
 | `implementation` | Execution Context Package from an approved plan. | Code changes, commits, pushes, merges, deploys, or applying patches. |
 | `execute` | Approved ECP application within explicit boundaries. | Redesigning the plan or approving missing high-risk decisions. |
-| `review` | Executed-result review: correctness, scope, validation, security, and context impact. | Mutating code by default or replacing execution. |
+| `review` | Plan/ECP/result review: verdict, findings, validation assessment, lifecycle compliance, security, and context impact. | Mutating code by default or replacing execution. |
 | `verify-context` | `.forge/context` health, freshness, and consistency only. | Plan readiness, ECP completeness, code diff correctness, MR readiness, or general validation. |
 
 ## Scenarios, Not Core Modes

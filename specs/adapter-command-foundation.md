@@ -84,11 +84,11 @@ Ownership:
 Adapter loading must follow the Forge invocation protocol:
 
 1. Read `.forge/forge.config.yaml`.
-2. Read `.forge/context/00-meta/context-manifest.md`.
-3. Follow `.forge/context/00-meta/conventions.md`.
-4. Treat `00-meta/*` and `01-core/*` as always-loaded core.
-5. Read the requested mode file from `.forge/context/modes/<mode>.md`.
-6. Load only the mode delta needed for the task.
+2. Resolve the requested mode and read the requested mode file from `.forge/context/modes/<mode>.md` or the relevant compatibility/scenario file.
+3. Follow `.forge/context/00-meta/conventions.md` when task behavior, reporting shape, evidence handling, risk, validation, or language rules need it.
+4. Load scoped convention files only when relevant.
+5. Use `.forge/context/00-meta/context-manifest.md` only as a routing index when needed.
+6. Load only the mode delta and smallest relevant repository/context evidence needed for the task.
 7. Preserve evidence, inference, proposed-default, assumption, and unknown boundaries.
 
 Adapters may phrase this sequence for a tool, but may not redefine it.

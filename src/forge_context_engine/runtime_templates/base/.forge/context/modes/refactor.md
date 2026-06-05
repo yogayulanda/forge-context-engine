@@ -7,12 +7,12 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Scenario Guidance: Refactor
 
-`refactor` is not a core lifecycle mode. Use this file only as scenario guidance for behavior-preserving cleanup.
+`refactor` is not a core lifecycle mode. Use this file only as compatibility, scenario, or historical guidance for behavior-preserving cleanup.
 
 ## route through core modes
 - Use `plan` to define refactor scope, risk, non-goals, and behavior-preservation evidence.

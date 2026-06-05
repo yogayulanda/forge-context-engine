@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Mode: Implementation
@@ -43,6 +43,7 @@ Convert an approved plan into an Execution Context Package (ECP).
 ## behavior
 - Verify the plan is approved before generating execution instructions.
 - Produce a bounded, tool-ready ECP.
+- Convert the approved plan into a readiness package only; do not execute it.
 - Resolve only execution packaging details that are safe and evidenced.
 - Stop if required domain, security, architecture, contract, data, or migration decisions are missing.
 
@@ -51,19 +52,21 @@ Execution Context Package (ECP) with:
 - Goal.
 - Approved scope.
 - Non-goals.
+- Assumptions.
 - Relevant context.
 - Relevant evidence.
-- Allowed files / likely files.
+- Exact files likely to change.
 - Task sequence.
-- Step-by-step implementation guidance.
 - Coding rules.
-- Security constraints.
-- Validation checklist.
+- Safety / security constraints.
 - Acceptance criteria.
-- Risk notes.
+- Validation commands.
 - Stop conditions.
 - Expected execution report format.
-- Target tool instructions.
+- Status.
+- Step-by-step implementation guidance only inside the approved file/scope boundary.
+- Risk notes.
+- Target tool instructions when adapter-specific instructions are necessary.
 
 ## status values
 - `ecp_ready`
@@ -72,7 +75,7 @@ Execution Context Package (ECP) with:
 - `needs_plan_approval`
 
 ## boundaries
-- Do not edit code, commit, push, merge, deploy, or apply changes.
+- Do not edit code, stage, commit, push, merge, deploy, or apply changes.
 - Do not silently redefine the approved plan.
 - Do not produce execution instructions while critical blockers remain.
 

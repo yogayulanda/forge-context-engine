@@ -7,12 +7,12 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Scenario Guidance: Incident
 
-`incident` is not a core lifecycle mode. Use this file only as scenario guidance for incident, regression, or production-like symptom work.
+`incident` is not a core lifecycle mode. Use this file only as compatibility, scenario, or historical guidance for incident, regression, or production-like symptom work.
 
 ## route through core modes
 - Use `ask` to understand symptoms and evidence.

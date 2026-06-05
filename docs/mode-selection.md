@@ -8,10 +8,10 @@ Use this page when the question is: Which Forge mode should I use right now?
 |---|---|---|
 | I need to initialize Forge context/config for this repo. | `init` | Creates confirmed `.forge/context` and `forge.config.yaml` through bounded scan and human confirmation. |
 | I need to understand current code or context. | `ask` | Answers from context and scoped evidence without creating a plan or changing files. |
-| I need to shape a non-trivial change. | `plan` | Produces a Quick Plan or SDD with scope, risk, validation, and unknowns. |
+| I need to shape a non-trivial change. | `plan` | Produces a Quick Plan or SDD with scope, assumptions, acceptance criteria, validation commands, and unknowns. |
 | I have an approved plan and need an execution handoff. | `implementation` | Converts the approved plan into an Execution Context Package. |
 | I have an approved ECP and want changes applied. | `execute` | Modifies the repository inside the approved scope. |
-| I need senior MR-style assessment. | `review` | Checks correctness, scope, validation honesty, security, context impact, and MR readiness. |
+| I need senior MR-style assessment. | `review` | Checks goal alignment, scope drift, validation honesty, lifecycle compliance, security, and context impact. |
 | I need to check context freshness/health. | `verify-context` | Verifies `.forge/context` health only. |
 
 ## Ask vs Scenario Diagnosis
@@ -96,7 +96,7 @@ Do not use `verify-context` to review code, approve an MR, validate a test suite
 | "Can the assistant fix the review findings?" | `execute` with the approved finding scope, or `implementation` first for major fixes. |
 | "Can we clean this package while preserving behavior?" | Refactor scenario using `plan`, `implementation`, `execute`, and `review` as needed. |
 | "Can we skip straight to execute?" | Only for clear, low-risk, bounded changes with explicit approval. |
-| "Review returned needs fix. What now?" | `implementation` for fix ECP on critical/major findings; `execute` directly for bounded minor fixes with human-named scope. |
+| "Review returned request_changes. What now?" | `implementation` for fix ECP on critical/major findings; `execute` directly for bounded minor fixes with human-named scope. |
 | "Can I go back from review to execute?" | Yes - human approves the fix scope, then `execute` with that scoped request. |
 
 ## Review Fix Path

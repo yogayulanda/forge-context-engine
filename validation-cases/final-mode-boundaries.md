@@ -27,9 +27,10 @@ Mode boundaries:
 - `init` creates confirmed `.forge/context` and config through scan plus human confirmation.
 - `ask` answers evidence-aware questions without mutation.
 - `plan` emits Quick Plan or SDD and waits for Gate 1 approval.
-- `implementation` emits ECP and does not edit code.
+- `plan` includes assumptions when ambiguity exists plus acceptance criteria and validation commands.
+- `implementation` emits ECP/readiness output and does not edit code.
 - `execute` applies an approved ECP, runs per-task scoped validation and final validation, and may fix in-scope failures.
-- `review` uses final statuses and checks correctness, validation evidence, security, and context impact.
+- `review` uses verdicts and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
 - `verify-context` checks context health only.
 
 ## Incorrect Behaviors Forge Must Reject
@@ -37,6 +38,7 @@ Mode boundaries:
 - Treating `planning`, `testing`, `incident`, or `refactor` as active core modes.
 - Treating `check` or `package` as top-level modes.
 - Emitting code changes from `implementation`.
+- Broad-loading all modes or all context before inspecting the requested mode.
 - Letting `verify-context` validate plans, ECPs, code diffs, MR readiness, or production readiness.
 
 ## Regression Signals

@@ -41,6 +41,8 @@ forge-plan invoked
 
 - Plan output is labeled `proposed` in the plan artifact status.
 - Assistant explicitly signals that the plan awaits human approval before implementation proceeds.
+- Quick Plan output includes explicit assumptions when the request is ambiguous.
+- Quick Plan output includes acceptance criteria and validation commands even for small changes.
 - Assistant does not produce ECP task cards at the end of plan output.
 - Assistant does not treat the plan output as implicitly approved.
 - Gate 1 is satisfied only by an explicit human approval signal for the plan.

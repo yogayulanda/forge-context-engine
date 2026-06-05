@@ -7,14 +7,14 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-06-05
 ---
 
 # Legacy Mode Alias: Planning
 
 `planning` is a legacy name. Use `plan`.
 
-This file exists only as compatibility guidance for older adapters or installed prompts. It is not a core lifecycle mode and must not be presented as the active mode contract.
+This file exists only as compatibility or historical guidance for older adapters or installed prompts. It is not a core lifecycle mode and must not be presented as the active mode contract.
 
 Load and apply:
 
@@ -22,4 +22,4 @@ Load and apply:
 .forge/context/modes/plan.md
 ```
 
-Use `ready_for_implementation` for implementation readiness.
+Route to `plan.md` and use only active `plan` status values.
