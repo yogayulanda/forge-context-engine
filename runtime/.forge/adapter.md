@@ -23,11 +23,14 @@ init -> ask -> plan -> implementation -> execute -> review -> verify-context
 ```
 
 - `plan` creates a reviewable plan or SDD and does not edit code.
+- `plan` is read-only by definition; users do not need to append "Do not edit files" in normal usage.
 - Gate 1 = human approval from `plan` to `implementation`.
 - `implementation` creates an ECP/readiness package and does not edit code.
+- `implementation` is read-only by definition; users do not need to append "Do not edit files" in normal usage.
 - Gate 2 = human approval from ECP to `execute`.
 - `execute` applies only an approved ECP within bounded scope and reports validation honestly.
 - `review` checks correctness, validation evidence, security, and context impact.
+- `review` is read-only by default; fixes require a separately approved execution flow.
 - `verify-context` checks `.forge/context` health only.
 
 Legacy names such as `planning`, `testing`, `incident`, and `refactor` are not active core modes. If present, they are legacy aliases or scenario guidance only.
@@ -43,6 +46,11 @@ Legacy names such as `planning`, `testing`, `incident`, and `refactor` are not a
 7. Load only the smallest relevant repository evidence and scoped `.forge/context` needed for the task.
 
 Do not broad-load `.forge/context`, do not load every mode file by default, and do not load compatibility/scenario files unless the request or evidence makes them relevant. For small plans, inspect the smallest relevant code surface first. If context remains insufficient, state what is missing instead of reading everything.
+
+Normal prompt UX:
+- Use: `Use Forge plan mode for adding a small health check function.`
+- Not required: `Use Forge plan mode for adding a small health check function. Do not edit files.`
+- The second form is allowed as a safety probe, but read-only core modes already carry their own no-edit boundary.
 
 ## Source of truth
 

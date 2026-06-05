@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Forge Artifact Lifecycle Specification |
-| Version | 1.1 |
-| Date | 2026-05-25 |
+| Version | 1.2 |
+| Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Minimal lifecycle artifacts for mode continuity |
 | Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `runtime/.forge/context/00-meta/conventions.md` |
@@ -44,7 +44,9 @@ Artifacts may summarize approved intent and results, but they never override rep
 
 Artifacts are persisted only when useful for lifecycle continuity.
 
-Default location:
+Default behavior is chat output first. Forge should not auto-write a Markdown artifact for every small answer.
+
+Default persisted location:
 
 ```
 .forge/generated/
@@ -63,6 +65,22 @@ Artifact storage policy:
 | `.forge/cache` | Ignored local-only cache |
 
 Generated artifacts must never be confused with curated context. Context changes that should become durable source of truth go through `.forge/context-patches` review before promotion to `.forge/context`.
+
+Persist only when one of these is true:
+- The user explicitly asks to save or create the artifact.
+- The work is medium/large and the user approves saving for continuity.
+- The artifact is needed for multi-session or multi-agent continuation.
+
+Do not persist artifacts during read-only modes by default. If a read-only mode is explicitly asked to save its output, save only to `.forge/generated/...` and keep the mode's no-code-change boundary intact.
+
+Recommended persisted paths:
+
+```text
+.forge/generated/plans/<date>-<slug>.md
+.forge/generated/ecp/<date>-<slug>.md
+.forge/generated/reports/<date>-<slug>-execution.md
+.forge/generated/reviews/<date>-<slug>-review.md
+```
 
 Recommended filename:
 
@@ -107,6 +125,10 @@ Artifacts must stay concise. Store decisions, blockers, boundaries, evidence ref
 
 Produced by: plan mode.
 
+Default behavior:
+- Emit the Forge Plan in chat.
+- Persist only when requested or approved for continuity.
+
 Purpose:
 - Preserve reviewable engineering intent before implementation.
 - Preserve plan shape: Quick Plan or SDD.
@@ -141,6 +163,10 @@ Rules:
 
 Produced by: implementation mode.
 
+Default behavior:
+- Emit the ECP/readiness package in chat.
+- Persist only when requested or approved for continuity.
+
 Purpose:
 - Persist the execution-ready context package produced from an approved plan.
 
@@ -173,6 +199,10 @@ Rules:
 
 Produced by: execute mode.
 
+Default behavior:
+- Report execution in chat.
+- Persist when requested, approved, or useful for follow-up review/continuity.
+
 Purpose:
 - Preserve the actual implementation result.
 
@@ -202,6 +232,10 @@ Minimum contents:
 ### 4.5 Review Result Artifact
 
 Produced by: review mode.
+
+Default behavior:
+- Report review findings in chat.
+- Persist only when requested or approved.
 
 Purpose:
 - Preserve MR/review findings.

@@ -51,6 +51,8 @@ Expected `plan` output:
 - blockers or required confirmations
 - explicit out-of-scope items
 
+`Do not edit files` is not required here. Plan mode is already read-only by contract.
+
 State after this step:
 
 ```text
@@ -95,6 +97,8 @@ Expected `implementation` output:
 - stop conditions
 
 If retry/DLQ contract, idempotency behavior, or runtime config is unclear, Forge should return `NEEDS_CONFIRMATION` instead of pretending the task is ready. A newly produced ECP has `status: proposed` until the human explicitly approves it.
+
+`Do not edit files` is not required here either. Implementation mode is read-only by contract.
 
 ## Human Approval - ECP
 

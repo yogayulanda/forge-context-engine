@@ -18,6 +18,11 @@ Scenario compatibility examples:
 
 Codex invocation may be `$forge-review`, `/skill forge-review`, or a natural prompt such as "Use Forge review mode", depending on Codex surface or version. Do not create a parallel Codex command-wrapper layer unless the Codex runtime explicitly requires it later.
 
+Normal read-only UX:
+- `plan`, `implementation`, and `review` already carry their own no-edit boundary.
+- Users do not need to append `Do not edit files` for those modes in normal usage.
+- `Do not edit files` remains allowed as an explicit safety probe.
+
 ## Loading Contract
 
 1. Resolve the requested Forge mode to `runtime/skills/<skill>/SKILL.md`.

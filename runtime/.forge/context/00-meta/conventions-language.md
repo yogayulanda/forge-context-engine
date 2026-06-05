@@ -15,6 +15,8 @@ updated: 2026-06-03
 
 Load this file when the task involves language consistency, Indonesian/English usage, naming guidance, tone, or reference stability.
 
+`ui.language` controls human-facing narration, progress updates, and explanations. Forge Plans, ECPs, Execute Reports, Review Reports, task cards, specs, validation commands, commit messages, and generated Markdown artifact contents remain English by default unless the user explicitly requests another language.
+
 ---
 
 ## Engineering Style Convention
@@ -71,6 +73,9 @@ Technical identifiers stay verbatim regardless of dominant language:
 - Event/topic names, queue names
 - External system names, dependency names
 - Configuration keys (env vars, config paths)
+- Commands and shell snippets
+- File paths
+- Status enums and machine-readable mode/status values
 
 Examples:
 
@@ -88,6 +93,17 @@ Examples:
 - Source-code identifiers embedded in prose
 
 Whole sentences in a second language inside an otherwise single-language file are NOT acceptable.
+
+### Human Narration vs Project Output
+
+- Human-facing chat narration follows `ui.language`.
+- Copyable/project output remains English by default.
+- A user may explicitly request project artifacts in another language, but that changes only the requested artifact output, not commands or identifier-shaped text.
+
+Example with `ui.language: id`:
+
+- Narration: `Saya akan memakai Forge plan mode. Boundary-nya read-only.`
+- Artifact heading: `Forge Plan`
 
 ### Anti-Patterns
 

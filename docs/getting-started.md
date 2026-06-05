@@ -79,7 +79,8 @@ Manual setup remains available when you want to copy runtime files directly.
 
    Check:
    - `forge.version: "0.5.0a0"` for the current runtime config shape.
-   - `ui.language: en` by default; switch to `id` when you want Indonesian CLI narration.
+   - `ui.language: en` by default; switch to `id` when you want Indonesian human-facing narration and progress updates.
+   - Forge Plans, ECPs, Execute Reports, Review Reports, task cards, specs, validation commands, commit messages, and generated Markdown artifacts stay English by default unless you explicitly request another language.
    - `run.interaction: manual` for local human-in-the-loop work.
    - `workflow.default_mode: ask` unless the repository has an explicit reason to start elsewhere.
    - `context.root: .forge/context` so context stays repository-local.
@@ -99,6 +100,14 @@ Manual setup remains available when you want to copy runtime files directly.
    ```text
    Use Forge ask mode to explain how this service handles retries. Cite the repository evidence and list unknowns.
    ```
+
+   Read-only mode prompt UX:
+
+   ```text
+   Use Forge plan mode for adding a small health check function.
+   ```
+
+   You do not need to append `Do not edit files` for `plan` or `implementation`. That wording is still allowed as a safety probe, but the mode contract already enforces the no-edit boundary.
 
 ## CLAUDE.md And AGENTS.md Usage
 

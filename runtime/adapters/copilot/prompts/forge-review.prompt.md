@@ -5,6 +5,8 @@ Use shared skill:
 
 This is a GitHub Copilot prompt wrapper for Forge review mode.
 
+Review mode is read-only by default. Users do not need to add `Do not edit files` for normal usage.
+
 Focus on:
 - Bugs, correctness risks, and missing validation.
 - Boundary drift, hidden scope, plan/ECP adherence, and context impact.

@@ -41,6 +41,7 @@ forge-implementation invoked with approved plan
 
 - ECP artifact uses `status: proposed` when first produced.
 - Assistant signals that the ECP is ready for human review, not automatically ready for execution.
+- Read-only/no-edit behavior appears under a dedicated Mode Boundary section, not under `Assumptions`.
 - ECP output remains read-only and does not edit, stage, commit, push, or apply changes.
 - ECP output includes exact likely files, task sequence, acceptance criteria, validation commands, stop conditions, and expected execution report format.
 - `forge-execute` is not invoked until the human explicitly approves the ECP or a named bounded ECP subset.
@@ -51,6 +52,7 @@ forge-implementation invoked with approved plan
 ## 5. Incorrect Behaviors Forge Must Reject
 
 - Producing an ECP with `status: approved` before human confirmation.
+- Placing mode-boundary text under `Assumptions` instead of a dedicated boundary section.
 - Transitioning from `forge-implementation` output directly to code changes without Gate 2 approval.
 - Treating `READY_FOR_EXECUTION` in the implementation output as autonomous permission to execute.
 - Treating task card production as implicit execution approval.

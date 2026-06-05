@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 3.2 |
-| Date | 2026-05-28 |
+| Version | 3.3 |
+| Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
 | Dependency | `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `runtime/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
@@ -41,6 +41,7 @@ v2.9 adds bounded runtime profile, decision authority, decision risk, and automa
 v3.0 adds lightweight intelligence and governance semantics for scoped loading, drift detection, cross-repo awareness, incident/refactor reasoning, and fintech-grade risk signals. It does not add tooling, RAG, vector search, knowledge graphs, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops.
 v3.1 clarifies that Claude, Codex, shared skills, and tool-specific adapters are thin invocation surfaces that reference Forge core instead of duplicating runtime, validation, drift, artifact, governance, or secret semantics.
 v3.2 hardens bounded execution against unintended file churn, residual review blockers, and contract-source drift, and adds one concise recommended next action to lifecycle outputs. It does not add modes, orchestration, agents, memory, schedulers, CI/CD, deploy logic, runtime executors, or autonomous chaining.
+v3.3 clarifies read-only mode boundaries, normal prompt UX for plan/implementation/review, `ui.language` behavior for narration versus project artifacts, and chat-first artifact persistence. It does not add modes, CLI redesign, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
 
 This document does NOT:
 - Redesign Forge architecture.
@@ -74,6 +75,7 @@ Canonical lifecycle:
 15. Loading details reported only as concise scoped-context confirmation when useful.
 16. Mode sufficiency evaluated when it affects the result.
 17. Lifecycle artifacts referenced or written only when useful for bounded continuity.
+18. Read-only mode boundaries are enforced by the selected mode contract; users do not need to restate "Do not edit files" for normal plan, implementation, or review usage.
 
 Mode invocation is successful only when the assistant can explain what mattered for the task, what evidence was missing, and whether the selected mode was enough. Normal interactive output should not expose full runtime/bootstrap detail.
 
@@ -91,6 +93,13 @@ forge-plan
 ```
 
 Each transition between plan output and implementation, and between ECP output and execution, requires explicit human approval. Assistants must not proceed to the next mode without that signal.
+
+Read-only core mode UX:
+- `plan` is read-only by definition.
+- `implementation` is read-only by definition.
+- `review` is read-only unless the human separately approves a follow-up execution flow.
+- `execute` is the only core mode that may edit files, and only from approved scope.
+- Safety-probe prompts may still say `Do not edit files`, but that phrase is optional rather than required for correct Forge behavior.
 
 `ask` is an entry mode, not a mandatory lifecycle stage. Incident, refactor, and test-focused requests are workflow scenarios that use the core lifecycle modes as needed. Small, well-understood changes may skip `plan`. Execution may operate on approved task subsets.
 
@@ -129,6 +138,7 @@ All modes follow these rules:
 - Report missing evidence and unresolved ambiguity before relying on guesses.
 - State whether the requested mode was insufficient when that affects the task.
 - Treat lifecycle artifacts as generated continuity helpers; never treat them as source of truth over repository evidence.
+- Keep mode-boundary statements separate from assumptions in human-facing plan/ECP/review outputs.
 
 ## 2.1 Scoped Loading, Drift, Cross-Repo, and Governance
 
@@ -249,6 +259,8 @@ Each proposed default must state:
 
 Forge output should read like practical engineering workflow communication, not an AI framework audit.
 
+`ui.language` applies to narration, progress updates, and explanations. Copyable/project artifacts stay English by default unless the user explicitly requests another language. Commands, file paths, config keys, code identifiers, and status enums remain verbatim.
+
 Prefer human-friendly section names:
 - `Execution Result`
 - `Yang berhasil diubah`
@@ -358,11 +370,19 @@ Review mode must check architecture/contract compliance for non-trivial changes:
 
 Lifecycle artifacts are optional mode handoff records. Persist them only when they reduce repeated context reconstruction or preserve result evidence across sessions.
 
+Default behavior is chat output first. Do not auto-write a Markdown artifact for every small answer.
+
 Allowed persisted location:
 
 ```
 .forge/generated/
 ```
+
+Recommended persisted paths:
+- `.forge/generated/plans/<date>-<slug>.md`
+- `.forge/generated/ecp/<date>-<slug>.md`
+- `.forge/generated/reports/<date>-<slug>-execution.md`
+- `.forge/generated/reviews/<date>-<slug>-review.md`
 
 Mode-owned artifact types:
 
@@ -381,6 +401,11 @@ Artifact links may reference previous artifact IDs, plan IDs, ECP IDs, result ar
 Artifact links are trace references only. They must not become orchestration, DAG, workflow, scheduler, agent-memory, execution-trigger, or dependency-management semantics.
 
 Artifacts must stay concise, human-readable, append-friendly, replaceable, and discardable. They must not contain hidden chain-of-thought, raw secrets, unnecessary conversation history, broad summaries, or autonomous memory structures.
+
+Persistence policy:
+- Save only when the user explicitly asks, when the work is medium/large and the user approves saving, or when multi-session/multi-agent continuity clearly benefits from a persisted artifact.
+- Read-only modes do not write Markdown artifacts by default. If saving is explicitly requested, they may write only within their mode boundary and only to `.forge/generated/...`.
+- Durable context promotion goes through `.forge/context-patches/...` review, not direct mutation of `.forge/context`.
 
 If an artifact conflicts with repository evidence, code/repo evidence wins and the artifact is stale, partial, or superseded.
 

@@ -23,10 +23,18 @@ Final artifact and context paths:
 
 Generated artifacts may include Quick Plans, ECPs, execution reports, review results, and context verification results when they help reviewers understand or validate the change.
 
+Default persistence behavior:
+- Print the Plan, ECP, Execute Report, or Review Report in chat first.
+- Save Markdown only when explicitly requested, approved for continuity, or needed for multi-session/multi-agent handoff.
+- Persist generated artifacts under `.forge/generated/...`, not `.forge/context`.
+- Promote durable context only through reviewed `.forge/context-patches/...`.
+
 ## Incorrect Behaviors Forge Must Reject
 
 - Treating `.forge/generated` as always ignored or always committed.
+- Auto-writing Markdown artifacts for every small answer.
 - Treating `.forge/generated` as authoritative over source code, ADRs, or `.forge/context`.
+- Writing durable context updates directly into `.forge/context` instead of `.forge/context-patches`.
 - Committing `.forge/temp` or `.forge/cache`.
 - Storing raw secrets, hidden chain-of-thought, or broad conversation history in artifacts.
 

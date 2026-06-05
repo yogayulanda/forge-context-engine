@@ -70,6 +70,7 @@ Apply an approved ECP into code within explicit boundaries.
 - `not_validated`
 
 ## boundaries
+- Execute is the only core mode that may edit files, and only within the approved ECP/scope boundary.
 - Do not expand scope silently.
 - Do not commit, push, merge, deploy, change secrets, or change CI/CD/infra unless explicitly approved in the ECP.
 - Do not ignore failed validation.

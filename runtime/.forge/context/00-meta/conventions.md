@@ -142,7 +142,7 @@ Summary: Validation reporting must never imply success without evidence. Execute
 
 See `specs/artifact-lifecycle.md` for the full artifact specification.
 
-Summary: Lifecycle artifacts are optional, human-readable continuity helpers under `.forge/generated/` when persisted. They support mode handoffs; they do not replace repository code, docs, ADRs, or human confirmations. Artifact links are trace references only — not dependency graphs, workflow state, DAGs, orchestration, execution triggers, or agent memory.
+Summary: Lifecycle artifacts are optional, human-readable continuity helpers under `.forge/generated/` when persisted. Default behavior is chat output first; save Markdown artifacts only when requested, approved for continuity, or clearly useful for multi-session/multi-agent continuation. Generated artifacts do not replace repository code, docs, ADRs, or human confirmations. Context promotion goes through reviewed `.forge/context-patches/`, not direct writes into `.forge/context`. Artifact links are trace references only — not dependency graphs, workflow state, DAGs, orchestration, execution triggers, or agent memory.
 
 ## Intelligence & Governance Semantics
 
@@ -160,6 +160,13 @@ Forge uses `run.interaction` as the controlling interaction setting.
 | `auto` | Automation-safe behavior. Do not ask conversational questions; emit structured required decisions and blocking statuses. |
 
 Important decisions are governed by policy, not by an active decision-authority config knob. Domain rule, data mutation, architecture boundary, external contract, security boundary, and migration changes require human confirmation.
+
+## Language Output Policy
+
+- Human-facing narration, progress updates, and explanations follow `ui.language`.
+- Copyable/project artifacts remain English by default unless the user explicitly requests another language.
+- English-by-default project artifacts include Plans, ECPs, Execute Reports, Review Reports, task cards, specs, validation commands, commit messages, and generated Markdown artifact contents.
+- Do not translate commands, file paths, config keys, status enums, or code identifiers.
 
 ## Unknown Decision Semantics
 

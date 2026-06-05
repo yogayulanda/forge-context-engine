@@ -43,6 +43,7 @@ Convert developer intent into a reviewable Quick Plan or SDD.
 - Choose Quick Plan for small, clear, low-risk work.
 - Choose SDD for domain, data, public API, security/auth, database migration, multi-system, high-risk, ambiguous, roadmap, or major architecture work.
 - Show selected plan type and reason.
+- Keep mode boundaries separate from user/request assumptions.
 - Preserve evidence, assumptions, unknowns, and decisions needed.
 - State assumptions explicitly when the request is ambiguous, even for small changes.
 - Keep small-change output concise, but still include acceptance criteria and validation commands.
@@ -53,6 +54,7 @@ Convert developer intent into a reviewable Quick Plan or SDD.
 Quick Plan:
 - Plan type selected: Quick Plan.
 - Reason.
+- Mode Boundary.
 - Assumptions.
 - Goal.
 - Scope.
@@ -68,6 +70,7 @@ Quick Plan:
 SDD:
 - Plan type selected: SDD.
 - Reason.
+- Mode Boundary.
 - Goal.
 - Problem / Context.
 - Requirements.
@@ -92,6 +95,9 @@ SDD:
 - `needs_more_context`
 
 ## boundaries
+- Plan mode is read-only.
+- No files are edited, staged, committed, pushed, or applied in this mode.
+- This mode stops before implementation.
 - Do not edit code.
 - Do not produce ECP task instructions.
 - Do not treat the plan as approved. Human approval is required before `implementation`.

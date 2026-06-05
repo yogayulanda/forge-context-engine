@@ -5,6 +5,7 @@ forge:
   version: "0.5.0a0"
 
 ui:
+  # Controls human-facing narration/progress language. Copyable project artifacts stay English by default unless explicitly requested otherwise.
   language: en
 
 run:

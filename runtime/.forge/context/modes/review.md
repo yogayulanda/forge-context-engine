@@ -56,6 +56,7 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 ## outputs
 - Verdict.
 - Summary.
+- Mode Boundary.
 - Critical Findings.
 - Major Findings.
 - Minor Findings.
@@ -72,6 +73,8 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 - `blocked`
 
 ## boundaries
+- Review mode inspects plan/ECP/diff/results.
+- It does not apply fixes unless explicitly moved to an approved execution flow.
 - Do not edit code, produce an ECP, or run broad implementation planning.
 - Do not approve unsupported production-ready or fully validated claims.
 - Do not replace current repository evidence with stale context/artifacts.

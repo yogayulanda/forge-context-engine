@@ -41,6 +41,7 @@ forge-plan invoked
 
 - Plan output is labeled `proposed` in the plan artifact status.
 - Assistant explicitly signals that the plan awaits human approval before implementation proceeds.
+- Read-only/no-edit behavior appears under a dedicated Mode Boundary section, not under `Assumptions`.
 - Quick Plan output includes explicit assumptions when the request is ambiguous.
 - Quick Plan output includes acceptance criteria and validation commands even for small changes.
 - Assistant does not produce ECP task cards at the end of plan output.
@@ -52,6 +53,7 @@ forge-plan invoked
 ## 5. Incorrect Behaviors Forge Must Reject
 
 - Marking the plan as `approved` when the human has not confirmed.
+- Placing mode-boundary text such as `No file edits are requested in this mode` under `Assumptions`.
 - Appending ECP task card scaffolding to plan output without a human approval signal.
 - Treating affirmative language such as "looks good" or "that makes sense" as formal approval.
 - Treating artifact creation itself as an approval signal.

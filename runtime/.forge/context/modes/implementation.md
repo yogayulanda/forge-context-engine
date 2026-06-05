@@ -44,6 +44,7 @@ Convert an approved plan into an Execution Context Package (ECP).
 - Verify the plan is approved before generating execution instructions.
 - Produce a bounded, tool-ready ECP.
 - Convert the approved plan into a readiness package only; do not execute it.
+- Keep mode boundaries separate from assumptions carried into the ECP.
 - Resolve only execution packaging details that are safe and evidenced.
 - Stop if required domain, security, architecture, contract, data, or migration decisions are missing.
 
@@ -52,6 +53,7 @@ Execution Context Package (ECP) with:
 - Goal.
 - Approved scope.
 - Non-goals.
+- Mode Boundary.
 - Assumptions.
 - Relevant context.
 - Relevant evidence.
@@ -75,6 +77,9 @@ Execution Context Package (ECP) with:
 - `needs_plan_approval`
 
 ## boundaries
+- Implementation mode produces an ECP/readiness package only.
+- It does not edit files, stage, commit, push, or apply changes.
+- Execution requires explicit approval and `execute` mode.
 - Do not edit code, stage, commit, push, merge, deploy, or apply changes.
 - Do not silently redefine the approved plan.
 - Do not produce execution instructions while critical blockers remain.

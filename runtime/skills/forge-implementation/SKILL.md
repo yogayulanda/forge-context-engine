@@ -16,4 +16,4 @@ Produce a bounded, tool-ready ECP with assumptions, exact likely files, task seq
 Return implementation-mode ECP with status `ecp_ready`, `blocked_by_decision`, `needs_more_evidence`, or `needs_plan_approval`.
 
 ## Do NOT
-Do not edit code, commit, push, merge, deploy, apply changes, hide blockers, redefine the approved plan, or treat ECP readiness as approval to execute.
+Do not put mode-boundary statements under `Assumptions`. Do not edit code, commit, push, merge, deploy, apply changes, hide blockers, redefine the approved plan, or treat ECP readiness as approval to execute.

@@ -16,4 +16,4 @@ Prioritize goal alignment, scope drift, lifecycle boundary compliance, validatio
 Return review-mode output with one verdict: `accept`, `request_changes`, `needs_more_validation`, or `blocked`.
 
 ## Do NOT
-Do not implement changes, produce an ECP, replace execution, broad-load unrelated context, or add orchestration/runtime behavior.
+Do not implement changes, produce an ECP, replace execution, broad-load unrelated context, or add orchestration/runtime behavior. Keep review-mode boundary statements separate from findings and assumptions.

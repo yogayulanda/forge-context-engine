@@ -26,12 +26,13 @@ verify-context
 Mode boundaries:
 - `init` creates confirmed `.forge/context` and config through scan plus human confirmation.
 - `ask` answers evidence-aware questions without mutation.
-- `plan` emits Quick Plan or SDD and waits for Gate 1 approval.
+- `plan` emits Quick Plan or SDD, includes a dedicated Mode Boundary section, and waits for Gate 1 approval.
 - `plan` includes assumptions when ambiguity exists plus acceptance criteria and validation commands.
-- `implementation` emits ECP/readiness output and does not edit code.
+- `implementation` emits ECP/readiness output, includes a dedicated Mode Boundary section, and does not edit code.
 - `execute` applies an approved ECP, runs per-task scoped validation and final validation, and may fix in-scope failures.
-- `review` uses verdicts and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
+- `review` uses verdicts, includes a dedicated Mode Boundary section, and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
 - `verify-context` checks context health only.
+- Users do not need to append `Do not edit files` for normal `plan`, `implementation`, or `review` requests.
 
 ## Incorrect Behaviors Forge Must Reject
 

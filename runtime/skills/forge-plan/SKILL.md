@@ -16,4 +16,4 @@ Choose Quick Plan or SDD, show the reason, ground the plan in repository evidenc
 Return plan-mode output with one status: `ready_for_implementation`, `blocked_by_decision`, or `needs_more_context`.
 
 ## Do NOT
-Do not produce an ECP, detailed executable task cards, code changes, commits, HIGH-risk approvals, broad context loading, invented contracts, or orchestration/runtime behavior.
+Do not put mode-boundary statements under `Assumptions`. Do not produce an ECP, detailed executable task cards, code changes, commits, HIGH-risk approvals, broad context loading, invented contracts, or orchestration/runtime behavior.

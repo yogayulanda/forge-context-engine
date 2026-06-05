@@ -25,6 +25,7 @@ tools
 ```
 
 Required final values:
+- `ui.language` controls human-facing narration/progress language, not the default language of copyable project artifacts.
 - `workflow.default_mode` points to a final core mode.
 - `team.context_update_flow` is `reviewable_patch`.
 - `team.require_context_impact_check` is `true`.
@@ -36,6 +37,7 @@ Required final values:
 ## Incorrect Behaviors Forge Must Reject
 
 - Active config examples using `runtime.profile`, `non_interactive`, `decision_authority`, `loading.default_mode`, or `apply_allowed`.
+- Treating `ui.language` as an instruction to translate commands, file paths, config keys, status enums, or default project artifacts.
 - Using `allowed_modes` as the default workflow shape.
 - Treating `.forge/generated` as curated context source of truth.
 - Ignoring context impact checks in team workflows.
