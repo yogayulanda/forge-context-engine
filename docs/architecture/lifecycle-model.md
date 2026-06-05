@@ -1,6 +1,6 @@
 # Lifecycle Model
 
-Forge lifecycle modes separate different engineering jobs so one assistant response does not blur initialization, understanding, planning, ECP preparation, execution, review, and context verification.
+Forge lifecycle modes separate different engineering jobs so one assistant response does not blur `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
 
 ## Core Modes
 

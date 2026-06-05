@@ -151,8 +151,8 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `CONTEXT_BUDGET_LIMITED` reports when safe scoped reasoning needs more evidence than normal budget
 - `drift-detection prefers current repository evidence over stale context/artifacts`
 - `cross-repo-awareness reports ownership/contract uncertainty without assuming external behavior`
-- `incident-mode distinguishes symptom, likely cause, possible cause, and evidence gaps with confidence`
-- `refactor-mode classifies LOW/MEDIUM/HIGH risk and requires a plan path for HIGH-risk work`
+- `incident scenarios distinguish symptom, likely cause, possible cause, and evidence gaps with confidence`
+- `refactor scenarios classify LOW/MEDIUM/HIGH risk and require a plan path for HIGH-risk work`
 - `fintech-governance surfaces concise risk signals without audit bureaucracy`
 - `payment-transaction-correctness is never classified as LOW risk`
 - `AI-generated code follows repository-native pragmatic naming, style, abstraction, and testing conventions`

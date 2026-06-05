@@ -2,6 +2,8 @@
 
 GitHub Copilot enters Forge through Copilot instructions and prompt files that resolve to shared Forge skills.
 
+Copilot support is opt-in. Default target-repo output stays `AGENTS.md`, `CLAUDE.md`, and `.forge/` unless the repository explicitly selects Copilot.
+
 ## How Invocation Works
 
 Common prompt-file style:
@@ -25,7 +27,7 @@ runtime/adapters/copilot/
 runtime/adapters/copilot/prompts/
 ```
 
-When materialized into a target repository, prompt wrappers can live under `.github/prompts/` if that repository uses Copilot prompt files.
+When materialized into a target repository, `.github/copilot-instructions.md` and prompt wrappers can live under `.github/` only if that repository uses Copilot prompt files.
 
 ## What The Adapter Does
 

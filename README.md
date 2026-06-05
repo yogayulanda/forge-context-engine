@@ -4,7 +4,7 @@ Forge is a developer workflow framework for AI coding tools.
 
 It helps engineers and AI assistants work with repository context in a disciplined way: scoped evidence, explicit lifecycle modes, ambiguity and risk gates, AI-tool-ready Execution Context Packages, bounded execution, security-aware review, and context health verification.
 
-Forge v1 is the lifecycle foundation: a context structure, mode protocol, validation rules, shared skills, thin adapters, and lightweight handoff artifacts.
+Forge v0.3 is the completed lifecycle foundation: a context structure, mode protocol, validation rules, thin adapters, and lightweight handoff artifacts.
 
 ## Quick Mental Model
 
@@ -39,18 +39,19 @@ Forge has three lightweight parts:
 | Part | Role | Boundary |
 |---|---|---|
 | `.forge/context` | Repo-local conventions, mode files, scoped knowledge, and optional handoff artifacts. | Code, docs, ADRs, and human decisions still win. |
-| Lifecycle modes | Separate init, understanding, planning, ECP preparation, execution, review, and context verification. | Each mode owns one kind of work. |
-| Skills and adapters | Let Claude, Codex, GitHub Copilot, Cursor, and other tools invoke the same Forge behavior. | Tool files stay thin invocation surfaces. |
+| Lifecycle modes | Separate `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`. | Each mode owns one kind of work. |
+| Adapters | Let Claude, Codex, optional GitHub Copilot, Cursor, and other tools invoke the same Forge behavior. | Tool files stay thin invocation surfaces. |
 
 In normal use, the assistant reads the Forge config, reads the requested mode, loads only task-relevant context, checks current repository evidence, and returns a concise engineering output for that mode.
 
 ## 10-Minute First Use
 
-1. Copy the `runtime/` template into the target repository root.
+1. Copy the runtime target-repo surface into the target repository root.
 2. Keep `runtime/.forge/context` as the starting `.forge/context` structure for that repository.
-3. Keep `CLAUDE.md` and/or `AGENTS.md` as thin tool entrypoints when those tools are used.
-4. Ask a scoped first question, such as: `Use Forge ask mode to explain how this service handles retries.`
-5. For a change, move through the smallest useful lifecycle path, usually `ask -> plan -> implementation -> execute -> review`.
+3. Keep `CLAUDE.md` and/or `AGENTS.md` as thin tool entrypoints that point to `.forge/adapter.md` and `.forge/context`.
+4. Add `.github/copilot-instructions.md` only when GitHub Copilot is explicitly selected for that repository.
+5. Ask a scoped first question, such as: `Use Forge ask mode to explain how this service handles retries.`
+6. For a change, move through the smallest useful lifecycle path, usually `ask -> plan -> implementation -> execute -> review`.
 
 For a practical setup walkthrough, see [Getting Started](docs/getting-started.md).
 
@@ -84,6 +85,11 @@ Small changes may skip `plan` when the scope is obvious. Incident response, refa
 
 Forge does not automatically advance from one step to another, approve risky choices, open PRs, deploy code, or merge changes.
 
+Approval gates stay explicit:
+
+- Gate 1 = human approval from `plan` to `implementation`
+- Gate 2 = human approval from ECP to `execute`
+
 ## Runtime Behavior
 
 Forge uses `run.interaction` as the interaction control:
@@ -99,15 +105,15 @@ High-risk decisions require human approval by policy. In automation-safe flows, 
 
 | Path | Purpose |
 |---|---|
-| `runtime/` | Runtime template copied into target repositories during initialization. |
-| `runtime/skills/` | Shared Forge skill entrypoints for Claude, Codex, GitHub Copilot, Cursor, and future tools. |
-| `runtime/CLAUDE.md` | Thin Claude-compatible adapter pointing to `.forge/`. |
-| `runtime/AGENTS.md` | Thin Codex-compatible adapter pointing to `.forge/`. |
-| `runtime/adapters/` | Thin tool compatibility notes and shared command conventions. |
+| `runtime/` | Engine-side source for the target-repo runtime surface and adapter/package docs. |
+| `runtime/.forge/adapter.md` | Shared compact adapter source copied into target repositories. |
+| `runtime/CLAUDE.md` | Thin Claude-compatible wrapper pointing to `.forge/adapter.md` and `.forge/context`. |
+| `runtime/AGENTS.md` | Thin Codex-compatible wrapper pointing to `.forge/adapter.md` and `.forge/context`. |
+| `runtime/adapters/` | Engine/package adapter notes and optional tool templates, not default target-repo output. |
 | `runtime/.forge/context/` | Canonical Forge context skeleton. |
 | `.forge/generated` | Generated artifacts, committed manually when relevant. |
 | `.forge/context-patches` | Reviewable context update proposals. |
-| `.forge/temp`, `.forge/cache` | Local-only temporary/cache data. |
+| `.forge/temp`, `.forge/cache` | Local-only temporary/cache data; do not push them. |
 | `docs/` | First-use guides, examples, adapter onboarding, and concise architecture notes. |
 | `specs/` | Normative specifications for initialization, validation, mode invocation, artifacts, migration, lifecycle, and adapters. |
 | `validation-cases/` | Focused cases used to validate Forge cognition patterns. |
@@ -115,17 +121,19 @@ High-risk decisions require human approval by policy. In automation-safe flows, 
 
 ## Current Status
 
-Forge v1 status:
+Forge v0.3.1 status:
 
-- full-version lifecycle foundation being aligned to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`
+- lifecycle foundation aligned to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`
 - mode boundaries stabilized
 - manual and automation-safe interaction semantics bounded through `run.interaction`
 - artifact lifecycle defined
 - validation rules consolidated
+- default target-repo surface narrowed to `AGENTS.md`, `CLAUDE.md`, and `.forge/`
+- GitHub Copilot support kept opt-in to avoid default `.github/` noise
 - ready for real-world pilot usage
 - entering evidence-based refinement
 
-Forge v1 is not claiming complete automation, benchmarked behavior across all repositories, or production runtime tooling.
+Forge v0.3.1 does not claim a v0.4 CLI, complete automation, benchmarked behavior across all repositories, or production runtime tooling.
 
 ## Non-Goals
 

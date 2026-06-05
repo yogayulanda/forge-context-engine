@@ -45,19 +45,19 @@ Runtime-managed files may be refreshed from `forge-context-engine` runtime updat
 Examples:
 - `.forge/context/modes/*.md`
 - `.forge/context/00-meta/conventions.md`
+- `.forge/adapter.md`
 - `CLAUDE.md`
 - `AGENTS.md`
-- `skills/`
-- `adapters/`
+- Optional `.github/copilot-instructions.md` when the repository selected Copilot
 - Optional runtime/config metadata when schema-compatible
-- `.forge/forge.config.yaml` final v0.3.0 config keys: `forge`, `run`, `workflow`, `context`, `policy`, `team`, `artifacts`, and `tools`
+- `.forge/forge.config.yaml` final v0.3.1 config keys: `forge`, `run`, `workflow`, `context`, `policy`, `team`, `artifacts`, and `tools`
 
 Purpose:
 - Operational behavior.
 - Loading strategy.
 - Runtime semantics.
 - Interactive vs non-interactive workflow behavior.
-- Runtime profile and automation-safe decision boundaries.
+- Automation-safe decision boundaries.
 - Framework conventions.
 - AI operational contract updates.
 
@@ -106,7 +106,7 @@ Runtime migration must be narrow. A repository that needs full context reconstru
 Runtime migration must:
 - Preserve local evidence.
 - Preserve inferred, assumption, confirmation, and unknown boundaries.
-- Preserve repository cognition when migrating legacy config fields such as `runtime.profile`, `runtime.non_interactive`, or `runtime.decision_authority`; these are compatibility inputs only and must map to final v0.3.0 config vocabulary.
+- Preserve repository cognition when migrating legacy config fields such as `runtime.profile`, `runtime.non_interactive`, or `runtime.decision_authority`; these are compatibility inputs only and must map to final v0.3.1 config vocabulary.
 - Preserve secret-safety boundaries: raw secrets must not be printed, copied, summarized, or migrated into runtime-managed files.
 - Preserve audit/history semantics.
 - Preserve repository topology reasoning.
@@ -151,7 +151,7 @@ After runtime migration:
 | Token budget | `token_budget` contains only a decimal integer |
 | Runtime parity | Refreshed runtime-managed files match the selected runtime source |
 | Interaction flag | `run.interaction` is `manual` or `auto` |
-| Run behavior | `run.output`, `run.output_detail`, `run.write_behavior`, and `run.failure_behavior` use final v0.3.0 allowed values |
+| Run behavior | `run.output`, `run.output_detail`, `run.write_behavior`, and `run.failure_behavior` use final v0.3.1 allowed values |
 | Workflow config | `workflow.default_mode` references a final core mode and `workflow.disabled_modes` exists |
 | Team workflow | `team.context_update_flow` is `reviewable_patch` and `team.require_context_impact_check` is `true` |
 | Artifact paths | `.forge/generated`, `.forge/context-patches`, `.forge/temp`, and `.forge/cache` are separated by config |

@@ -2,7 +2,7 @@
 # Not a narrative context file. Customize during Context Initialization for the target repo.
 
 forge:
-  version: "0.3.0"
+  version: "0.3.1"
 
 run:
   interaction: manual
@@ -53,7 +53,6 @@ tools:
   adapters:
     - codex
     - claude_code
-    - copilot
   default_adapter: codex
   validation_commands: []
   package_targets:

@@ -361,7 +361,7 @@ Lifecycle artifacts are optional mode handoff records. Persist them only when th
 Allowed persisted location:
 
 ```
-.forge/context/generated/artifacts/
+.forge/generated/
 ```
 
 Mode-owned artifact types:

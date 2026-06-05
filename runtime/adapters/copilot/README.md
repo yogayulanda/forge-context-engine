@@ -4,6 +4,8 @@ GitHub Copilot uses repository prompt files as a Forge UX layer.
 
 This adapter is a thin invocation bridge. It points Copilot prompts to shared Forge skills under `runtime/skills/*/SKILL.md`, and each shared skill loads the relevant `.forge/context` mode and scoped repository evidence.
 
+Copilot support is opt-in. Default target-repo output should not create `.github/` files unless the repository explicitly selects Copilot.
+
 ## Repository Integration
 
 Copy or materialize these files into a target repository when Copilot prompt files are supported:

@@ -45,12 +45,10 @@ Canonical runtime adapter layout:
 
 ```text
 runtime/
-+-- skills/
-+-- adapters/
-+-- adapters/copilot/
++-- .forge/
 +-- CLAUDE.md
 +-- AGENTS.md
-+-- .forge/
++-- adapters/
 ```
 
 ### 1.1 Source of Truth
@@ -74,10 +72,10 @@ Ownership:
 
 ### 1.2 Runtime File Roles
 
-- `runtime/CLAUDE.md` is the Claude-compatible root adapter.
-- `runtime/AGENTS.md` is the Codex/agent-compatible root adapter.
-- `runtime/skills/<skill>/SKILL.md` contains shared, tool-neutral Forge skill entrypoints.
-- `runtime/adapters/<tool>/` contains tool-specific invocation notes only.
+- `runtime/.forge/adapter.md` is the shared compact adapter source copied into target repositories.
+- `runtime/CLAUDE.md` is the Claude-compatible root adapter wrapper.
+- `runtime/AGENTS.md` is the Codex/agent-compatible root adapter wrapper.
+- `runtime/adapters/<tool>/` contains engine/package tool-specific invocation notes and optional templates.
 - `runtime/adapters/shared/` contains portable adapter and command conventions.
 - `runtime/.forge/` contains Forge runtime context, modes, configuration, and repository-native cognition structure.
 
@@ -158,9 +156,9 @@ Skills are not cognition sources. Repository intelligence still comes from `.for
 
 Root adapters such as `runtime/CLAUDE.md` and `runtime/AGENTS.md` should contain only:
 - Bootstrap entrypoint order.
-- Tool-specific skill or command invocation mapping.
+- Tool-specific invocation mapping.
 - Concise loading and output hints.
-- Pointers to Forge core and specs.
+- Pointers to `.forge/adapter.md` and Forge core.
 
 Root adapters should reference, not restate:
 - Runtime interaction semantics.
@@ -170,7 +168,7 @@ Root adapters should reference, not restate:
 - Governance and approval behavior.
 - Mode-specific execution and reporting behavior.
 
-If a root adapter needs a large rule list to be correct, that rule belongs in `.forge/context/00-meta/conventions.md`, a mode file, or a spec instead.
+If a root adapter needs a large rule list to be correct, that rule belongs in `.forge/adapter.md`, `.forge/context/00-meta/conventions.md`, a mode file, or a spec instead.
 
 ---
 
@@ -386,16 +384,18 @@ Forge separates three concerns:
 
 Claude compatibility uses:
 - Root `CLAUDE.md` as the thin adapter.
-- Optional Claude slash command files that point to shared skills.
+- `.forge/adapter.md` as the shared adapter contract.
+- Optional Claude slash command files when a tool surface materializes them.
 - No duplicated Forge cognition in Claude-specific folders.
 
 ### 5.2 Codex
 
 Codex compatibility uses:
 - Root `AGENTS.md` as the thin adapter.
-- Codex instructions that point to shared skills, `.forge/`, and mode files.
+- `.forge/adapter.md` as the shared adapter contract.
+- Codex instructions that point to `.forge/` and mode files.
 - No Codex-specific repository intelligence.
-- Skills-first invocation through `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review skill", depending on Codex surface/version.
+- Invocation through `$forge-review`, `/skill forge-review`, or natural prompts such as "Use Forge review mode", depending on Codex surface/version.
 - No parallel Codex command-wrapper layer unless the Codex runtime explicitly requires it later.
 
 ### 5.3 Cursor
@@ -408,9 +408,27 @@ Cursor compatibility uses:
 ### 5.4 GitHub Copilot
 
 GitHub Copilot compatibility uses:
-- `.github/copilot-instructions.md` as the thin repository instruction surface.
-- `.github/prompts/*.prompt.md` as tool UX wrappers that point to shared skills.
+- `.github/copilot-instructions.md` as the thin repository instruction surface when Copilot is explicitly selected.
+- Optional `.github/prompts/*.prompt.md` as tool UX wrappers.
 - No Copilot-specific repository intelligence, lifecycle semantics, governance layer, or workflow system.
+
+### 5.4.1 Target Repository Surface
+
+Default target-repository output is:
+
+```text
+AGENTS.md
+CLAUDE.md
+.forge/
+```
+
+Optional target-repository output when Copilot is selected:
+
+```text
+.github/copilot-instructions.md
+```
+
+Engine/package folders such as `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, and `runtime/skills/` must not be copied into every target repository by default.
 
 ### 5.5 Future Tools
 
@@ -443,11 +461,11 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 
 | Folder | Purpose |
 |---|---|
-| `skills/` | Shared Forge skill entrypoints and invocation semantics. |
-| `adapters/claude/` | Claude invocation notes and optional slash-command mapping. |
-| `adapters/codex/` | Codex invocation notes and `AGENTS.md` mapping. |
-| `adapters/copilot/` | GitHub Copilot instruction and prompt-wrapper templates. |
-| `adapters/cursor/` | Cursor rules/invocation notes. |
+| `.forge/adapter.md` | Shared compact adapter source for copied target-repo wrappers. |
+| `adapters/claude/` | Engine/package Claude invocation notes and optional slash-command templates. |
+| `adapters/codex/` | Engine/package Codex invocation notes and `AGENTS.md` mapping references. |
+| `adapters/copilot/` | Opt-in GitHub Copilot instruction and prompt-wrapper templates. |
+| `adapters/cursor/` | Engine/package Cursor rules/invocation notes. |
 | `adapters/shared/` | Portable command semantics and anti-duplication rules. |
 
 Adapter folders are documentation and compatibility surfaces unless a future spec explicitly allows a generated adapter artifact. They are not runtime state.

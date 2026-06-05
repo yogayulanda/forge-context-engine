@@ -5,7 +5,7 @@
 | Document | Context Initialization Protocol |
 | Version | 1.4 |
 | Date | 2026-05-26 |
-| Status | `decision` — finalized for forge-context-engine v0.2.1 |
+| Status | `decision` — finalized for forge-context-engine v0.3.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.5 · `runtime/` layer · `specs/context-validation.md` v1.3 |
 
@@ -37,7 +37,7 @@ Before running init:
 
 | Prerequisite | Description |
 |---|---|
-| Runtime copied | `runtime/` contents flattened into target repo root (`CLAUDE.md`, `AGENTS.md`, `skills/`, `adapters/`, `.gitignore` merged, `.forge/`) |
+| Runtime copied | Runtime target surface flattened into target repo root (`CLAUDE.md`, `AGENTS.md`, `.forge/`, optional `.github/copilot-instructions.md`, `.gitignore` merged) |
 | Repo access | AI/human has read access to target repo codebase |
 | Owner identified | Someone can answer clarifying questions and confirm promotions |
 | Scenario known | Explicitly declared: **brownfield** (existing code) or **greenfield** (new project) |
@@ -72,9 +72,11 @@ Phase 7:    Human Confirmation Pass            ← NEW (operational feedback v1.
    - Set `run.interaction` for manual or automation-safe behavior.
    - Set `workflow.default_mode` based on immediate work type.
    - Confirm `context.root`, policy confirmation boundaries, artifact directories, and tool adapter defaults.
+   - Keep `tools.adapters` defaulted to `codex` and `claude_code`; add Copilot only when that repository explicitly opts in.
 3. Merge `.gitignore` entries with target repo's existing `.gitignore`.
 4. Verify `.forge/` structure is intact after copy.
-5. **Declare dominant context language** *(v1.2)* — pick one based on (in order): existing repo docs language, team convention, legacy `.ai/` content, dominant commit language. Record in `00-meta/conventions.md` if it differs from the runtime default. Apply consistently from this phase onward.
+5. Keep `.forge/temp/` and `.forge/cache/` local-only; do not push them.
+6. **Declare dominant context language** *(v1.2)* — pick one based on (in order): existing repo docs language, team convention, legacy `.ai/` content, dominant commit language. Record in `00-meta/conventions.md` if it differs from the runtime default. Apply consistently from this phase onward.
 
 ### Exit Criteria
 
@@ -496,17 +498,17 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 ### First Commit
 
 ```
-git add .forge/ CLAUDE.md AGENTS.md skills/ adapters/
+git add .forge/ CLAUDE.md AGENTS.md
 git commit -m "forge: context initialization complete"
 ```
 
-> Note: Do not commit `.forge/context/temp/` — already gitignored.
+> Note: Do not commit `.forge/temp/` or `.forge/cache/` — both are local-only and already gitignored.
 
 ### Exit Criteria
 
 - All validation checks pass.
 - Clean git status (no untracked context files).
-- System ready for normal operation (AI can bootstrap using `CLAUDE.md` or `AGENTS.md` -> `forge.config.yaml` -> `00-meta` -> `01-core` -> mode).
+- System ready for normal operation (AI can bootstrap using `CLAUDE.md` or `AGENTS.md` -> `.forge/adapter.md` -> `forge.config.yaml` -> `00-meta` -> `01-core` -> mode).
 
 ---
 

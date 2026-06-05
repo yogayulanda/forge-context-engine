@@ -137,7 +137,7 @@ Summary: Validation reporting must never imply success without evidence. Execute
 
 See `specs/artifact-lifecycle.md` for the full artifact specification.
 
-Summary: Lifecycle artifacts are optional, human-readable continuity helpers under `generated/artifacts/` when persisted. They support mode handoffs; they do not replace repository code, docs, ADRs, or human confirmations. Artifact links are trace references only — not dependency graphs, workflow state, DAGs, orchestration, execution triggers, or agent memory.
+Summary: Lifecycle artifacts are optional, human-readable continuity helpers under `.forge/generated/` when persisted. They support mode handoffs; they do not replace repository code, docs, ADRs, or human confirmations. Artifact links are trace references only — not dependency graphs, workflow state, DAGs, orchestration, execution triggers, or agent memory.
 
 ## Intelligence & Governance Semantics
 

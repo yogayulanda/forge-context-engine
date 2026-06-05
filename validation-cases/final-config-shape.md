@@ -11,7 +11,7 @@
 
 ## Expected Behavior
 
-`forge.config.yaml` uses the final v0.3.0 top-level keys:
+`forge.config.yaml` uses the final v0.3.1 top-level keys:
 
 ```text
 forge

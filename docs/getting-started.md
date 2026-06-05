@@ -11,7 +11,7 @@ Goal: within 10-15 minutes, a new engineer should be able to install the runtime
 - At least one supported AI tool surface:
   - Claude with `CLAUDE.md`
   - Codex with `AGENTS.md`
-  - GitHub Copilot with prompt files and instructions
+  - GitHub Copilot with opt-in instructions
 
 Forge does not require a server, daemon, workflow engine, scheduler, or separate memory store.
 
@@ -21,20 +21,29 @@ Forge does not require a server, daemon, workflow engine, scheduler, or separate
 
    ```text
    forge-context-engine/runtime/.forge -> <target-repo>/.forge
-   forge-context-engine/runtime/skills -> <target-repo>/skills
-   forge-context-engine/runtime/adapters -> <target-repo>/adapters
    forge-context-engine/runtime/CLAUDE.md -> <target-repo>/CLAUDE.md
    forge-context-engine/runtime/AGENTS.md -> <target-repo>/AGENTS.md
    ```
 
+   Default target-repo output is:
+
+   ```text
+   AGENTS.md
+   CLAUDE.md
+   .forge/
+   ```
+
+   Add `.github/copilot-instructions.md` only when GitHub Copilot is explicitly selected. Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, or `runtime/skills/` into every target repository.
+
 2. Open `<target-repo>/.forge/forge.config.yaml`.
 
    Check:
-   - `forge.version: "0.3.0"` for the current runtime config shape.
+   - `forge.version: "0.3.1"` for the current runtime config shape.
    - `run.interaction: manual` for local human-in-the-loop work.
    - `workflow.default_mode: ask` unless the repository has an explicit reason to start elsewhere.
    - `context.root: .forge/context` so context stays repository-local.
    - `policy.require_human_confirmation_for` covers important domain, data, architecture, contract, security, and migration changes.
+   - `tools.adapters` defaults to `codex` and `claude_code`; add Copilot only when needed.
 
 3. Keep `.forge/context` repository-first.
 
@@ -42,7 +51,7 @@ Forge does not require a server, daemon, workflow engine, scheduler, or separate
 
 4. Keep tool entrypoints thin.
 
-   `CLAUDE.md`, `AGENTS.md`, and files under `adapters/` should point to Forge skills and `.forge/context`. They should not store repo-specific cognition.
+   `CLAUDE.md` and `AGENTS.md` should point to `.forge/adapter.md` and `.forge/context`. They should not store repo-specific cognition, lifecycle logic, or artifact policy.
 
 5. Make one scoped first request.
 
@@ -52,25 +61,23 @@ Forge does not require a server, daemon, workflow engine, scheduler, or separate
 
 ## CLAUDE.md And AGENTS.md Usage
 
-Use `CLAUDE.md` for Claude-compatible assistants. It tells the assistant to:
+Use `CLAUDE.md` for Claude-compatible assistants. It should be a thin wrapper that tells the assistant to:
 
-- read `.forge/forge.config.yaml`
-- read the routing manifest and conventions
-- read the requested mode file
-- load only task-relevant context
-- keep outputs concise and mode-aligned
+- read `.forge/adapter.md`
+- treat `.forge/context` as source of truth
+- follow the requested lifecycle mode with scoped context only
 
-Use `AGENTS.md` for Codex-compatible assistants. It maps natural prompts such as `Use Forge review mode` to the shared Forge skill for that mode.
+Use `AGENTS.md` for Codex-compatible assistants. It should be a thin wrapper that maps natural prompts such as `Use Forge review mode` to the Forge lifecycle defined in `.forge/adapter.md`.
 
-Both files are entrypoints only. `.forge/context` remains the source of truth.
+Both files are entrypoints only. `.forge/context` remains the source of truth, `.forge/generated` remains generated output only, and `.forge/temp` plus `.forge/cache` stay local-only.
 
 ## Supported Tool Overview
 
 | Tool | Common invocation | Runtime path |
 |---|---|---|
-| Claude | `/forge-plan`, `/forge-review`, or natural language | `CLAUDE.md`, `skills/`, `adapters/claude/` |
-| Codex | `$forge-review`, `/skill forge-review`, or natural language | `AGENTS.md`, `skills/`, `adapters/codex/` |
-| GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask` prompt files | `adapters/copilot/`, `.github/prompts/` when materialized |
+| Claude | `/forge-plan`, `/forge-review`, or natural language | `CLAUDE.md`, `.forge/adapter.md`, `.forge/context/` |
+| Codex | `$forge-review`, `/skill forge-review`, or natural language | `AGENTS.md`, `.forge/adapter.md`, `.forge/context/` |
+| GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask` prompt files | `.github/copilot-instructions.md` when selected |
 
 Tool syntax may differ. The expected behavior should resolve to:
 
@@ -132,7 +139,7 @@ For a backend service:
 
 ```text
 1. Copy runtime files.
-2. Keep `backend` and `testing` in `layers_enabled`.
+2. Keep `backend` and `testing` in `layers_enabled` when the repository actually owns those layers.
 3. Add one system entry for the service after verifying repo evidence.
 4. Ask: "Use Forge ask mode to explain retry and idempotency behavior."
 5. If a change is needed, ask: "Use Forge plan mode for improving retry behavior without changing the public contract."
@@ -150,8 +157,9 @@ For an OSS contributor:
 ## Setup Checklist
 
 - `.forge/forge.config.yaml` exists.
+- `.forge/adapter.md` exists.
 - `.forge/context/modes/` contains the visible lifecycle modes.
-- `skills/` contains the shared Forge skills.
-- `CLAUDE.md` and/or `AGENTS.md` point to Forge instead of duplicating repo facts.
+- `CLAUDE.md` and/or `AGENTS.md` point to `.forge/adapter.md` and `.forge/context` instead of duplicating repo facts.
+- `.forge/temp/` and `.forge/cache/` are treated as local-only and are not pushed.
 - First `ask` request returns evidence, inferences, and unknowns.
 - No adapter implies autonomous execution, orchestration, or hidden memory.

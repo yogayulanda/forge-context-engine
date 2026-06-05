@@ -5,7 +5,7 @@
 | Document | Context System Validation Specification |
 | Version | 3.7 |
 | Date | 2026-05-28 |
-| Status | `decision` — finalized for forge-context-engine v0.2.1 |
+| Status | `decision` — finalized for forge-context-engine v0.3.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
 | Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.2 · `specs/artifact-lifecycle.md` v1.0 |
 
@@ -581,10 +581,10 @@ ANTI-DUPLICATION
 [ ] F8  modes expose Markdown sections include/on_demand/exclude/token_budget/notes
 [ ] F9  modes are deltas, not prose-only instructions
 [ ] F10 modes token_budget is numeric only
-[ ] F11 planning uses ECP, not PRD/business prose
-[ ] F12 planning adapts sections to active layers
-[ ] F13 planning preserves evidence/inference/unknown boundaries
-[ ] F14 planning uses scoped on-demand loading
+[ ] F11 plan uses ECP-ready output, not PRD/business prose
+[ ] F12 plan adapts sections to active layers
+[ ] F13 plan preserves evidence/inference/unknown boundaries
+[ ] F14 plan uses scoped on-demand loading
 [ ] F15 forge.config.yaml read before mode file
 [ ] F16 context-loading detail concise; missing evidence reported
 [ ] F17 no broad-loading by default
