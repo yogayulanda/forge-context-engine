@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Artifact Lifecycle Specification |
-| Version | 1.2 |
+| Version | 1.3 |
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Minimal lifecycle artifacts for mode continuity |
@@ -65,6 +65,14 @@ Artifact storage policy:
 | `.forge/cache` | Ignored local-only cache |
 
 Generated artifacts must never be confused with curated context. Context changes that should become durable source of truth go through `.forge/context-patches` review before promotion to `.forge/context`.
+
+Context quality boundary:
+- `.forge/context` is for durable, repo-specific, evidence-backed, compact knowledge that remains useful beyond one task.
+- `.forge/generated/...` is for working artifacts such as plans, ECPs, execution reports, review reports, and other temporary continuity records.
+- `.forge/context-patches/...` is for proposed durable context updates that still require review.
+- A generated artifact is not automatically promoted into `.forge/context`.
+- A context patch is not accepted context until it is reviewed and promoted.
+- Raw logs, scratchpads, one-off plans, temporary ECPs, and long reports stay out of curated context unless reduced into durable evidence-backed context.
 
 Persist only when one of these is true:
 - The user explicitly asks to save or create the artifact.

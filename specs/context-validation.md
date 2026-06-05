@@ -3,11 +3,11 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 3.7 |
-| Date | 2026-05-28 |
+| Version | 3.8 |
+| Date | 2026-06-05 |
 | Status | `decision` — finalized for forge-context-engine v0.3.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
-| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.2 · `specs/artifact-lifecycle.md` v1.0 |
+| Dependency | `FORGE-CONTEXT-ARCHITECTURE.md` v0.8 §16 · `specs/mode-invocation.md` v3.3 · `specs/artifact-lifecycle.md` v1.3 |
 
 > **v2.5 -> v2.6 changes:** Human UX refinement for mode outputs: concise operational wording, quieter runtime internals, clearer confirmation prompts, grouped file-change reporting, and execute reports focused on result/validation/rollback. No lifecycle redesign, tooling, automation, runtime executors, orchestration, or new folders.
 > **v2.6 -> v2.7 changes:** Implementation readiness now requires bounded ECP structure for `READY_FOR_EXECUTION` and `READY_FOR_PARTIAL_EXECUTION`, with explicit guardrails, acceptance criteria, validation expectations, and blocker gates. No tooling, orchestration, agents, schedulers, workflow engines, DAGs, Jira integration, or story points.
@@ -21,6 +21,7 @@
 > **v3.4 -> v3.5 changes:** Adds future-safe intelligence and governance validation for scoped loading, `CONTEXT_BUDGET_LIMITED`, drift, cross-repo awareness, incident/refactor cause/risk semantics, and fintech-grade governance signals. No tooling, RAG, vector DB, knowledge graph, orchestration, agents, deploy workflow, CI/CD behavior, runtime executors, or autonomous loops.
 > **v3.5 -> v3.6 changes:** Adds thin-adapter validation rules so root adapters reference Forge core instead of duplicating cognition, lifecycle, validation, drift, artifact, governance, or secret semantics. No orchestration, memory, agent, runtime executor, deploy, CI/CD, or workflow behavior added.
 > **v3.6 -> v3.7 changes:** Adds execute hardening validation for minimal diffs, finalization checks, contract-source checks, review-loop closure, and concise recommended next action. No lifecycle redesign, modes, orchestration, memory, agents, runtime executors, deploy, CI/CD, or autonomous chaining added.
+> **v3.7 -> v3.8 changes:** Clarifies curated context quality rules so `.forge/context` stays durable, evidence-backed, compact, and distinct from generated artifacts and reviewed context-patch proposals. No lifecycle redesign, new CLI commands, runtime agent behavior, or structured v0.8B context-impact workflow added.
 
 ---
 
@@ -368,6 +369,11 @@ Use this as:
 | N9 | Artifact conflicts with repository evidence are surfaced as stale, partial, or superseded; repository evidence wins | error | manual |
 | N10 | Ask mode does not create lifecycle artifacts by default and references artifacts only when relevant to a lightweight question | warning | manual |
 | N11 | `.forge/context` is the committed curated context source of truth; `.forge/context-patches` contains reviewable proposals only | error | manual |
+| N12 | Curated `.forge/context` content is durable, repository-specific, evidence-backed, compact, and useful beyond a single task/session | error | manual |
+| N13 | Raw terminal logs, full execution reports, one-off Quick Plans, temporary ECPs, long review reports, generic AI advice, and scratchpad notes are not stored as curated context | error | manual |
+| N14 | Generated artifacts are not auto-promoted into `.forge/context`; durable updates require a reviewed `.forge/context-patches` step first | error | manual |
+| N15 | Context patches are treated as proposals pending review, not accepted context | error | manual |
+| N16 | Review or verify-context may assess context impact/freshness against context quality rules without requiring a structured context-impact output contract | warning | manual |
 
 ---
 
