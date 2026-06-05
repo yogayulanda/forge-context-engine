@@ -6,6 +6,8 @@ It helps engineers and AI assistants work with repository context in a disciplin
 
 Forge v0.3 is the completed lifecycle foundation: a context structure, mode protocol, validation rules, thin adapters, and lightweight handoff artifacts.
 
+Forge v0.4 is the in-progress operational packaging layer: a lightweight GitHub-installed CLI for safe runtime initialization and update in target repositories.
+
 ## Quick Mental Model
 
 Forge is a repository-native way to work with AI assistants without giving up engineering control.
@@ -46,14 +48,77 @@ In normal use, the assistant reads the Forge config, reads the requested mode, l
 
 ## 10-Minute First Use
 
-1. Copy the runtime target-repo surface into the target repository root.
-2. Keep `runtime/.forge/context` as the starting `.forge/context` structure for that repository.
-3. Keep `CLAUDE.md` and/or `AGENTS.md` as thin tool entrypoints that point to `.forge/adapter.md` and `.forge/context`.
-4. Add `.github/copilot-instructions.md` only when GitHub Copilot is explicitly selected for that repository.
+Preferred v0.4 setup uses the CLI.
+
+1. Install Forge:
+
+   ```text
+   uv tool install git+https://github.com/yogayulanda/forge-context-engine.git
+   ```
+
+2. Initialize a service repository:
+
+   ```text
+   cd my-service
+   forge init
+   ```
+
+3. Initialize a workspace repository when needed:
+
+   ```text
+   cd work-context
+   forge init --workspace
+   ```
+
+4. Update an initialized repository:
+
+   ```text
+   cd initialized-repo
+   forge update
+   ```
+
 5. Ask a scoped first question, such as: `Use Forge ask mode to explain how this service handles retries.`
-6. For a change, move through the smallest useful lifecycle path, usually `ask -> plan -> implementation -> execute -> review`.
+
+Manual runtime copy remains available as a compatible fallback when you want direct file-level setup from `runtime/`.
 
 For a practical setup walkthrough, see [Getting Started](docs/getting-started.md).
+
+## v0.4 CLI Flow
+
+Implemented install flow:
+
+```text
+uv tool install git+https://github.com/yogayulanda/forge-context-engine.git
+cd my-service
+forge init
+
+cd work-context
+forge init --workspace
+
+cd initialized-repo
+forge update
+```
+
+v0.4 CLI status:
+- `forge --version` is implemented.
+- `forge init` writes the service profile safely.
+- `forge init --workspace` writes the workspace profile safely.
+- `forge update` updates managed runtime files and supports manifest-less adoption preview.
+
+Local CLI smoke examples:
+
+```text
+uv run python -m forge_context_engine.cli --version
+uv run python -m forge_context_engine.cli init --help
+uv run python -m forge_context_engine.cli update --help
+```
+
+Editable tool validation example:
+
+```text
+uv tool install --editable .
+forge --version
+```
 
 ## Documentation
 
@@ -111,6 +176,7 @@ High-risk decisions require human approval by policy. In automation-safe flows, 
 | `runtime/AGENTS.md` | Thin Codex-compatible wrapper pointing to `.forge/adapter.md` and `.forge/context`. |
 | `runtime/adapters/` | Engine/package adapter notes and optional tool templates, not default target-repo output. |
 | `runtime/.forge/context/` | Canonical Forge context skeleton. |
+| `src/forge_context_engine/` | Python package and CLI foundation for the v0.4 install/update layer. |
 | `.forge/generated` | Generated artifacts, committed manually when relevant. |
 | `.forge/context-patches` | Reviewable context update proposals. |
 | `.forge/temp`, `.forge/cache` | Local-only temporary/cache data; do not push them. |
@@ -121,7 +187,7 @@ High-risk decisions require human approval by policy. In automation-safe flows, 
 
 ## Current Status
 
-Forge v0.3.1 status:
+Forge v0.3.1 / v0.4 Batch B status:
 
 - lifecycle foundation aligned to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`
 - mode boundaries stabilized
@@ -132,8 +198,11 @@ Forge v0.3.1 status:
 - GitHub Copilot support kept opt-in to avoid default `.github/` noise
 - ready for real-world pilot usage
 - entering evidence-based refinement
+- Python packaging and runtime template payload added for GitHub-installed `forge` CLI
+- `forge --version` implemented
+- `forge init`, `forge init --workspace`, and `forge update` implemented with safe file ownership boundaries
 
-Forge v0.3.1 does not claim a v0.4 CLI, complete automation, benchmarked behavior across all repositories, or production runtime tooling.
+Forge does not claim production runtime tooling, lifecycle redesign, or autonomous execution behavior.
 
 ## Non-Goals
 

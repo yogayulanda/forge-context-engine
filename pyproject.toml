@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forge-context-engine"
+version = "0.4.0a0"
+description = "Forge Context Engine packaging and CLI foundation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Yoga Yulanda" }
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/yogayulanda/forge-context-engine"
+Repository = "https://github.com/yogayulanda/forge-context-engine"
+
+[project.scripts]
+forge = "forge_context_engine.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+forge_context_engine = [
+  "runtime_templates/**/*.md",
+  "runtime_templates/**/*.yaml",
+  "runtime_templates/**/*.txt",
+  "runtime_templates/**/.gitignore",
+  "runtime_templates/**/.gitkeep",
+]

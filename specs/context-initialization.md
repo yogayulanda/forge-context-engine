@@ -710,7 +710,7 @@ Team workflow defaults:
 
 ## 19. Relationship to Future Tooling
 
-This protocol is designed to be **automatable**. Future `forge init` CLI will:
+This protocol is designed to be **automatable**. The implemented v0.4 `forge init` CLI follows this protocol foundation and future refinements may:
 
 1. Execute Phase 0 interactively (ask config questions).
 2. Execute Phases 1–3 using codebase analysis (AST, dependency graph, config detection).

@@ -4,10 +4,16 @@ Use this guide when you want the first successful Forge setup and invocation in 
 
 Goal: within 10-15 minutes, a new engineer should be able to install the runtime template, invoke one mode, and understand the next workflow step.
 
+Status note:
+- v0.4 GitHub-installed `forge` CLI is implemented
+- `forge init`, `forge init --workspace`, and `forge update` are now implemented
+- manual runtime copy remains a compatible fallback for direct repo use
+
 ## What You Need
 
 - A repository with code or docs that Forge can inspect.
-- The Forge `runtime/` directory from this repository.
+- For CLI setup: `uv`
+- For manual fallback setup: the Forge `runtime/` directory from this repository.
 - At least one supported AI tool surface:
   - Claude with `CLAUDE.md`
   - Codex with `AGENTS.md`
@@ -15,7 +21,40 @@ Goal: within 10-15 minutes, a new engineer should be able to install the runtime
 
 Forge does not require a server, daemon, workflow engine, scheduler, or separate memory store.
 
-## Minimal Setup Flow
+## v0.4 CLI Flow
+
+Implemented v0.4 flow:
+
+```text
+uv tool install git+https://github.com/yogayulanda/forge-context-engine.git
+
+cd my-service
+forge init
+
+cd work-context
+forge init --workspace
+
+cd initialized-repo
+forge update
+```
+
+Current behavior:
+- `forge --version` works
+- `forge init` writes the service profile in the current directory by default
+- `forge init --workspace` writes the workspace profile in the current directory by default
+- `forge update` updates managed runtime files and supports manifest-less adoption preview
+
+Local CLI smoke examples:
+
+```text
+uv run python -m forge_context_engine.cli --version
+uv run python -m forge_context_engine.cli init --help
+uv run python -m forge_context_engine.cli update --help
+```
+
+## Manual Setup Flow
+
+Manual setup remains available when you want to copy runtime files directly.
 
 1. Copy the runtime template into the target repository.
 

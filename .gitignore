@@ -34,3 +34,11 @@ runtime/.forge/cache/
 !.forge/context/temp/.gitkeep
 runtime/.forge/context/temp/
 !runtime/.forge/context/temp/.gitkeep
+__pycache__/
+*.py[cod]
+
+.venv/
+uv.lock
+__pycache__/
+*.py[cod]
+*.egg-info/

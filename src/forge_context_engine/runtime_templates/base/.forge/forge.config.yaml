@@ -1,0 +1,60 @@
+# forge-context-engine - Engine Configuration
+# Not a narrative context file. Customize during Context Initialization for the target repo.
+
+forge:
+  version: "0.3.1"
+
+run:
+  interaction: manual
+  output: human
+  output_detail: standard
+  write_behavior: draft
+  failure_behavior: stop
+
+workflow:
+  default_mode: ask
+  disabled_modes: []
+
+context:
+  root: .forge/context
+  budget_profile: standard
+
+policy:
+  high_risk_areas:
+    - payments
+    - authentication
+    - authorization
+    - public_api
+    - database_migrations
+    - secrets
+    - external_provider_integration
+    - file_upload
+  require_human_confirmation_for:
+    - domain_rule_change
+    - data_mutation_change
+    - architecture_boundary_change
+    - external_contract_change
+    - security_boundary_change
+    - migration_change
+
+team:
+  context_update_flow: reviewable_patch
+  require_context_impact_check: true
+
+artifacts:
+  output_dir: .forge/generated
+  patch_dir: .forge/context-patches
+  temp_dir: .forge/temp
+  cache_dir: .forge/cache
+  commit_policy: manual
+  mr_policy: include_when_relevant
+
+tools:
+  adapters:
+    - codex
+    - claude_code
+  default_adapter: codex
+  validation_commands: []
+  package_targets:
+    - codex
+    - claude_code
