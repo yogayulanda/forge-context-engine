@@ -241,12 +241,21 @@ Purpose:
 - Preserve MR/review findings.
 
 Minimum contents:
-- Review result.
-- MR readiness.
+- Review Report.
+- Verdict.
+- Mode Boundary.
+- Diff Reviewed.
+- Summary.
 - Critical/major findings.
-- Reviewer focus.
-- Rollback/safety notes.
-- Suggested next action.
+- Validation result assessment.
+- Lifecycle boundary assessment.
+- Security / risk assessment.
+- Context impact.
+- Recommended next step.
+
+Review result artifacts must name the diff surface reviewed. If no diff or changed-file evidence is available, the artifact must say so explicitly and should usually preserve a `needs_more_validation` outcome rather than imply complete review coverage.
+
+Recommended next-step wording must preserve human control. It must not imply that Forge will commit, push, merge, or open MR/PR actions automatically.
 
 ### 4.6 Incident Scenario Artifact
 

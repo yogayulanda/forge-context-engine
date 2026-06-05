@@ -144,6 +144,10 @@ See `specs/artifact-lifecycle.md` for the full artifact specification.
 
 Summary: Lifecycle artifacts are optional, human-readable continuity helpers under `.forge/generated/` when persisted. Default behavior is chat output first; save Markdown artifacts only when requested, approved for continuity, or clearly useful for multi-session/multi-agent continuation. Generated artifacts do not replace repository code, docs, ADRs, or human confirmations. Context promotion goes through reviewed `.forge/context-patches/`, not direct writes into `.forge/context`. Artifact links are trace references only — not dependency graphs, workflow state, DAGs, orchestration, execution triggers, or agent memory.
 
+When artifact persistence is mentioned in mode output or docs, keep it concise. Prefer wording such as:
+- `Artifact Persistence: Not saved by default.`
+- `Save to .forge/generated/... only when requested or approved.`
+
 ## Intelligence & Governance Semantics
 
 See `conventions-risk.md` for full governance, drift, cross-repo awareness, and secret safety rules.

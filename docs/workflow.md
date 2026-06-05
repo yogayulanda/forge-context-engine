@@ -34,7 +34,7 @@ Each step produces a defined output. Each transition between plan and implementa
 | `forge-implementation` | Execution Context Package (`status: proposed`) | No |
 | human approval | ECP transitions to approved execution input | N/A |
 | `forge-execute` | Code changes + validation report | Yes, inside approved scope |
-| `forge-review` | Verdict + findings + validation assessment + context impact | No |
+| `forge-review` | Verdict + diff reviewed + findings + validation assessment + context impact | No |
 | `forge-verify-context` | Context health/freshness result | No |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
 

@@ -41,6 +41,7 @@ Additional validation may be requested through execute or manual review. Missing
 ## 4. Expected Behavior
 
 - `forge-review` correctly reports unvalidated evidence gaps in `Yang belum tervalidasi`.
+- `forge-review` says explicitly when no diff or changed-file evidence was available and usually returns `needs_more_validation` in that case.
 - Review verdict is `request_changes` or `needs_more_validation` when required validation evidence is missing.
 - Review does not invent validation evidence such as "tests pass" without evidence.
 - Review does not produce `accept` without required validation evidence.
@@ -62,6 +63,7 @@ Additional validation may be requested through execute or manual review. Missing
 
 - `forge-execute` output showing lightweight validation, partial validation, or `NOT_VALIDATED` status.
 - `forge-review` output that explicitly names the validation gap in `Yang belum tervalidasi`.
+- `forge-review` output that includes `Diff Reviewed` with inspected files or an explicit no-diff statement.
 - Review verdict that is `request_changes` or `needs_more_validation`, not `accept` and not `blocked` solely for missing additional validation.
 
 ---

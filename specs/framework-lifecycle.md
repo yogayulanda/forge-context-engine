@@ -142,7 +142,7 @@ A repository reaches `audited` when structural validation and evidence/semantic 
 - `execute/review validation reporting owns structured validation, scope grouping, test strategy, mocks/fakes/stubs, coverage, and regression validation where relevant`
 - `review-mode validates execute results without replacing execute mode`
 - `review-mode rejects hidden success and unsupported fully-validated/test-passed claims`
-- `review-mode produces senior MR-review output with status, MR readiness, severity-grouped evidence findings, reviewer focus, and safety notes`
+- `review-mode produces senior review output with verdict, diff reviewed, severity-grouped evidence findings, and safety-focused boundary assessment`
 - `review-mode checks architecture/contract drift and relevant safety risks without redesigning lifecycle or replacing post-change human responsibility`
 - `incident scenarios diagnose bugs/issues without speculative redesign`
 - `refactor scenarios preserve behavior and stay bounded`
@@ -196,7 +196,7 @@ A cognition pattern reaches `cognition-validated` when Forge produces the expect
 - The case is repository-neutral enough to test framework cognition.
 - The case has regression value.
 
-For mode benchmarks, expected behavior should verify init-mode context/config creation, ask-mode repo understanding without mutation, plan-mode Quick Plan or SDD output, layer-adaptive sections, scoped loading and `CONTEXT_BUDGET_LIMITED` behavior, evidence/inference/unknown separation, implementation-mode ECP generation, execute-mode approved-ECP boundaries, grouped file-change reporting, explicit runtime prerequisite checks, partial/blocking/not-validated status semantics, concise blocker/confirmation UX, validation scope categories, contract-aware runtime-sensitive coverage, review-mode MR readiness, severity-grouped findings, reviewer focus, architecture/contract drift checks, security/context-impact notes, verify-context context-health boundaries, incident/refactor scenario safety, fintech governance risk signals, and rejection of unsupported backend-only, topology, broad-loading, stale-artifact, cross-repo-assumption, generic-audit, fully-validated, production-ready, or test-passed claims.
+For mode benchmarks, expected behavior should verify init-mode context/config creation, ask-mode repo understanding without mutation, plan-mode Quick Plan or SDD output, layer-adaptive sections, scoped loading and `CONTEXT_BUDGET_LIMITED` behavior, evidence/inference/unknown separation, implementation-mode ECP generation, execute-mode approved-ECP boundaries, grouped file-change reporting, explicit runtime prerequisite checks, partial/blocking/not-validated status semantics, concise blocker/confirmation UX, validation scope categories, contract-aware runtime-sensitive coverage, review-mode verdict plus diff-reviewed coverage, severity-grouped findings, architecture/contract drift checks, security/context-impact notes, verify-context context-health boundaries, incident/refactor scenario safety, fintech governance risk signals, and rejection of unsupported backend-only, topology, broad-loading, stale-artifact, cross-repo-assumption, generic-audit, fully-validated, production-ready, or test-passed claims.
 
 For engineering-style benchmarks, expected behavior should verify pragmatic idiomatic implementation, natural operational naming, repository-first test placement, minimal safe improvement, and rejection of unnecessary abstraction, academic wording, competing coding paradigms, or unrelated mass refactor.
 

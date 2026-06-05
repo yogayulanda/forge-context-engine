@@ -43,6 +43,7 @@ forge-review returns NEEDS_CHANGES
 ## 4. Expected Behavior
 
 - `forge-review` returns `NEEDS_CHANGES` with severity-grouped findings.
+- `forge-review` names the reviewed diff surface so the human can see which files or changes were inspected.
 - The assistant does not automatically re-run execute to fix findings.
 - The human explicitly reviews findings, scopes the fix, and approves that scope.
 - When `forge-execute` runs after a `NEEDS_CHANGES` review, it verifies that prior findings are resolved or explicitly still open.
@@ -64,6 +65,7 @@ forge-review returns NEEDS_CHANGES
 ## 6. Evidence Shape Required
 
 - `forge-review` output with `NEEDS_CHANGES` status and severity-grouped findings.
+- `forge-review` output with a `Diff Reviewed` section naming the inspected files or explicitly stating when no diff was available.
 - Human message explicitly naming the fix scope and approving action before `forge-execute` runs.
 - `forge-execute` output that references prior review findings as resolved or still open.
 - `forge-review` re-invocation output that addresses prior findings.

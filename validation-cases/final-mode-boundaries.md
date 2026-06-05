@@ -29,8 +29,9 @@ Mode boundaries:
 - `plan` emits Quick Plan or SDD, includes a dedicated Mode Boundary section, and waits for Gate 1 approval.
 - `plan` includes assumptions when ambiguity exists plus acceptance criteria and validation commands.
 - `implementation` emits ECP/readiness output, includes a dedicated Mode Boundary section, and does not edit code.
+- `implementation` keeps `Target Tool Instructions` tool-aware rather than universally Codex-specific.
 - `execute` applies an approved ECP, runs per-task scoped validation and final validation, and may fix in-scope failures.
-- `review` uses verdicts, includes a dedicated Mode Boundary section, and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
+- `review` uses verdicts, includes a dedicated Mode Boundary section plus `Diff Reviewed`, and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
 - `verify-context` checks context health only.
 - Users do not need to append `Do not edit files` for normal `plan`, `implementation`, or `review` requests.
 

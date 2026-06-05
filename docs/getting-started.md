@@ -5,7 +5,7 @@ Use this guide when you want the first successful Forge setup and invocation in 
 Goal: within 10-15 minutes, a new engineer should be able to install the runtime template, invoke one mode, and understand the next workflow step.
 
 Status note:
-- v0.4 GitHub-installed `forge` CLI is implemented
+- v0.7 lifecycle polish is current
 - `forge init`, `forge init --workspace`, and `forge update` are now implemented
 - manual runtime copy remains a compatible fallback for direct repo use
 
@@ -21,9 +21,9 @@ Status note:
 
 Forge does not require a server, daemon, workflow engine, scheduler, or separate memory store.
 
-## v0.4 CLI Flow
+## CLI Flow
 
-Implemented v0.4 flow:
+Current CLI flow:
 
 ```text
 uv tool install git+https://github.com/yogayulanda/forge-context-engine.git
@@ -35,15 +35,16 @@ cd work-context
 forge init --workspace
 
 cd initialized-repo
-forge update
-forge update --tools codex,claude
+forge update --dry-run
+forge update --yes
+forge update --tools codex,claude --yes
 ```
 
 Current behavior:
 - `forge --version` works
 - `forge init` writes the service profile in the current directory by default
 - `forge init --workspace` writes the workspace profile in the current directory by default
-- `forge update` updates managed runtime files, supports `--tools`, and supports manifest-less adoption preview
+- `forge update` updates managed runtime files, supports `--tools`, supports dry-run preview, and supports manifest-less adoption preview
 
 Local CLI smoke examples:
 
@@ -78,7 +79,7 @@ Manual setup remains available when you want to copy runtime files directly.
 2. Open `<target-repo>/.forge/forge.config.yaml`.
 
    Check:
-   - `forge.version: "0.5.0a0"` for the current runtime config shape.
+   - `forge.version` for the current runtime config shape.
    - `ui.language: en` by default; switch to `id` when you want Indonesian human-facing narration and progress updates.
    - Forge Plans, ECPs, Execute Reports, Review Reports, task cards, specs, validation commands, commit messages, and generated Markdown artifacts stay English by default unless you explicitly request another language.
    - `run.interaction: manual` for local human-in-the-loop work.
@@ -162,11 +163,12 @@ A first real change usually looks like this:
 
 1. `ask`: understand current behavior.
 2. `plan`: describe the change, risks, validation, rollback, and unknowns.
-3. `implementation`: produce an ECP and stop conditions.
-4. Human approval: approve the ECP for execution.
-5. `execute`: apply the approved ECP only and run scoped validation.
-6. `review`: assess MR readiness, security, validation gaps, and context impact.
-7. `verify-context`: run when source changes may affect curated context.
+3. Human approval: approve the plan for implementation.
+4. `implementation`: produce an ECP and stop conditions.
+5. Human approval: approve the ECP for execution.
+6. `execute`: apply the approved ECP only and run scoped validation.
+7. `review`: assess verdict, diff reviewed, security, validation gaps, and context impact.
+8. `verify-context`: run when source changes may affect curated context.
 
 Small, low-risk edits can skip `plan` when the scope is obvious. Risky, ambiguous, contract-heavy, or production-sensitive work should not skip plan.
 

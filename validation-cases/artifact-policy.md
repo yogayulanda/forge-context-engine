@@ -28,6 +28,7 @@ Default persistence behavior:
 - Save Markdown only when explicitly requested, approved for continuity, or needed for multi-session/multi-agent handoff.
 - Persist generated artifacts under `.forge/generated/...`, not `.forge/context`.
 - Promote durable context only through reviewed `.forge/context-patches/...`.
+- Do not force artifact-save status into every response; mention persistence status only when the user asks or when save behavior is part of the workflow.
 
 ## Incorrect Behaviors Forge Must Reject
 

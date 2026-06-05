@@ -43,7 +43,7 @@ Preserve the public event schema and list validation needed.
 
 ```text
 Use Forge review mode on this branch.
-Focus on correctness, validation honesty, security, context impact, and MR readiness.
+Focus on correctness, validation honesty, security, context impact, and the exact diff reviewed.
 ```
 
 ## Boundaries

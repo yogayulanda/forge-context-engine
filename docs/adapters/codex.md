@@ -51,7 +51,7 @@ Good review request:
 
 ```text
 Use Forge review mode.
-Prioritize bugs, behavioral regressions, validation gaps, security, context impact, and MR readiness.
+Prioritize bugs, behavioral regressions, validation gaps, security, context impact, and the exact diff reviewed.
 ```
 
 ## Boundaries

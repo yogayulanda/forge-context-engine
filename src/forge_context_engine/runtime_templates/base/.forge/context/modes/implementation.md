@@ -46,6 +46,7 @@ Convert an approved plan into an Execution Context Package (ECP).
 - Convert the approved plan into a readiness package only; do not execute it.
 - Keep mode boundaries separate from assumptions carried into the ECP.
 - Resolve only execution packaging details that are safe and evidenced.
+- Keep universal edit guidance tool-aware: use the smallest safe edit mechanism available in the target tool, then add tool-specific notes only as sub-guidance.
 - Stop if required domain, security, architecture, contract, data, or migration decisions are missing.
 
 ## outputs
@@ -68,7 +69,13 @@ Execution Context Package (ECP) with:
 - Status.
 - Step-by-step implementation guidance only inside the approved file/scope boundary.
 - Risk notes.
-- Target tool instructions when adapter-specific instructions are necessary.
+- Target Tool Instructions:
+  - Use the smallest safe edit mechanism available in the target tool.
+  - For Codex, prefer `apply_patch` for scoped edits.
+  - For Claude Code, use its normal file-edit workflow while preserving approved scope.
+  - For Copilot, produce the smallest reviewable patch or task guidance according to the active Copilot workflow.
+  - Do not widen scope beyond the approved ECP.
+  - Do not commit or push unless explicitly requested by the human.
 
 ## status values
 - `ecp_ready`

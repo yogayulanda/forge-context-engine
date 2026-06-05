@@ -6,17 +6,17 @@ Use this example when a branch or MR needs a senior engineering review.
 
 ```text
 Use Forge review mode on this branch.
-Focus on correctness, approved boundaries, validation honesty, rollback readiness, and MR readiness.
+Focus on correctness, approved boundaries, validation honesty, rollback readiness, and the exact diff reviewed.
 ```
 
 Expected output:
 
-- one review result
-- MR readiness
+- one review report
+- verdict plus Diff Reviewed
 - critical, major, minor, and info findings
 - validation gaps
-- rollback and safety notes
-- suggested next action
+- lifecycle, security, and context impact assessment
+- recommended next step that preserves human commit/MR control
 
 ## Good Review Focus
 

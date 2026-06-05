@@ -28,7 +28,7 @@ The protocol ensures:
 - Runtime validation checks prerequisites before commands and separates implementation failures from environment/tooling blockers.
 - Partial, blocked, and not-validated outcomes are first-class statuses where each mode owns the vocabulary for that outcome.
 - Validation activity provides structured, contract-aware evidence grouped by test scope and runtime risk inside execute/review workflows.
-- Review mode behaves like a concise senior MR review with clear acceptability, severity, evidence, MR readiness, reviewer focus, and safety risk.
+- Review mode behaves like a concise senior review report with clear verdict, diff coverage, severity, evidence, lifecycle boundary assessment, and safety risk.
 - Runtime placement stays modular: global files define entry rules, mode files define mode-specific behavior.
 - Human-reviewable execution boundaries exist before AI modifies code.
 - Execution can be deterministic after architecture reasoning, unknown classification, and bounded task-card decomposition.
@@ -132,7 +132,7 @@ All modes follow these rules:
 - Expand context only with a concrete reason tied to task relevance, missing evidence, drift risk, cross-repo uncertainty, incident blast radius, refactor risk, or governance risk.
 - Emit `CONTEXT_BUDGET_LIMITED` when required evidence may exceed the normal scoped budget and Forge cannot safely answer, plan, implement, execute, review, verify context, or handle the requested scenario without more context.
 - Keep evidence-backed facts, inferences, proposed defaults, assumptions, and unknowns separate.
-- Keep proposed defaults explicitly labeled as proposed and not confirmed.
+- Keep proposed defaults clearly marked as unconfirmed; when the section heading already signals uncertainty, concise readable wording is preferred over repeating the same label on every bullet.
 - Redact secrets before reporting evidence, findings, plans, reviews, tests, or loaded context.
 - Keep context-loading details terse in normal output; `Scoped context loaded` plus the relevant areas is enough when useful.
 - Report missing evidence and unresolved ambiguity before relying on guesses.
@@ -317,12 +317,6 @@ Review status meanings:
 - `BLOCKED`: required contract/runtime evidence is missing, so meaningful review cannot complete.
 - `PARTIAL_REVIEW`: review covered only part of the changed scope or lacked complete validation evidence.
 
-Review MR readiness must use exactly one of:
-- `MR-ready`
-- `not MR-ready`
-- `MR-ready with accepted risk`
-- `cannot determine`
-
 `NEEDS_HUMAN_APPROVAL` means required decision risk is HIGH or automation/orchestrator authority is insufficient. It is not an execution-ready state.
 
 Validation sections must separate:
@@ -351,18 +345,27 @@ Validation scope must be grouped by applicable category: unit, integration, e2e,
 Contract-aware validation checks the approved ECP where possible: approved behavior, rollback assumptions, retry/idempotency semantics, runtime boundaries, and non-regression expectations. Event-driven or runtime-sensitive validation must explicitly address retryable failure behavior, non-retryable failure behavior, DLQ expectations, duplicate/idempotent replay, and partial replay when relevant.
 
 Review reports must use this output order:
-1. `Review Result`
-2. `MR readiness`
-3. `Critical findings`
-4. `Major findings`
-5. `Minor findings`
-6. `Info / observations`
-7. `Reviewer perlu fokus ke`
-8. `Yang belum tervalidasi`
-9. `Rollback / safety notes`
-10. `Suggested next action`
+1. `Review Report`
+2. `Verdict`
+3. `Mode Boundary`
+4. `Diff Reviewed`
+5. `Summary`
+6. `Critical Findings`
+7. `Major Findings`
+8. `Minor Findings`
+9. `Validation Result Assessment`
+10. `Lifecycle Boundary Assessment`
+11. `Security / Risk Assessment`
+12. `Context Impact`
+13. `Recommended Next Step`
 
 Review findings must be grouped by severity: `CRITICAL`, `MAJOR`, `MINOR`, and `INFO`. Each `CRITICAL` or `MAJOR` finding must include affected file/area, what is wrong, why it matters, and suggested fix.
+
+`Diff Reviewed` must name the files or diff surfaces actually inspected. If no diff or changed-file evidence is available, the report must say that explicitly and should usually return `needs_more_validation`.
+
+`Recommended Next Step` must preserve human control. Avoid wording that implies Forge will commit, push, merge, or open MR/PR actions automatically. Safe wording includes:
+- Human decides whether to commit, open MR/PR, request changes, or discard the change.
+- When the verdict is `accept`, human may proceed with the normal repo workflow outside Forge.
 
 Review mode must check architecture/contract compliance for non-trivial changes: execution contract adherence, approved boundary preservation, absence of hidden topology redesign, no service/repository boundary bypass, and no unapproved contract/schema changes. Review mode must also check relevant safety risks: secret/raw payload logging, PII exposure, retry/DLQ correctness, idempotency correctness, rollback readiness, and validation honesty.
 
@@ -406,6 +409,7 @@ Persistence policy:
 - Save only when the user explicitly asks, when the work is medium/large and the user approves saving, or when multi-session/multi-agent continuity clearly benefits from a persisted artifact.
 - Read-only modes do not write Markdown artifacts by default. If saving is explicitly requested, they may write only within their mode boundary and only to `.forge/generated/...`.
 - Durable context promotion goes through `.forge/context-patches/...` review, not direct mutation of `.forge/context`.
+- Do not force every response to mention artifact persistence status; mention it only when the user asks about saving or the workflow is explicitly discussing persistence.
 
 If an artifact conflicts with repository evidence, code/repo evidence wins and the artifact is stale, partial, or superseded.
 
@@ -665,7 +669,7 @@ Mode invocation validation checks that runtime behavior follows this protocol. S
 
 **Testing and review correctness:**
 - Testing output used required sections and grouped validation by test category.
-- Review output used required sections, severity grouping, and one MR readiness result.
+- Review output used required sections, named the diff reviewed, and preserved severity grouping.
 - `CRITICAL`/`MAJOR` review findings included file/area, what is wrong, why it matters, and suggested fix.
 
 **Artifacts and secrets:**

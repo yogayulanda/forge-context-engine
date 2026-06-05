@@ -50,7 +50,7 @@ Use `review` to decide whether a change is acceptable:
 
 ```text
 Use Forge review mode on this branch.
-Focus on correctness, validation honesty, rollback, security, context impact, and MR readiness.
+Focus on correctness, validation honesty, rollback, security, context impact, and the exact diff reviewed.
 ```
 
 ## Execute Boundaries
@@ -139,7 +139,7 @@ Run the narrow tests available in this repo and report any environment blockers.
 ```
 
 ```text
-Use Forge review mode on this MR and report MR readiness.
+Use Forge review mode on this MR and report verdict plus Diff Reviewed.
 ```
 
 ```text

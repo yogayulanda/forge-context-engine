@@ -214,8 +214,8 @@ Use this as:
 | F95 | Environment/runtime blockers are surfaced directly and not buried inside prose | error | manual |
 | F96 | Validation output highlights unvalidated risk areas, missing coverage, risky runtime assumptions, and runtime-sensitive behavior not verified | warning | manual |
 | F97 | Validation output does not collapse into review/governance language or generic QA-document prose | warning | manual |
-| F98 | Review output uses required sections in order: `Review Result`, `MR readiness`, `Critical findings`, `Major findings`, `Minor findings`, `Info / observations`, `Reviewer perlu fokus ke`, `Yang belum tervalidasi`, `Rollback / safety notes`, and `Suggested next action` | error | manual |
-| F99 | Review output states one MR readiness result: `MR-ready`, `not MR-ready`, `MR-ready with accepted risk`, or `cannot determine` | error | manual |
+| F98 | Review output uses required sections in order: `Review Report`, `Verdict`, `Mode Boundary`, `Diff Reviewed`, `Summary`, `Critical Findings`, `Major Findings`, `Minor Findings`, `Validation Result Assessment`, `Lifecycle Boundary Assessment`, `Security / Risk Assessment`, `Context Impact`, and `Recommended Next Step` | error | manual |
+| F99 | `Diff Reviewed` names the inspected files or diff surfaces, or explicitly states when no diff was available | error | manual |
 | F100 | Review findings are grouped by severity: `CRITICAL`, `MAJOR`, `MINOR`, and `INFO` | error | manual |
 | F101 | Each `CRITICAL` or `MAJOR` review finding includes affected file/area, what is wrong, why it matters, and suggested fix | error | manual |
 | F102 | Non-trivial review checks architecture/contract drift: execution contract adherence, confirmed boundary preservation, no hidden topology redesign, no service/repository boundary bypass, and no unapproved contract/schema change | error | manual |
@@ -668,8 +668,8 @@ ANTI-DUPLICATION
 [ ] F95 environment/runtime blockers are surfaced directly
 [ ] F96 unvalidated risks, missing coverage, and risky runtime assumptions are visible
 [ ] F97 validation reporting stays out of generic QA prose and review/governance critique
-[ ] F98 review output uses required MR-review sections
-[ ] F99 review states clear MR readiness
+[ ] F98 review output uses required review-report sections
+[ ] F99 review names the diff reviewed or explicitly states that no diff was available
 [ ] F100 review findings grouped by CRITICAL/MAJOR/MINOR/INFO
 [ ] F101 critical/major review findings include evidence, impact, and suggested fix
 [ ] F102 non-trivial review checks architecture/contract drift

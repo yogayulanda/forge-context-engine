@@ -35,7 +35,7 @@ Artifacts can record:
 - Quick Plan or SDD
 - Execution Context Package
 - Execution Report
-- Review Result
+- Review Report
 - Context Verification Result
 - Context patch proposal
 

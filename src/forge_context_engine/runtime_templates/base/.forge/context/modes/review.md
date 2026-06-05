@@ -51,12 +51,16 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 - Inspect security-sensitive areas when relevant: auth/authz, input validation, sensitive data exposure, secret handling, injection risk, IDOR, SSRF, file upload, and OWASP-relevant risks.
 - Assess whether follow-up execute work or a context patch is needed.
 - Treat validation gaps as review findings without becoming execute mode.
+- When reviewing executed changes, name the exact diff surface reviewed under `Diff Reviewed`.
+- If no diff or changed-file evidence is available, say that explicitly and usually return `needs_more_validation`.
 - Do not fix code directly.
 
 ## outputs
+- Review Report.
 - Verdict.
-- Summary.
 - Mode Boundary.
+- Diff Reviewed.
+- Summary.
 - Critical Findings.
 - Major Findings.
 - Minor Findings.
@@ -74,13 +78,13 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 
 ## boundaries
 - Review mode inspects plan/ECP/diff/results.
-- It does not apply fixes unless explicitly moved to an approved execution flow.
+- It does not apply fixes, commit, push, merge, or open MR/PR actions; fixes require a separately approved execution flow.
 - Do not edit code, produce an ECP, or run broad implementation planning.
 - Do not approve unsupported production-ready or fully validated claims.
 - Do not replace current repository evidence with stale context/artifacts.
 
 ## next mode transitions
-- `accept` -> merge/MR decision outside Forge, or `verify-context` if context may need refresh.
+- `accept` -> human decides whether to commit, open MR/PR, request changes, discard the change, or continue normal repo workflow outside Forge. Forge does not commit, push, merge, or open MR/PR automatically.
 - `request_changes` -> bounded fix scope through `implementation` or `execute` after human approval.
 - `needs_more_validation` -> `execute` or manual validation activity.
 - `blocked` -> human decision, `plan`, or context patch depending on blocker type.

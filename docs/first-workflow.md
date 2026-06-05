@@ -174,17 +174,19 @@ Human request:
 
 ```text
 Use Forge review mode on the retry change.
-Focus on correctness, idempotency, retry/DLQ behavior, validation honesty, and MR readiness.
+Focus on correctness, idempotency, retry/DLQ behavior, validation honesty, and the exact diff reviewed.
 ```
 
 Expected `review` output:
 
-- review result
-- MR readiness
+- Review Report
+- verdict
+- Diff Reviewed
 - severity-grouped findings
-- validation gaps
-- rollback and safety notes
-- suggested next action
+- validation result assessment
+- lifecycle boundary assessment
+- security and context impact
+- recommended next step that keeps commit/MR decisions with the human
 
 State after this step:
 
@@ -192,7 +194,7 @@ State after this step:
 Reviewing -> Completed (if APPROVED)
 ```
 
-Merge, release, deploy, and production rollout remain outside Forge.
+Commit, push, MR/PR, merge, release, deploy, and production rollout remain outside Forge.
 
 ## After Review: Fix Loop
 
@@ -232,7 +234,7 @@ Reviewing -> Completed
 | `implementation` | ECP (`status: proposed`) | No |
 | human approval - ECP | ECP transitions to approved execution input | N/A |
 | `execute` | Bounded repository changes and validation report | Yes, inside approved scope |
-| `review` | MR readiness and findings | No, unless separately asked to execute fixes |
+| `review` | Verdict, diff reviewed, and findings | No, unless separately asked to execute fixes |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
 
 ## Good Workflow Signals
