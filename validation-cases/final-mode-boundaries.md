@@ -32,7 +32,8 @@ Mode boundaries:
 - `implementation` keeps `Target Tool Instructions` tool-aware rather than universally Codex-specific.
 - `execute` applies an approved ECP, runs per-task scoped validation and final validation, and may fix in-scope failures.
 - `review` uses verdicts, includes a dedicated Mode Boundary section plus `Diff Reviewed`, and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
-- `verify-context` checks context health only.
+- `review` includes a lightweight `Context Impact` check and proposes `.forge/context-patches/...` when durable repo knowledge changes.
+- `verify-context` checks context health and reviewable context-patch quality only.
 - Users do not need to append `Do not edit files` for normal `plan`, `implementation`, or `review` requests.
 
 ## Incorrect Behaviors Forge Must Reject
@@ -42,6 +43,8 @@ Mode boundaries:
 - Emitting code changes from `implementation`.
 - Broad-loading all modes or all context before inspecting the requested mode.
 - Letting `verify-context` validate plans, ECPs, code diffs, MR readiness, or production readiness.
+- Letting `review` mutate `.forge/context` directly instead of proposing a reviewable context patch.
+- Letting `verify-context` accept context patches automatically.
 
 ## Regression Signals
 

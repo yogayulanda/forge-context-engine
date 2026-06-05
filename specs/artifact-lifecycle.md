@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Artifact Lifecycle Specification |
-| Version | 1.3 |
+| Version | 1.4 |
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Minimal lifecycle artifacts for mode continuity |
@@ -74,6 +74,11 @@ Context quality boundary:
 - A context patch is not accepted context until it is reviewed and promoted.
 - Raw logs, scratchpads, one-off plans, temporary ECPs, and long reports stay out of curated context unless reduced into durable evidence-backed context.
 
+Context maintenance cadence:
+- `Context Impact Check` is a small per-task review concern.
+- `Context Quality Audit` is a larger milestone/release/manual concern.
+- Normal daily review should not become a full context quality audit.
+
 Persist only when one of these is true:
 - The user explicitly asks to save or create the artifact.
 - The work is medium/large and the user approves saving for continuity.
@@ -103,6 +108,38 @@ artifact.<type>.<short-topic>.r<N>
 ```
 
 `.forge/generated/*` remains generated artifact output. It is loaded only by explicit reference, mode handoff, or task relevance.
+
+Context patch proposals live under `.forge/context-patches/...`, not `.forge/generated/...`, when the workflow needs a reviewable durable-context update proposal.
+
+Recommended context patch path:
+
+```text
+.forge/context-patches/<date>-<slug>.md
+```
+
+Suggested patch shape:
+
+```text
+# Context Patch Proposal: <title>
+
+Target context files:
+- .forge/context/...
+
+Reason:
+...
+
+Evidence:
+- file/path:line or command/result summary
+
+Proposed update:
+...
+
+Confidence:
+high | medium | low
+
+Promotion notes:
+- Requires human review before merging into `.forge/context`.
+```
 
 ---
 

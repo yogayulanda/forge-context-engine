@@ -47,6 +47,7 @@ Additional validation may be requested through execute or manual review. Missing
 - Review does not produce `accept` without required validation evidence.
 - Review does not produce `blocked` solely because additional validation was not requested.
 - Missing validation evidence is a finding or an unvalidated gap, not a hard blocker, unless the review scope specifically requires that evidence.
+- Review still includes a small `Context Impact` section even when the main finding is missing validation evidence.
 
 ---
 
@@ -64,6 +65,7 @@ Additional validation may be requested through execute or manual review. Missing
 - `forge-execute` output showing lightweight validation, partial validation, or `NOT_VALIDATED` status.
 - `forge-review` output that explicitly names the validation gap in `Yang belum tervalidasi`.
 - `forge-review` output that includes `Diff Reviewed` with inspected files or an explicit no-diff statement.
+- `forge-review` output that includes `Context Impact` with `update_needed: true | false | unknown`.
 - Review verdict that is `request_changes` or `needs_more_validation`, not `accept` and not `blocked` solely for missing additional validation.
 
 ---

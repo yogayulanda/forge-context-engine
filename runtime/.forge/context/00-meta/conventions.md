@@ -187,7 +187,12 @@ Context Quality Checklist:
 - Is it replacing or duplicating existing context?
 - Does it require review before promotion?
 
-`review` and `verify-context` may reference these rules when assessing context impact or freshness, but v0.8A does not require a structured context-impact output contract.
+Context maintenance cadence:
+- `Context Impact Check` is a small per-task review check.
+- `Context Quality Audit` is a larger milestone/release/manual check for stale, noisy, missing, or low-quality context.
+- Do not turn every task into a full context quality audit.
+
+`review` should use a structured `Context Impact` section to determine whether a durable context update is needed. When an update is needed, propose a reviewable `.forge/context-patches/...` patch instead of mutating `.forge/context` directly. `verify-context` may validate curated context health and reviewable patch quality, but it must not accept patches automatically.
 
 When artifact persistence is mentioned in mode output or docs, keep it concise. Prefer wording such as:
 - `Artifact Persistence: Not saved by default.`

@@ -50,6 +50,11 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 - Check goal alignment, scope drift, lifecycle boundary compliance, validation evidence, risk/safety, security, and context impact.
 - Inspect security-sensitive areas when relevant: auth/authz, input validation, sensitive data exposure, secret handling, injection risk, IDOR, SSRF, file upload, and OWASP-relevant risks.
 - Assess whether follow-up execute work or a context patch is needed.
+- Run a small per-task Context Impact Check; do not turn routine review into a full context quality audit.
+- Use `update_needed: false` when changes stay internal and do not affect durable repository knowledge.
+- Use `update_needed: true` when changes affect durable repository knowledge such as architecture boundaries, public API behavior, domain rules, security boundaries, operational conventions, repository structure, service/system responsibilities, dependency/provider behavior, testing/validation conventions, workflow conventions, or durable decisions/constraints.
+- Use `update_needed: unknown` when evidence is insufficient to determine whether durable context should change.
+- When `update_needed: true`, propose a reviewable `.forge/context-patches/<date>-<slug>.md` patch instead of editing `.forge/context` directly.
 - Treat validation gaps as review findings without becoming execute mode.
 - When reviewing executed changes, name the exact diff surface reviewed under `Diff Reviewed`.
 - If no diff or changed-file evidence is available, say that explicitly and usually return `needs_more_validation`.
@@ -70,6 +75,24 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 - Context Impact.
 - Recommended Next Step.
 
+## context impact contract
+Context Impact:
+- `update_needed: true | false | unknown`
+- `reason:`
+- `affected_context_files:`
+  - `.forge/context/...`
+- `suggested_context_patch:`
+  - `none`
+  - `.forge/context-patches/<date>-<slug>.md`
+
+When `update_needed: true`, the suggested patch proposal should be human-reviewable and include:
+- Target context file(s)
+- Reason
+- Evidence
+- Proposed update or diff
+- Confidence
+- Promotion notes stating human review is required before promotion into `.forge/context`
+
 ## verdict values
 - `accept`
 - `request_changes`
@@ -80,6 +103,7 @@ Inspect a plan, ECP, or executed result against goal alignment, scope boundaries
 - Review mode inspects plan/ECP/diff/results.
 - It does not apply fixes, commit, push, merge, or open MR/PR actions; fixes require a separately approved execution flow.
 - Do not edit code, produce an ECP, or run broad implementation planning.
+- Do not mutate `.forge/context` directly from review mode.
 - Do not approve unsupported production-ready or fully validated claims.
 - Do not replace current repository evidence with stale context/artifacts.
 

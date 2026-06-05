@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Context System Validation Specification |
-| Version | 3.8 |
+| Version | 3.9 |
 | Date | 2026-06-05 |
 | Status | `decision` — finalized for forge-context-engine v0.3.1 |
 | Language | English (context) · Bahasa Indonesia (human notes) |
@@ -22,6 +22,7 @@
 > **v3.5 -> v3.6 changes:** Adds thin-adapter validation rules so root adapters reference Forge core instead of duplicating cognition, lifecycle, validation, drift, artifact, governance, or secret semantics. No orchestration, memory, agent, runtime executor, deploy, CI/CD, or workflow behavior added.
 > **v3.6 -> v3.7 changes:** Adds execute hardening validation for minimal diffs, finalization checks, contract-source checks, review-loop closure, and concise recommended next action. No lifecycle redesign, modes, orchestration, memory, agents, runtime executors, deploy, CI/CD, or autonomous chaining added.
 > **v3.7 -> v3.8 changes:** Clarifies curated context quality rules so `.forge/context` stays durable, evidence-backed, compact, and distinct from generated artifacts and reviewed context-patch proposals. No lifecycle redesign, new CLI commands, runtime agent behavior, or structured v0.8B context-impact workflow added.
+> **v3.8 -> v3.9 changes:** Adds a lightweight `Context Impact` review contract, reviewable context-patch proposal expectations, and bounded verify-context quality/patch validation rules. No lifecycle redesign, new CLI commands, runtime agent behavior, or automatic context promotion added.
 
 ---
 
@@ -223,6 +224,11 @@ Use this as:
 | F103 | Review checks relevant safety areas: secret/raw payload logging, PII exposure, retry/DLQ correctness, idempotency correctness, rollback readiness, and validation honesty | error | manual |
 | F104 | Review highlights validation gaps as review findings or coverage gaps without becoming a full validation report or test plan | warning | manual |
 | F105 | Review output stays concise and MR-oriented, not a generic audit/report, planning narrative, or implementation task list | warning | manual |
+| F105a | Review `Context Impact` includes `update_needed: true | false | unknown`, reason, affected context files, and suggested context patch path or `none` | error | manual |
+| F105b | Review uses `update_needed: false` for internal-only or temporary changes that do not affect durable repository knowledge | warning | manual |
+| F105c | Review uses `update_needed: true` and proposes `.forge/context-patches/<date>-<slug>.md` when durable repository knowledge changes | error | manual |
+| F105d | Review uses `update_needed: unknown` when evidence is insufficient for a safe context-impact conclusion | warning | manual |
+| F105e | Review does not mutate `.forge/context` directly; context updates remain reviewable proposals until promoted by human review | error | manual |
 | F106 | Run behavior semantics are bounded to interaction, output, output detail, write behavior, and failure behavior; run config does not introduce CI/CD, deploy, pipeline, trigger, or executor behavior | error | manual |
 | F107 | `run.interaction` remains the controlling interaction setting and no overlapping interaction flags are introduced | error | manual |
 | F108 | Unsupported or conflicting run fields are reported clearly before mode work | error | manual |
@@ -373,7 +379,8 @@ Use this as:
 | N13 | Raw terminal logs, full execution reports, one-off Quick Plans, temporary ECPs, long review reports, generic AI advice, and scratchpad notes are not stored as curated context | error | manual |
 | N14 | Generated artifacts are not auto-promoted into `.forge/context`; durable updates require a reviewed `.forge/context-patches` step first | error | manual |
 | N15 | Context patches are treated as proposals pending review, not accepted context | error | manual |
-| N16 | Review or verify-context may assess context impact/freshness against context quality rules without requiring a structured context-impact output contract | warning | manual |
+| N16 | Review or verify-context may assess context impact/freshness against context quality rules using the lightweight `Context Impact` contract without requiring a full context audit on every task | warning | manual |
+| N17 | Verify-context may validate curated context health and reviewable context-patch proposals, but does not become code review, general testing, or automatic patch acceptance | error | manual |
 
 ---
 

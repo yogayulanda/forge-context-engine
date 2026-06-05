@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 3.3 |
+| Version | 3.4 |
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
@@ -42,6 +42,7 @@ v3.0 adds lightweight intelligence and governance semantics for scoped loading, 
 v3.1 clarifies that Claude, Codex, shared skills, and tool-specific adapters are thin invocation surfaces that reference Forge core instead of duplicating runtime, validation, drift, artifact, governance, or secret semantics.
 v3.2 hardens bounded execution against unintended file churn, residual review blockers, and contract-source drift, and adds one concise recommended next action to lifecycle outputs. It does not add modes, orchestration, agents, memory, schedulers, CI/CD, deploy logic, runtime executors, or autonomous chaining.
 v3.3 clarifies read-only mode boundaries, normal prompt UX for plan/implementation/review, `ui.language` behavior for narration versus project artifacts, and chat-first artifact persistence. It does not add modes, CLI redesign, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
+v3.4 adds a lightweight `Context Impact` review contract, reviewable `.forge/context-patches/...` proposal shape, and bounded verify-context patch/quality checks. It does not add modes, CLI commands, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
 
 This document does NOT:
 - Redesign Forge architecture.
@@ -361,6 +362,20 @@ Review reports must use this output order:
 
 Review findings must be grouped by severity: `CRITICAL`, `MAJOR`, `MINOR`, and `INFO`. Each `CRITICAL` or `MAJOR` finding must include affected file/area, what is wrong, why it matters, and suggested fix.
 
+`Context Impact` is a small per-task review section, not a full context quality audit. It must include:
+- `update_needed: true | false | unknown`
+- `reason:`
+- `affected_context_files:`
+- `suggested_context_patch:` with either `none` or `.forge/context-patches/<date>-<slug>.md`
+
+Use `update_needed: false` for internal-only or temporary changes that do not affect durable repository knowledge, such as pure refactors without behavior change, local test-only improvements, formatting-only changes, small helper extraction preserving behavior, one-off execution reports, or generated artifacts with no durable context value.
+
+Use `update_needed: true` when the reviewed change affects durable repository knowledge, such as architecture boundaries, public API behavior, domain rules, security boundaries, operational conventions, repository structure, service/system responsibilities, dependency/provider behavior, testing/validation conventions, workflow conventions, or durable decisions/constraints.
+
+Use `update_needed: unknown` when evidence is insufficient to determine whether durable context should change.
+
+When `update_needed: true`, review mode proposes a reviewable `.forge/context-patches/<date>-<slug>.md` patch instead of mutating `.forge/context` directly. The proposal should include target context files, reason, evidence, proposed update or diff, confidence, and promotion notes that require human review before promotion into `.forge/context`.
+
 `Diff Reviewed` must name the files or diff surfaces actually inspected. If no diff or changed-file evidence is available, the report must say that explicitly and should usually return `needs_more_validation`.
 
 `Recommended Next Step` must preserve human control. Avoid wording that implies Forge will commit, push, merge, or open MR/PR actions automatically. Safe wording includes:
@@ -409,6 +424,7 @@ Persistence policy:
 - Save only when the user explicitly asks, when the work is medium/large and the user approves saving, or when multi-session/multi-agent continuity clearly benefits from a persisted artifact.
 - Read-only modes do not write Markdown artifacts by default. If saving is explicitly requested, they may write only within their mode boundary and only to `.forge/generated/...`.
 - Durable context promotion goes through `.forge/context-patches/...` review, not direct mutation of `.forge/context`.
+- Context patch proposals remain reviewable proposals until a human promotes them into `.forge/context`.
 - Do not force every response to mention artifact persistence status; mention it only when the user asks about saving or the workflow is explicitly discussing persistence.
 
 If an artifact conflicts with repository evidence, code/repo evidence wins and the artifact is stale, partial, or superseded.
@@ -480,8 +496,8 @@ ECP readiness in implementation output is a readiness signal, not autonomous per
 - `plan` produces Quick Plan or SDD with explicit assumptions when ambiguity exists, plus acceptance criteria and validation commands even for small plans; it does not emit detailed executable coding tasks or modify code.
 - `implementation` produces an ECP/readiness package with exact likely files, task sequence, coding rules, safety constraints, acceptance criteria, validation commands, stop conditions, and expected execution report format; it does not modify code directly.
 - `execute` implements approved ECP scope; it does not redesign architecture or absorb review responsibilities.
-- `review` assesses goal alignment, scope drift, lifecycle boundary compliance, validation evidence, security/risk boundaries, and context impact using verdicts `accept`, `request_changes`, `needs_more_validation`, or `blocked`; it does not modify code by default.
-- `verify-context` checks `.forge/context` health only; it does not validate plans, ECPs, code diffs, or MR readiness.
+- `review` assesses goal alignment, scope drift, lifecycle boundary compliance, validation evidence, security/risk boundaries, and context impact using verdicts `accept`, `request_changes`, `needs_more_validation`, or `blocked`; it performs a small per-task Context Impact Check and may propose a reviewable context patch, but it does not modify code or mutate `.forge/context` directly.
+- `verify-context` checks `.forge/context` health, freshness, and reviewable patch quality; it may validate context quality issues or context-patch proposals, but it does not validate plans, ECPs, code diffs, MR readiness, or general code quality.
 - Incident scenarios diagnose symptoms to root cause through `ask`, `plan`, `implementation`, `execute`, and `review` as needed; they do not become core lifecycle modes or redesign architecture.
 - Refactor scenarios improve code conservatively through `plan`, `implementation`, `execute`, and `review` as needed; they preserve behavior and do not hide architecture changes.
 
@@ -595,8 +611,8 @@ The following are invalid mode invocation behaviors. See `runtime/.forge/context
 - Marking implementation output `READY_FOR_EXECUTION` while required execution values are conditional, unavailable, or unresolved.
 - Allowing implementation to directly modify code.
 - Allowing execute to redefine approved architecture or absorb review responsibilities.
-- Allowing review to become execution, replace validation evidence, or produce implementation task lists.
-- Allowing verify-context to become code validation, MR review, or implementation planning.
+- Allowing review to become execution, replace validation evidence, produce implementation task lists, or mutate `.forge/context` directly.
+- Allowing verify-context to become code validation, MR review, implementation planning, or automatic context-patch acceptance.
 - Allowing ask to become plan, review, audit, or mutation.
 - Allowing incident scenarios to become speculative redesign or architecture rewrite.
 - Allowing refactor scenarios to hide behavior changes, architecture rewrites, or paradigm migrations.

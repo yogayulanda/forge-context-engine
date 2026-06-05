@@ -28,6 +28,7 @@ Curated context expectations:
 - Generated artifacts are working records, not automatically curated context.
 - Context patches are proposals only until reviewed and promoted.
 - Raw logs, one-off plans, temporary ECPs, long reports, and scratchpad notes stay out of `.forge/context`.
+- Review-triggered durable context updates are proposed under `.forge/context-patches/...`, not written directly into `.forge/context`.
 
 Default persistence behavior:
 - Print the Plan, ECP, Execute Report, or Review Report in chat first.
@@ -44,6 +45,7 @@ Default persistence behavior:
 - Treating a generated artifact as automatically accepted curated context.
 - Writing durable context updates directly into `.forge/context` instead of `.forge/context-patches`.
 - Treating `.forge/context-patches` proposals as already accepted context.
+- Treating a review `Context Impact` result as permission to auto-write curated context.
 - Storing raw logs, one-off task artifacts, or scratchpad notes in `.forge/context`.
 - Committing `.forge/temp` or `.forge/cache`.
 - Storing raw secrets, hidden chain-of-thought, or broad conversation history in artifacts.

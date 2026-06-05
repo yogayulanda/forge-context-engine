@@ -78,6 +78,8 @@ Validation reports must surface unvalidated risk areas and must not imply full v
 
 - Execute performs scoped validation for the implemented scope.
 - Review evaluates correctness, risk, and whether implementation/validation evidence supports the claimed status.
+- Review performs a small per-task Context Impact Check and may propose a reviewable context patch when durable repository knowledge changes.
+- Verify-context evaluates curated context health and reviewable patch quality; it is not a general code-review or testing mode.
 - Deeper test planning is a validation activity inside execute/review workflows, not a core lifecycle mode.
 
 ---

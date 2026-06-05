@@ -31,6 +31,20 @@ Required metadata on curated context cards:
 
 `.forge/context` is committed curated source of truth. `.forge/context-patches` contains reviewable proposals only.
 
+When review determines durable repo knowledge changed, it should propose a patch path such as:
+
+```text
+.forge/context-patches/<date>-<slug>.md
+```
+
+Suggested proposal contents:
+- target context files
+- reason
+- evidence
+- proposed update or diff
+- confidence
+- promotion notes requiring human review before promotion into `.forge/context`
+
 ## Incorrect Behaviors Forge Must Reject
 
 - Silently overwriting `.forge/context` from code changes without a reviewable patch.
