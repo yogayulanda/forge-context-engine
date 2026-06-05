@@ -25,22 +25,23 @@ Index and routing map for the entire context system. Not a knowledge source.
 ## Bootstrap Order
 
 1. `forge.config.yaml`
-2. `00-meta/context-manifest.md` ← this file
-3. `00-meta/conventions.md`
-4. `00-meta/glossary.md` *(if exists)*
-5. `01-core/*`
-6. `modes/<workflow.default_mode>.md` resolves the mode delta
+2. `.forge/adapter.md`
+3. requested core mode or relevant compatibility/scenario guidance
+4. `00-meta/conventions.md` when task behavior, output shape, evidence handling, validation, or risk rules need it
+5. `00-meta/context-manifest.md` only as a routing index when navigation help is needed
 
-## Always Loaded
+## Daily Default Load
 
 - `forge.config.yaml`
-- `00-meta/context-manifest.md`
+- `.forge/adapter.md`
+- requested mode file only
+
+## On-Demand Core
+
 - `00-meta/conventions.md`
 - `00-meta/glossary.md` *(if exists)*
-- `01-core/product.md`
-- `01-core/architecture.md`
-- `01-core/principles.md` *(optional in Minimal tier)*
-- `01-core/constraints.md` *(optional in Minimal tier)*
+- relevant `01-core/*`
+- `00-meta/context-manifest.md` only when routing help is needed
 
 ## Scoped Convention Files (On Demand)
 
@@ -69,6 +70,7 @@ Load based on task type. Do not load all for every task.
 
 - `temp/*` — ephemeral scratch, gitignored.
 - Files with `status: deprecated`.
+- All of `.forge/context` or all linked workspace repos by default.
 
 ## Validation Rules
 

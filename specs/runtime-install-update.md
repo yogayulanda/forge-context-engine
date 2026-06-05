@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Runtime Install and Update Specification |
-| Version | 0.12-draft1 |
+| Version | 1.0.0rc1 |
 | Date | 2026-06-05 |
 | Status | `draft` |
 | Scope | GitHub-installed CLI contract, safe runtime init/update semantics, ownership boundaries |
@@ -13,7 +13,7 @@
 
 ## 0. Purpose
 
-This document defines the v0.12 release-hardening install/update layer for Forge.
+This document defines the `1.0.0rc1` release-candidate install/update layer for Forge.
 
 It standardizes:
 - a lightweight Python CLI package
@@ -187,7 +187,7 @@ Minimum schema:
 
 ```yaml
 manifest_version: "1"
-forge_version: "0.12.0a0"
+forge_version: "1.0.0rc1"
 profile: service
 selected_tools:
   - codex

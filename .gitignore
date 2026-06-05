@@ -35,8 +35,12 @@ runtime/.forge/cache/
 runtime/.forge/context/temp/
 !runtime/.forge/context/temp/.gitkeep
 __pycache__/
+*.pyc
 *.py[cod]
 
+# Python build artifacts
 .venv/
 uv.lock
 *.egg-info/
+build/
+dist/

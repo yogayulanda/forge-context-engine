@@ -5,7 +5,7 @@ Use this guide when you want the first successful Forge setup and invocation in 
 Goal: within 10-15 minutes, a new engineer should be able to install the runtime template, invoke one mode, and understand the next workflow step.
 
 Release note:
-- v0.12 release hardening focuses on install, init, update, adoption, workspace usage, and recovery guidance
+- `1.0.0rc1` hardening focuses on install, init, update, adoption, workspace usage, recovery guidance, and compact default context
 - `forge init`, `forge init --workspace`, and `forge update` are the primary user flows
 - manual runtime copy remains a compatible fallback when the CLI install path is not available
 

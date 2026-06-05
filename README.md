@@ -336,13 +336,14 @@ Then move through the normal path when a change is needed:
 
 ## Status
 
-- Release hardening target: v0.12.
-- Validated against real repo-shaped service and workspace flows.
-- CLI install/update and lifecycle contracts are in release-hardening mode, not v1.0 finalization.
+- Release candidate target: `1.0.0rc1`
+- Validated against fresh service, workspace, adoption, and real repo-shaped dry-run flows
+- CLI install/update and lifecycle contracts are release-candidate hardened for daily usage
 
 ## More Docs
 
 - [Getting Started](docs/getting-started.md)
+- [Release Notes](docs/release-notes.md)
 - [First Workflow](docs/first-workflow.md)
 - [Workflow](docs/workflow.md)
 - [Mode Selection](docs/mode-selection.md)

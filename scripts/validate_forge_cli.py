@@ -90,12 +90,14 @@ def run_case(name: str, fn) -> None:
 def case_version() -> None:
     result = run_cli(["--version"])
     assert_ok(result)
-    assert_contains(result.stdout, "forge 0.12.0a0")
+    assert_contains(result.stdout, "forge 1.0.0rc1")
 
 
 def case_readme_release_surface() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     getting_started = (ROOT / "docs" / "getting-started.md").read_text(encoding="utf-8")
+    release_notes = (ROOT / "docs" / "release-notes.md").read_text(encoding="utf-8")
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
 
     for text in (readme, getting_started):
         assert_contains(text, "uv tool install git+https://github.com/yogayulanda/forge-context-engine.git")
@@ -108,6 +110,14 @@ def case_readme_release_surface() -> None:
     assert_contains(readme, "## Troubleshooting")
     assert_contains(getting_started, "## Troubleshooting And Recovery")
     assert_contains(getting_started, "## Release Checklist")
+    assert_contains(readme, "forge update --tools codex,claude")
+    assert_contains(readme, "docs/release-notes.md")
+    assert_contains(release_notes, "## 1.0.0rc1")
+    assert_contains(release_notes, "fresh repo -> `forge init`")
+    assert_contains(release_notes, "existing or legacy repo -> `forge update`")
+
+    for entry in ("build/", "dist/", "*.egg-info/", "__pycache__/", "*.pyc", ".venv/", "uv.lock"):
+        assert_contains(gitignore, entry)
 
 
 def case_help(command: str) -> None:
@@ -477,6 +487,10 @@ def case_template_hygiene() -> None:
         raise ValidationError(f"template payload contains Python cache artifacts: {pycache or pyc}")
     for rel in REQUIRED_META_FILES + REQUIRED_MODE_FILES:
         assert_exists(templates / "base" / rel)
+    manifest = (templates / "base" / ".forge" / "context" / "00-meta" / "context-manifest.md").read_text(encoding="utf-8")
+    assert_contains(manifest, "## Daily Default Load")
+    assert_contains(manifest, ".forge/adapter.md")
+    assert_contains(manifest, "only as a routing index")
     forbidden = []
     for marker in ENGINE_ONLY_MARKERS:
         forbidden.extend(templates.rglob(marker))
