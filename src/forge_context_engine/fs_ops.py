@@ -34,10 +34,19 @@ def to_manifest_path(target_root: Path, path: Path) -> str:
 def sha256_text(content: str) -> str:
     """Hash text content for manifest change detection."""
 
-    return sha256(content.encode("utf-8")).hexdigest()
+    return sha256(normalize_text(content).encode("utf-8")).hexdigest()
 
 
 def sha256_file(path: Path) -> str:
     """Hash a file from disk."""
 
     return sha256_text(path.read_text(encoding="utf-8"))
+
+
+def normalize_text(content: str) -> str:
+    """Normalize managed text content for stable comparisons and hashing."""
+
+    normalized = content.replace("\r\n", "\n").replace("\r", "\n")
+    if normalized and not normalized.endswith("\n"):
+        normalized += "\n"
+    return normalized

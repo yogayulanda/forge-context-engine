@@ -36,13 +36,14 @@ forge init --workspace
 
 cd initialized-repo
 forge update
+forge update --tools codex,claude
 ```
 
 Current behavior:
 - `forge --version` works
 - `forge init` writes the service profile in the current directory by default
 - `forge init --workspace` writes the workspace profile in the current directory by default
-- `forge update` updates managed runtime files and supports manifest-less adoption preview
+- `forge update` updates managed runtime files, supports `--tools`, and supports manifest-less adoption preview
 
 Local CLI smoke examples:
 
@@ -77,12 +78,13 @@ Manual setup remains available when you want to copy runtime files directly.
 2. Open `<target-repo>/.forge/forge.config.yaml`.
 
    Check:
-   - `forge.version: "0.3.1"` for the current runtime config shape.
+   - `forge.version: "0.5.0a0"` for the current runtime config shape.
+   - `ui.language: en` by default; switch to `id` when you want Indonesian CLI narration.
    - `run.interaction: manual` for local human-in-the-loop work.
    - `workflow.default_mode: ask` unless the repository has an explicit reason to start elsewhere.
    - `context.root: .forge/context` so context stays repository-local.
    - `policy.require_human_confirmation_for` covers important domain, data, architecture, contract, security, and migration changes.
-   - `tools.adapters` defaults to `codex` and `claude_code`; add Copilot only when needed.
+   - `tools.adapters` defaults to `codex` and `claude`; add Copilot only when needed.
 
 3. Keep `.forge/context` repository-first.
 

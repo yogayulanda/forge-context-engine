@@ -50,9 +50,22 @@ def main() -> int:
             run_case("dry-run no writes", lambda: case_dry_run_init(scratch / "dry-run"))
             run_case("update dry-run no runtime", lambda: case_update_no_runtime(scratch / "no-runtime"))
             run_case("update preserves user-owned", lambda: case_update_preserves_user_owned(scratch / "preserve"))
+            run_case("update preserves entrypoint user content", lambda: case_update_preserves_entrypoint_user_content(scratch / "preserve-entrypoint"))
             run_case("update conflicts on modified managed", lambda: case_update_conflict(scratch / "conflict"))
             run_case("adoption dry-run", lambda: case_adoption_dry_run(scratch / "adopt-dry"))
             run_case("adoption yes", lambda: case_adoption_yes(scratch / "adopt-yes"))
+            run_case("adoption idempotent second dry-run", lambda: case_adoption_idempotent_second_dry_run(scratch / "adopt-idempotent"))
+            run_case("legacy config migration backup", lambda: case_legacy_config_migration_backup(scratch / "legacy-config"))
+            run_case("wrapper adoption avoids duplicate managed block", lambda: case_wrapper_adoption_avoids_duplicate_managed_block(scratch / "wrapper-adopt"))
+            run_case("update tools adds codex to adopted claude repo", lambda: case_update_tools_adds_codex_to_adopted_repo(scratch / "adopt-tools"))
+            run_case("update tools all adds copilot", lambda: case_update_tools_all_adds_copilot(scratch / "tools-update-all"))
+            run_case("init guidance on initialized repo", lambda: case_init_guidance_on_initialized_repo(scratch / "init-guidance"))
+            run_case("update tools dry-run writes nothing", lambda: case_update_tools_dry_run_writes_nothing(scratch / "update-tools-dry"))
+            run_case("update summary reporting", lambda: case_update_summary_reporting(scratch / "update-summary"))
+            run_case("update checks context contract files", lambda: case_update_checks_context_contract_files(scratch / "context-contract"))
+            run_case("newline-only managed drift stays unchanged", lambda: case_newline_only_managed_drift_stays_unchanged(scratch / "newline-drift"))
+            run_case("ui language id", lambda: case_ui_language_id(scratch / "ui-id"))
+            run_case("ui language en default", lambda: case_ui_language_en_default(scratch / "ui-en"))
             run_case("no source copy", lambda: case_no_source_copy(scratch / "no-source"))
             run_case("no engine-only copy", lambda: case_no_engine_only_copy(scratch / "no-engine"))
             run_case("template hygiene", case_template_hygiene)
@@ -72,7 +85,7 @@ def run_case(name: str, fn) -> None:
 def case_version() -> None:
     result = run_cli(["--version"])
     assert_ok(result)
-    assert_contains(result.stdout, "forge 0.4.0a0")
+    assert_contains(result.stdout, "forge 0.5.0a0")
 
 
 def case_help(command: str) -> None:
@@ -145,20 +158,29 @@ def case_update_preserves_user_owned(target: Path) -> None:
     assert_contains(product.read_text(encoding="utf-8"), "user-owned context")
 
 
+def case_update_preserves_entrypoint_user_content(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    claude = target / "CLAUDE.md"
+    claude.write_text("User intro\n\n" + claude.read_text(encoding="utf-8"), encoding="utf-8")
+    result = run_cli(["update", "--yes", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(claude.read_text(encoding="utf-8"), "User intro")
+
+
 def case_update_conflict(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
     managed = target / ".forge" / "context" / "00-meta" / "conventions.md"
     managed.write_text("LOCAL MOD\n", encoding="utf-8")
     result = run_cli(["update", "--yes", "--target", str(target)], check=False)
     assert_nonzero(result)
-    assert_contains(result.stdout, "CONFLICT")
+    assert_contains(result.stdout, "Conflicts: 1")
 
 
 def case_adoption_dry_run(target: Path) -> None:
     seed_manifestless_runtime(target)
     result = run_cli(["update", "--dry-run", "--target", str(target)])
     assert_ok(result)
-    assert_contains(result.stdout, "Adoption preview:")
+    assert_contains(result.stdout, "Mode: adoption")
     assert_not_exists(target / ".forge" / "forge-install.yaml")
 
 
@@ -167,6 +189,157 @@ def case_adoption_yes(target: Path) -> None:
     result = run_cli(["update", "--yes", "--target", str(target)])
     assert_ok(result)
     assert_exists(target / ".forge" / "forge-install.yaml")
+
+
+def case_adoption_idempotent_second_dry_run(target: Path) -> None:
+    seed_manifestless_runtime(target)
+    run_cli(["update", "--yes", "--target", str(target)])
+    manifest_before = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
+    result = run_cli(["update", "--dry-run", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(result.stdout, "Updated: 0")
+    assert_contains(result.stdout, "Conflicts: 0")
+    assert_equal((target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8"), manifest_before)
+
+
+def case_legacy_config_migration_backup(target: Path) -> None:
+    seed_manifestless_runtime(target)
+    legacy_config = target / ".forge" / "forge.config.yaml"
+    legacy_body = (
+        'forge_version: "0.2.1"\n'
+        "systems:\n"
+        "  - name: go-core\n"
+        "    type: library\n"
+        "loading:\n"
+        "  default_mode: implementation\n"
+        "runtime:\n"
+        "  non_interactive: true\n"
+        "size_budget:\n"
+        "  core_lines: 200\n"
+        "governance:\n"
+        "  staleness_days: 90\n"
+    )
+    legacy_config.write_text(legacy_body, encoding="utf-8")
+    dry_run = run_cli(["update", "--dry-run", "--yes", "--target", str(target)])
+    assert_ok(dry_run)
+    assert_contains(dry_run.stdout, "Legacy config migration:")
+    assert_contains(dry_run.stdout, ".forge/forge.config.legacy.yaml")
+    assert_contains(dry_run.stdout, ".forge/forge.config.yaml - legacy config migration")
+
+    result = run_cli(["update", "--yes", "--target", str(target)])
+    assert_ok(result)
+    backup = target / ".forge" / "forge.config.legacy.yaml"
+    assert_exists(backup)
+    assert_equal(backup.read_text(encoding="utf-8"), legacy_body)
+    assert_contains((target / ".forge" / "forge.config.yaml").read_text(encoding="utf-8"), 'forge:\n')
+    assert_contains(result.stdout, ".forge/forge.config.yaml - legacy config migration")
+
+
+def case_wrapper_adoption_avoids_duplicate_managed_block(target: Path) -> None:
+    seed_manifestless_runtime(target, tools=("claude",))
+    claude = target / "CLAUDE.md"
+    claude.write_text(
+        "# CLAUDE - Context Adapter\n\n"
+        "Thin adapter for AI assistants.\n\n"
+        "1. Read `.forge/forge.config.yaml`.\n"
+        "2. Read `.forge/context/00-meta/context-manifest.md`.\n"
+        "3. Read `.forge/context/00-meta/conventions.md`.\n"
+        "4. Follow `.forge/context`.\n",
+        encoding="utf-8",
+    )
+    result = run_cli(["update", "--yes", "--target", str(target)])
+    assert_ok(result)
+    final = claude.read_text(encoding="utf-8")
+    assert_not_contains(final, "<!-- BEGIN FORGE MANAGED BLOCK -->")
+    assert_contains(final, ".forge/context/00-meta/context-manifest.md")
+    assert_contains(result.stdout, "existing Forge-like wrapper adopted")
+
+
+def case_update_tools_adds_codex_to_adopted_repo(target: Path) -> None:
+    seed_manifestless_runtime(target, tools=("claude",))
+    result = run_cli(["update", "--yes", "--tools", "codex,claude", "--target", str(target)])
+    assert_ok(result)
+    assert_exists(target / "AGENTS.md")
+    assert_exists(target / "CLAUDE.md")
+    manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
+    assert_contains(manifest, "  - codex")
+    assert_contains(manifest, "  - claude")
+
+
+def case_update_tools_all_adds_copilot(target: Path) -> None:
+    run_cli(["init", "--yes", "--tools", "claude", "--target", str(target)])
+    result = run_cli(["update", "--yes", "--tools", "all", "--target", str(target)])
+    assert_ok(result)
+    assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".github" / "copilot-instructions.md")
+    assert_exists(target / "AGENTS.md")
+    manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
+    assert_contains(manifest, "  - codex")
+    assert_contains(manifest, "  - claude")
+    assert_contains(manifest, "  - copilot")
+
+
+def case_init_guidance_on_initialized_repo(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    result = run_cli(["init", "--tools", "codex", "--target", str(target)], check=False)
+    assert_nonzero(result)
+    assert_contains(result.stdout, "forge update --tools codex")
+
+
+def case_update_tools_dry_run_writes_nothing(target: Path) -> None:
+    run_cli(["init", "--yes", "--tools", "claude", "--target", str(target)])
+    manifest_before = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
+    result = run_cli(["update", "--dry-run", "--tools", "codex,claude", "--target", str(target)])
+    assert_ok(result)
+    assert_not_exists(target / "AGENTS.md")
+    assert_equal((target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8"), manifest_before)
+
+
+def case_update_summary_reporting(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    result = run_cli(["update", "--dry-run", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(result.stdout, "Managed files checked:")
+    assert_contains(result.stdout, "Unchanged:")
+    assert_contains(result.stdout, "Skipped:")
+    assert_contains(result.stdout, "Conflicts:")
+
+
+def case_update_checks_context_contract_files(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    result = run_cli(["update", "--dry-run", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(result.stdout, ".forge/context/00-meta/conventions.md")
+    assert_contains(result.stdout, ".forge/context/modes/ask.md")
+
+
+def case_newline_only_managed_drift_stays_unchanged(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    managed = target / ".forge" / "context" / "modes" / "verify-context.md"
+    managed.write_text(managed.read_text(encoding="utf-8").rstrip("\n"), encoding="utf-8")
+    result = run_cli(["update", "--dry-run", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(result.stdout, ".forge/context/modes/verify-context.md - already current")
+    assert_not_contains(result.stdout, ".forge/context/modes/verify-context.md - managed file modified locally")
+
+
+def case_ui_language_id(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    config = target / ".forge" / "forge.config.yaml"
+    config.write_text(config.read_text(encoding="utf-8").replace("language: en", "language: id"), encoding="utf-8")
+    result = run_cli(["update", "--dry-run", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(result.stdout, "Pemeriksaan file terkelola")
+    assert_contains(result.stdout, "Target:")
+    assert_contains(result.stdout, ".forge/forge.config.yaml")
+
+
+def case_ui_language_en_default(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    result = run_cli(["update", "--dry-run", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(result.stdout, "Managed file checks")
+    assert_contains(result.stdout, "Mode: manifest")
 
 
 def case_no_source_copy(target: Path) -> None:
@@ -201,12 +374,18 @@ def case_template_hygiene() -> None:
         raise ValidationError(f"engine-only paths packaged into runtime_templates: {forbidden}")
 
 
-def seed_manifestless_runtime(target: Path) -> None:
+def seed_manifestless_runtime(target: Path, tools: tuple[str, ...] = ("codex", "claude")) -> None:
     runtime_root = ROOT / "runtime"
     target.mkdir(parents=True, exist_ok=True)
     shutil.copytree(runtime_root / ".forge", target / ".forge", dirs_exist_ok=True)
-    shutil.copy2(runtime_root / "AGENTS.md", target / "AGENTS.md")
-    shutil.copy2(runtime_root / "CLAUDE.md", target / "CLAUDE.md")
+    if "codex" in tools:
+        shutil.copy2(runtime_root / "AGENTS.md", target / "AGENTS.md")
+    if "claude" in tools:
+        shutil.copy2(runtime_root / "CLAUDE.md", target / "CLAUDE.md")
+    if "copilot" in tools:
+        copilot = target / ".github" / "copilot-instructions.md"
+        copilot.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(runtime_root / "adapters" / "copilot" / "copilot-instructions.md", copilot)
     manifest = target / ".forge" / "forge-install.yaml"
     if manifest.exists():
         manifest.unlink()
@@ -251,6 +430,16 @@ def assert_not_exists(path: Path) -> None:
 def assert_contains(text: str, expected: str) -> None:
     if expected not in text:
         raise ValidationError(f"expected {expected!r} in output:\n{text}")
+
+
+def assert_not_contains(text: str, expected: str) -> None:
+    if expected in text:
+        raise ValidationError(f"did not expect {expected!r} in output:\n{text}")
+
+
+def assert_equal(left: str, right: str) -> None:
+    if left != right:
+        raise ValidationError(f"expected values to match\nLEFT:\n{left}\nRIGHT:\n{right}")
 
 
 class ValidationError(RuntimeError):

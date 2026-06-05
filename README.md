@@ -77,6 +77,13 @@ Preferred v0.4 setup uses the CLI.
    forge update
    ```
 
+   Change enabled tools safely when needed:
+
+   ```text
+   forge update --tools codex,claude
+   forge update --tools all
+   ```
+
 5. Ask a scoped first question, such as: `Use Forge ask mode to explain how this service handles retries.`
 
 Manual runtime copy remains available as a compatible fallback when you want direct file-level setup from `runtime/`.
@@ -103,7 +110,7 @@ v0.4 CLI status:
 - `forge --version` is implemented.
 - `forge init` writes the service profile safely.
 - `forge init --workspace` writes the workspace profile safely.
-- `forge update` updates managed runtime files and supports manifest-less adoption preview.
+- `forge update` updates managed runtime files, supports `--tools`, and supports manifest-less adoption preview.
 
 Local CLI smoke examples:
 

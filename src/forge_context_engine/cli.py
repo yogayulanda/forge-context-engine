@@ -59,6 +59,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Update Forge-managed runtime files in the current repository (Batch B).",
     )
     update_parser.add_argument(
+        "--tools",
+        help="Select tools: codex, claude, copilot, all, or comma combinations such as codex,claude.",
+    )
+    update_parser.add_argument(
         "--yes",
         action="store_true",
         help="Skip confirmation prompts for operations that are already safe by policy.",
@@ -96,10 +100,17 @@ def _handle_init(args: argparse.Namespace) -> int:
 
 
 def _handle_update(args: argparse.Namespace) -> int:
+    try:
+        tools = parse_tools_arg(args.tools) if args.tools else None
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
     return run_update(
         target=args.target,
         dry_run=args.dry_run,
         assume_yes=args.yes,
+        selected_tools=tools,
     )
 
 

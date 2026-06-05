@@ -6,17 +6,19 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .fs_ops import resolve_target_paths, sha256_text, to_manifest_path
+from .fs_ops import normalize_text, resolve_target_paths, sha256_text, to_manifest_path
 from .install_manifest import (
     DEFAULT_SELECTED_TOOLS,
     ForgeInstallManifest,
     PROFILE_SERVICE,
     PROFILE_WORKSPACE,
+    USER_OWNED_PATHS_BASELINE,
+    LOCAL_ONLY_PATHS_BASELINE,
     build_manifest,
     dump_manifest,
     load_manifest,
 )
-from .managed_blocks import upsert_managed_block
+from .managed_blocks import has_managed_block, upsert_managed_block
 from .runtime_templates import iter_template_files, read_template
 from .version import __version__
 
@@ -39,6 +41,143 @@ RUNTIME_MARKERS = (
     ".forge/forge.config.yaml",
     ".forge/context/modes/ask.md",
 )
+UI_LANGUAGE_EN = "en"
+UI_LANGUAGE_ID = "id"
+SUPPORTED_UI_LANGUAGES = (UI_LANGUAGE_EN, UI_LANGUAGE_ID)
+DETAIL_CURRENT = "already current"
+DETAIL_MANAGED_FILE = "managed file"
+DETAIL_MANAGED_REFRESH = "managed file refresh"
+DETAIL_ENTRYPOINT = "entrypoint managed block"
+DETAIL_INSTALL_MANIFEST = "install manifest refresh"
+DETAIL_CONFLICT_EXISTING = "existing file would be overwritten"
+DETAIL_CONFLICT_HASH = "managed file hash unavailable for safe update"
+DETAIL_CONFLICT_LOCAL = "managed file modified locally"
+DETAIL_PRESERVED_NON_SELECTED = "existing non-selected entrypoint preserved"
+DETAIL_ADOPTION_PREVIEW = "adoption preview only"
+DETAIL_LEGACY_PRESERVED = "legacy managed file preserved; current hash adopted"
+DETAIL_LEGACY_CONFIG_MIGRATION = "legacy config migration"
+DETAIL_ENTRYPOINT_ADOPTED = "existing Forge-like wrapper adopted"
+
+
+MESSAGES = {
+    UI_LANGUAGE_EN: {
+        "init_title": "Forge init",
+        "update_title": "Forge update",
+        "dry_run_suffix": "dry-run",
+        "target": "Target",
+        "profile": "Profile",
+        "selected_tools": "Selected tools",
+        "detected_tools": "Detected tools",
+        "tool_selection_change": "Tool selection change",
+        "mode": "Mode",
+        "managed_files": "Managed file checks",
+        "preserved_paths": "Preserved paths",
+        "user_owned": "user-owned",
+        "local_only": "local-only",
+        "notes": "Notes",
+        "summary": "Summary",
+        "managed_checked": "Managed files checked",
+        "created": "Created",
+        "updated": "Updated",
+        "unchanged": "Unchanged",
+        "skipped": "Skipped",
+        "conflicts": "Conflicts",
+        "preserved_user_count": "User-owned paths preserved",
+        "preserved_local_count": "Local-only paths preserved",
+        "initialized_use_update": "Forge is already initialized in {target}. Use `forge update`.",
+        "initialized_use_update_tools": (
+            "Forge is already initialized in {target}. "
+            "Use `forge update --tools {tools}` to change enabled tools."
+        ),
+        "runtime_without_manifest": (
+            "Existing Forge runtime detected in {target} without a manifest. "
+            "Use `forge update` for adoption-preview."
+        ),
+        "runtime_without_manifest_tools": (
+            "Existing Forge runtime detected in {target} without a manifest. "
+            "Use `forge update --tools {tools}` to adopt and change enabled tools."
+        ),
+        "init_conflicts": "Initialization stopped with conflicts. No existing files were overwritten.",
+        "no_runtime": "No Forge runtime detected in {target}. Run `forge init` or `forge init --workspace` first.",
+        "adoption_detected_narrower": (
+            "Detected tools were narrowed from existing entrypoints. "
+            "Use `forge update --tools {tools}` to add more tools."
+        ),
+        "adoption_override": "Using `--tools {tools}` for adoption instead of detected entrypoints.",
+        "adoption_confirm": "Proceed with adoption and managed update? [y/N]: ",
+        "adoption_cancelled": "Adoption cancelled.",
+        "confirm_non_interactive": "Confirmation required. Re-run with --yes in non-interactive mode.",
+        "adoption_mode": "adoption",
+        "manifest_mode": "manifest",
+    },
+    UI_LANGUAGE_ID: {
+        "init_title": "Forge init",
+        "update_title": "Forge update",
+        "dry_run_suffix": "dry-run",
+        "target": "Target",
+        "profile": "Profile",
+        "selected_tools": "Selected tools",
+        "detected_tools": "Detected tools",
+        "tool_selection_change": "Perubahan tool",
+        "mode": "Mode",
+        "managed_files": "Pemeriksaan file terkelola",
+        "preserved_paths": "Path yang dipertahankan",
+        "user_owned": "user-owned",
+        "local_only": "local-only",
+        "notes": "Catatan",
+        "summary": "Ringkasan",
+        "managed_checked": "Managed files checked",
+        "created": "Created",
+        "updated": "Updated",
+        "unchanged": "Unchanged",
+        "skipped": "Skipped",
+        "conflicts": "Conflicts",
+        "preserved_user_count": "User-owned paths preserved",
+        "preserved_local_count": "Local-only paths preserved",
+        "initialized_use_update": "Forge sudah diinisialisasi di {target}. Gunakan `forge update`.",
+        "initialized_use_update_tools": (
+            "Forge sudah diinisialisasi di {target}. "
+            "Gunakan `forge update --tools {tools}` untuk mengubah tool yang aktif."
+        ),
+        "runtime_without_manifest": (
+            "Runtime Forge sudah ada di {target} tanpa manifest. "
+            "Gunakan `forge update` untuk adoption-preview."
+        ),
+        "runtime_without_manifest_tools": (
+            "Runtime Forge sudah ada di {target} tanpa manifest. "
+            "Gunakan `forge update --tools {tools}` untuk adopt sekaligus mengubah tool yang aktif."
+        ),
+        "init_conflicts": "Inisialisasi dihentikan karena ada konflik. File yang sudah ada tidak ditimpa.",
+        "no_runtime": "Runtime Forge tidak ditemukan di {target}. Jalankan `forge init` atau `forge init --workspace` terlebih dahulu.",
+        "adoption_detected_narrower": (
+            "Tool terdeteksi lebih sempit dari entrypoint yang ada. "
+            "Gunakan `forge update --tools {tools}` untuk menambahkan tool."
+        ),
+        "adoption_override": "Menggunakan `--tools {tools}` untuk adoption, bukan entrypoint yang terdeteksi.",
+        "adoption_confirm": "Lanjutkan adoption dan managed update? [y/N]: ",
+        "adoption_cancelled": "Adoption dibatalkan.",
+        "confirm_non_interactive": "Butuh konfirmasi. Jalankan ulang dengan `--yes` pada mode non-interaktif.",
+        "adoption_mode": "adoption",
+        "manifest_mode": "manifest",
+    },
+}
+
+STATUS_LABELS = {
+    UI_LANGUAGE_EN: {
+        "created": "created",
+        "updated": "updated",
+        "unchanged": "unchanged",
+        "skipped": "skipped",
+        "conflict": "conflict",
+    },
+    UI_LANGUAGE_ID: {
+        "created": "dibuat",
+        "updated": "diperbarui",
+        "unchanged": "tetap",
+        "skipped": "dilewati",
+        "conflict": "konflik",
+    },
+}
 
 
 @dataclass
@@ -56,20 +195,77 @@ class OperationReport:
 
     dry_run: bool
     operations: list[Operation] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    preserved_user_paths: list[str] = field(default_factory=list)
+    preserved_local_paths: list[str] = field(default_factory=list)
+    managed_hash_overrides: dict[str, str] = field(default_factory=dict)
+    managed_checked: int = 0
 
     def add(self, status: str, path: str, detail: str = "") -> None:
         self.operations.append(Operation(status=status, path=path, detail=detail))
+        if status in {"created", "updated", "unchanged", "conflict"}:
+            self.managed_checked += 1
+
+    def add_note(self, note: str) -> None:
+        self.notes.append(note)
+
+    def mark_preserved(self, kind: str, path: str) -> None:
+        if kind == "user":
+            self.preserved_user_paths.append(path)
+            return
+        self.preserved_local_paths.append(path)
+
+    def override_hash(self, path: str, digest: str) -> None:
+        self.managed_hash_overrides[path] = digest
 
     def statuses(self, *wanted: str) -> list[Operation]:
         return [op for op in self.operations if op.status in wanted]
 
-    def print(self) -> None:
-        print(f"DRY-RUN: {'yes' if self.dry_run else 'no'}")
-        for op in self.operations:
-            message = f"{op.status.upper():9} {op.path}"
-            if op.detail:
-                message = f"{message} - {op.detail}"
-            print(message)
+    def count(self, status: str) -> int:
+        return sum(1 for op in self.operations if op.status == status)
+
+    def print(self, *, locale: str, title: str, context: list[tuple[str, str]]) -> None:
+        messages = MESSAGES[locale]
+        status_labels = STATUS_LABELS[locale]
+        rendered_title = f"{title} ({messages['dry_run_suffix']})" if self.dry_run else title
+        print(rendered_title)
+        for label, value in context:
+            print(f"{label}: {value}")
+
+        if self.notes:
+            print()
+            print(f"{messages['notes']}:")
+            for note in self.notes:
+                print(f"- {note}")
+
+        if self.operations:
+            print()
+            print(f"{messages['managed_files']}:")
+            for op in self.operations:
+                label = status_labels[op.status]
+                line = f"  {label:10} {op.path}"
+                if op.detail:
+                    line = f"{line} - {op.detail}"
+                print(line)
+
+        if self.preserved_user_paths or self.preserved_local_paths:
+            print()
+            print(f"{messages['preserved_paths']}:")
+            if self.preserved_user_paths:
+                print(f"  {messages['user_owned']}: {', '.join(self.preserved_user_paths)}")
+            if self.preserved_local_paths:
+                print(f"  {messages['local_only']}: {', '.join(self.preserved_local_paths)}")
+
+        print()
+        print(f"{messages['summary']}:")
+        print(f"  {messages['managed_checked']}: {self.managed_checked}")
+        print(f"  {messages['created']}: {self.count('created')}")
+        print(f"  {messages['updated']}: {self.count('updated')}")
+        print(f"  {messages['unchanged']}: {self.count('unchanged')}")
+        print(f"  {messages['skipped']}: {self.count('skipped')}")
+        print(f"  {messages['conflicts']}: {self.count('conflict')}")
+        print(f"  {messages['preserved_user_count']}: {len(self.preserved_user_paths)}")
+        print(f"  {messages['preserved_local_count']}: {len(self.preserved_local_paths)}")
 
 
 def run_init(
@@ -82,33 +278,61 @@ def run_init(
 ) -> int:
     """Initialize a service or workspace repo with Forge runtime files."""
 
+    del assume_yes
     paths = resolve_target_paths(target)
+    locale = _read_ui_language(paths.target_root)
     report = OperationReport(dry_run=dry_run)
-
     manifest_path = paths.forge_root / "forge-install.yaml"
+
     if manifest_path.exists():
-        print(f"Forge is already initialized in {paths.target_root}. Use `forge update`.")
+        if selected_tools != DEFAULT_SELECTED_TOOLS:
+            print(
+                _msg(
+                    locale,
+                    "initialized_use_update_tools",
+                    target=str(paths.target_root),
+                    tools=",".join(selected_tools),
+                )
+            )
+        else:
+            print(_msg(locale, "initialized_use_update", target=str(paths.target_root)))
         return 1
 
     if _detect_runtime(paths.target_root):
-        print(
-            f"Existing Forge runtime detected in {paths.target_root} without a manifest. "
-            "Use `forge update` for adoption-preview."
-        )
+        if selected_tools != DEFAULT_SELECTED_TOOLS:
+            print(
+                _msg(
+                    locale,
+                    "runtime_without_manifest_tools",
+                    target=str(paths.target_root),
+                    tools=",".join(selected_tools),
+                )
+            )
+        else:
+            print(_msg(locale, "runtime_without_manifest", target=str(paths.target_root)))
         return 1
 
     desired_files = _build_init_files(
         target_root=paths.target_root,
         profile=profile,
         selected_tools=selected_tools,
+        ui_language=UI_LANGUAGE_EN,
     )
-
     conflicts = _apply_init_files(paths.target_root, desired_files, report, dry_run)
     _ensure_local_only_dirs(paths.target_root, report, dry_run)
+    _mark_preserved_baselines(report)
 
     if conflicts:
-        report.print()
-        print("Initialization stopped with conflicts. No existing files were overwritten.")
+        _print_report(
+            report=report,
+            locale=UI_LANGUAGE_EN,
+            title=_msg(UI_LANGUAGE_EN, "init_title"),
+            target_root=paths.target_root,
+            profile=profile,
+            selected_tools=selected_tools,
+            mode="manifest",
+        )
+        print(_msg(UI_LANGUAGE_EN, "init_conflicts"))
         return 1
 
     manifest = _manifest_for_target(
@@ -126,54 +350,156 @@ def run_init(
         dry_run=dry_run,
         init_mode=True,
     )
-
-    report.print()
+    _print_report(
+        report=report,
+        locale=UI_LANGUAGE_EN,
+        title=_msg(UI_LANGUAGE_EN, "init_title"),
+        target_root=paths.target_root,
+        profile=profile,
+        selected_tools=selected_tools,
+        mode="manifest",
+    )
     return 0
 
 
-def run_update(*, target: Path | None, dry_run: bool, assume_yes: bool) -> int:
+def run_update(
+    *,
+    target: Path | None,
+    dry_run: bool,
+    assume_yes: bool,
+    selected_tools: tuple[str, ...] | None,
+) -> int:
     """Update only Forge-managed files using manifest state or adoption-preview."""
 
     paths = resolve_target_paths(target)
+    locale = _read_ui_language(paths.target_root)
     report = OperationReport(dry_run=dry_run)
     manifest_path = paths.forge_root / "forge-install.yaml"
 
     if manifest_path.exists():
         manifest = load_manifest(manifest_path)
-        _update_from_manifest(paths.target_root, manifest, report, dry_run)
-        report.print()
+        effective_tools = selected_tools or manifest.selected_tools
+        if effective_tools != manifest.selected_tools:
+            report.add_note(
+                f"{_msg(locale, 'tool_selection_change')}: "
+                f"{', '.join(manifest.selected_tools)} -> {', '.join(effective_tools)}"
+            )
+        if not dry_run:
+            preview = OperationReport(dry_run=True)
+            preview.notes.extend(report.notes)
+            _update_from_manifest(
+                target_root=paths.target_root,
+                manifest=manifest,
+                selected_tools=effective_tools,
+                ui_language=locale,
+                report=preview,
+                dry_run=True,
+            )
+            if preview.statuses("conflict"):
+                _print_report(
+                    report=preview,
+                    locale=locale,
+                    title=_msg(locale, "update_title"),
+                    target_root=paths.target_root,
+                    profile=manifest.profile,
+                    selected_tools=effective_tools,
+                    mode="manifest",
+                )
+                return 1
+        _update_from_manifest(
+            target_root=paths.target_root,
+            manifest=manifest,
+            selected_tools=effective_tools,
+            ui_language=locale,
+            report=report,
+            dry_run=dry_run,
+        )
+        _print_report(
+            report=report,
+            locale=locale,
+            title=_msg(locale, "update_title"),
+            target_root=paths.target_root,
+            profile=manifest.profile,
+            selected_tools=effective_tools,
+            mode="manifest",
+        )
         return 0 if not report.statuses("conflict") else 1
 
     if not _detect_runtime(paths.target_root):
-        print(
-            f"No Forge runtime detected in {paths.target_root}. "
-            "Run `forge init` or `forge init --workspace` first."
-        )
+        print(_msg(locale, "no_runtime", target=str(paths.target_root)))
         return 1
 
     adopted_profile = _detect_profile(paths.target_root)
-    adopted_tools = _detect_tools(paths.target_root)
+    detected_tools = _detect_tools(paths.target_root)
+    effective_tools = selected_tools or detected_tools
+    if selected_tools and selected_tools != detected_tools:
+        report.add_note(_msg(locale, "adoption_override", tools=",".join(selected_tools)))
+    elif selected_tools is None and detected_tools != DEFAULT_SELECTED_TOOLS:
+        report.add_note(
+            _msg(locale, "adoption_detected_narrower", tools=",".join(DEFAULT_SELECTED_TOOLS))
+        )
+
     manifest = _manifest_from_current_runtime(
         target_root=paths.target_root,
         profile=adopted_profile,
-        selected_tools=adopted_tools,
+        selected_tools=effective_tools,
     )
-
-    print("Adoption preview:")
-    print(f"- target: {paths.target_root}")
-    print(f"- profile: {adopted_profile}")
-    print(f"- selected tools: {', '.join(adopted_tools)}")
-    print(f"- managed paths: {', '.join(manifest.managed_paths)}")
-    print(f"- user-owned paths: {', '.join(manifest.user_owned_paths)}")
-    print(f"- local-only paths: {', '.join(manifest.local_only_paths)}")
-
     if dry_run:
-        report.add("skipped", ".forge/forge-install.yaml", "adoption preview only")
-        report.print()
+        report.add("skipped", ".forge/forge-install.yaml", DETAIL_ADOPTION_PREVIEW)
+        _update_from_manifest(
+            target_root=paths.target_root,
+            manifest=manifest,
+            selected_tools=effective_tools,
+            ui_language=locale,
+            report=report,
+            dry_run=True,
+        )
+        _print_report(
+            report=report,
+            locale=locale,
+            title=_msg(locale, "update_title"),
+            target_root=paths.target_root,
+            profile=adopted_profile,
+            selected_tools=effective_tools,
+            mode="adoption",
+            detected_tools=detected_tools,
+        )
         return 0
 
-    if not assume_yes and not _confirm("Proceed with adoption and managed update? [y/N]: "):
-        print("Adoption cancelled.")
+    if not assume_yes and not _confirm(_msg(locale, "adoption_confirm"), locale=locale):
+        print(_msg(locale, "adoption_cancelled"))
+        return 1
+
+    preview = OperationReport(dry_run=True)
+    preview.notes.extend(report.notes)
+    manifest_text = dump_manifest(manifest)
+    _apply_regular_file(
+        target_root=paths.target_root,
+        path=manifest_path,
+        content=manifest_text,
+        report=preview,
+        dry_run=True,
+        init_mode=True,
+    )
+    _update_from_manifest(
+        target_root=paths.target_root,
+        manifest=manifest,
+        selected_tools=effective_tools,
+        ui_language=locale,
+        report=preview,
+        dry_run=True,
+    )
+    if preview.statuses("conflict"):
+        _print_report(
+            report=preview,
+            locale=locale,
+            title=_msg(locale, "update_title"),
+            target_root=paths.target_root,
+            profile=adopted_profile,
+            selected_tools=effective_tools,
+            mode="adoption",
+            detected_tools=detected_tools,
+        )
         return 1
 
     manifest_text = dump_manifest(manifest)
@@ -185,26 +511,46 @@ def run_update(*, target: Path | None, dry_run: bool, assume_yes: bool) -> int:
         dry_run=False,
         init_mode=True,
     )
-    _update_from_manifest(paths.target_root, manifest, report, dry_run=False)
-    report.print()
+    _update_from_manifest(
+        target_root=paths.target_root,
+        manifest=manifest,
+        selected_tools=effective_tools,
+        ui_language=locale,
+        report=report,
+        dry_run=False,
+    )
+    _print_report(
+        report=report,
+        locale=locale,
+        title=_msg(locale, "update_title"),
+        target_root=paths.target_root,
+        profile=adopted_profile,
+        selected_tools=effective_tools,
+        mode="adoption",
+        detected_tools=detected_tools,
+    )
     return 0 if not report.statuses("conflict") else 1
 
 
 def _update_from_manifest(
+    *,
     target_root: Path,
     manifest: ForgeInstallManifest,
+    selected_tools: tuple[str, ...],
+    ui_language: str,
     report: OperationReport,
     dry_run: bool,
 ) -> None:
     all_desired_files = _build_init_files(
         target_root=target_root,
         profile=manifest.profile,
-        selected_tools=manifest.selected_tools,
+        selected_tools=selected_tools,
+        ui_language=ui_language,
     )
     desired_files = {
         rel_path: content
         for rel_path, content in all_desired_files.items()
-        if _is_managed_file(rel_path, manifest.profile, manifest.selected_tools)
+        if _is_managed_file(rel_path, manifest.profile, selected_tools)
     }
 
     for rel_path, content in desired_files.items():
@@ -232,15 +578,22 @@ def _update_from_manifest(
             expected_hash=expected_hash,
         )
 
+    _preserve_non_selected_entrypoints(
+        target_root=target_root,
+        selected_tools=selected_tools,
+        report=report,
+    )
     _ensure_local_only_dirs(target_root, report, dry_run)
 
     updated_manifest = _manifest_for_target(
         target_root=target_root,
         profile=manifest.profile,
-        selected_tools=manifest.selected_tools,
+        selected_tools=selected_tools,
         desired_files=all_desired_files,
         installed_at=manifest.installed_at,
+        hash_overrides=report.managed_hash_overrides,
     )
+    _mark_preserved_paths(report, updated_manifest)
     manifest_text = dump_manifest(updated_manifest)
     _apply_regular_file(
         target_root=target_root,
@@ -257,14 +610,18 @@ def _build_init_files(
     target_root: Path,
     profile: str,
     selected_tools: tuple[str, ...],
+    ui_language: str,
 ) -> dict[str, str]:
     files = {
         rel: content
         for rel, content in iter_template_files("base").items()
-        if rel not in {"AGENTS.md", "CLAUDE.md"}
+        if rel not in {"AGENTS.md", "CLAUDE.md", ".forge/forge.config.yaml"}
     }
 
-    files[".forge/forge.config.yaml"] = _render_forge_config(selected_tools)
+    files[".forge/forge.config.yaml"] = _render_forge_config(
+        selected_tools=selected_tools,
+        ui_language=ui_language,
+    )
     files[".forge/.gitignore"] = FORGE_LOCAL_GITIGNORE
 
     if "codex" in selected_tools:
@@ -321,25 +678,28 @@ def _apply_entrypoint_file(
     rel_path = to_manifest_path(target_root, path)
     if path.exists():
         existing = path.read_text(encoding="utf-8")
+        if not has_managed_block(existing) and _is_wrapper_like_entrypoint(existing):
+            report.add("unchanged", rel_path, DETAIL_ENTRYPOINT_ADOPTED)
+            return False
         updated, action = upsert_managed_block(existing, content)
-        if updated == existing:
-            report.add("skipped", rel_path, "already current")
+        if normalize_text(updated) == normalize_text(existing):
+            report.add("unchanged", rel_path, DETAIL_CURRENT)
             return False
         if dry_run:
-            report.add(action, rel_path, "entrypoint managed block")
+            report.add(action, rel_path, DETAIL_ENTRYPOINT)
             return False
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(updated, encoding="utf-8")
-        report.add(action, rel_path, "entrypoint managed block")
+        report.add(action, rel_path, DETAIL_ENTRYPOINT)
         return False
 
     if dry_run:
-        report.add("created", rel_path, "entrypoint managed block")
+        report.add("created", rel_path, DETAIL_ENTRYPOINT)
         return False
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(upsert_managed_block("", content)[0], encoding="utf-8")
-    report.add("created", rel_path, "entrypoint managed block")
+    report.add("created", rel_path, DETAIL_ENTRYPOINT)
     return False
 
 
@@ -356,41 +716,57 @@ def _apply_regular_file(
     rel_path = to_manifest_path(target_root, path)
     if path.exists():
         existing = path.read_text(encoding="utf-8")
-        if existing == content:
-            report.add("skipped", rel_path, "already current")
+        if normalize_text(existing) == normalize_text(content):
+            report.add("unchanged", rel_path, DETAIL_CURRENT)
             return False
         if init_mode:
-            report.add("conflict", rel_path, "existing file would be overwritten")
+            report.add("conflict", rel_path, DETAIL_CONFLICT_EXISTING)
             return True
+        if rel_path == ".forge/forge.config.yaml" and _looks_like_legacy_forge_config(existing):
+            backup_path = _next_legacy_config_backup_path(target_root)
+            backup_rel = to_manifest_path(target_root, backup_path)
+            report.add_note(
+                f"Legacy config migration: back up .forge/forge.config.yaml to {backup_rel} before overwrite."
+            )
+            if dry_run:
+                report.add("updated", rel_path, DETAIL_LEGACY_CONFIG_MIGRATION)
+                return False
+            backup_path.parent.mkdir(parents=True, exist_ok=True)
+            backup_path.write_text(existing, encoding="utf-8")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+            report.add("updated", rel_path, DETAIL_LEGACY_CONFIG_MIGRATION)
+            return False
         if rel_path == ".forge/forge-install.yaml":
             if dry_run:
-                report.add("updated", rel_path, "install manifest refresh")
+                report.add("updated", rel_path, DETAIL_INSTALL_MANIFEST)
                 return False
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
-            report.add("updated", rel_path, "install manifest refresh")
+            report.add("updated", rel_path, DETAIL_INSTALL_MANIFEST)
             return False
         if expected_hash is None:
-            report.add("conflict", rel_path, "managed file hash unavailable for safe update")
-            return True
+            report.override_hash(rel_path, sha256_text(existing))
+            report.add("skipped", rel_path, DETAIL_LEGACY_PRESERVED)
+            return False
         if sha256_text(existing) != expected_hash:
-            report.add("conflict", rel_path, "managed file modified locally")
+            report.add("conflict", rel_path, DETAIL_CONFLICT_LOCAL)
             return True
         if dry_run:
-            report.add("updated", rel_path, "managed file refresh")
+            report.add("updated", rel_path, DETAIL_MANAGED_REFRESH)
             return False
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
-        report.add("updated", rel_path, "managed file refresh")
+        report.add("updated", rel_path, DETAIL_MANAGED_REFRESH)
         return False
 
     if dry_run:
-        report.add("created", rel_path, "managed file")
+        report.add("created", rel_path, DETAIL_MANAGED_FILE)
         return False
 
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
-    report.add("created", rel_path, "managed file")
+    report.add("created", rel_path, DETAIL_MANAGED_FILE)
     return False
 
 
@@ -414,9 +790,10 @@ def _manifest_for_target(
     selected_tools: tuple[str, ...],
     desired_files: dict[str, str],
     installed_at: str | None = None,
+    hash_overrides: dict[str, str] | None = None,
 ) -> ForgeInstallManifest:
     managed_hashes = {
-        path: sha256_text(content)
+        path: (hash_overrides or {}).get(path, sha256_text(content))
         for path, content in desired_files.items()
         if _is_managed_file(path, profile, selected_tools) and path not in REGULAR_MANAGED_HASH_EXCLUDES
     }
@@ -434,10 +811,12 @@ def _manifest_from_current_runtime(
     profile: str,
     selected_tools: tuple[str, ...],
 ) -> ForgeInstallManifest:
+    ui_language = _read_ui_language(target_root)
     desired_files = _build_init_files(
         target_root=target_root,
         profile=profile,
         selected_tools=selected_tools,
+        ui_language=ui_language,
     )
     managed_hashes: dict[str, str] = {}
     for rel_path in desired_files:
@@ -455,7 +834,7 @@ def _manifest_from_current_runtime(
     )
 
 
-def _render_forge_config(selected_tools: tuple[str, ...]) -> str:
+def _render_forge_config(*, selected_tools: tuple[str, ...], ui_language: str) -> str:
     adapters = _yaml_list(selected_tools)
     default_adapter = selected_tools[0]
     package_targets = _yaml_list(selected_tools)
@@ -464,6 +843,8 @@ def _render_forge_config(selected_tools: tuple[str, ...]) -> str:
         "# Not a narrative context file. Customize during Context Initialization for the target repo.\n\n"
         "forge:\n"
         f'  version: "{__version__}"\n\n'
+        "ui:\n"
+        f"  language: {ui_language}\n\n"
         "run:\n"
         "  interaction: manual\n"
         "  output: human\n"
@@ -565,9 +946,146 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
     return rel_path.startswith(".forge/context/00-meta/") or rel_path.startswith(".forge/context/modes/")
 
 
-def _confirm(prompt: str) -> bool:
+def _looks_like_legacy_forge_config(content: str) -> bool:
+    legacy_markers = (
+        "forge_version:",
+        "systems:",
+        "loading:",
+        "runtime:",
+        "size_budget:",
+        "governance:",
+    )
+    current_markers = ("forge:\n", "\nui:\n", "\nworkflow:\n", "\ntools:\n")
+    return any(marker in content for marker in legacy_markers) and not all(
+        marker in content for marker in current_markers
+    )
+
+
+def _next_legacy_config_backup_path(target_root: Path) -> Path:
+    base = target_root / ".forge" / "forge.config.legacy.yaml"
+    if not base.exists():
+        return base
+
+    index = 1
+    while True:
+        candidate = target_root / ".forge" / f"forge.config.legacy.{index}.yaml"
+        if not candidate.exists():
+            return candidate
+        index += 1
+
+
+def _is_wrapper_like_entrypoint(content: str) -> bool:
+    wrapper_markers = (
+        ".forge/forge.config.yaml",
+        ".forge/context/00-meta/context-manifest.md",
+        ".forge/context/00-meta/conventions.md",
+    )
+    guidance_markers = (
+        ".forge/adapter.md",
+        ".forge/context",
+        "Thin adapter",
+        "Context Adapter",
+    )
+    return (
+        sum(marker in content for marker in wrapper_markers) >= 2
+        and sum(marker in content for marker in guidance_markers) >= 1
+    )
+
+
+def _preserve_non_selected_entrypoints(
+    *,
+    target_root: Path,
+    selected_tools: tuple[str, ...],
+    report: OperationReport,
+) -> None:
+    selected_paths = {
+        "codex": "AGENTS.md",
+        "claude": "CLAUDE.md",
+        "copilot": COPILOT_TEMPLATE_PATH,
+    }
+    for tool, rel_path in selected_paths.items():
+        if tool in selected_tools:
+            continue
+        if (target_root / rel_path).exists():
+            report.add("skipped", rel_path, DETAIL_PRESERVED_NON_SELECTED)
+
+
+def _mark_preserved_baselines(report: OperationReport) -> None:
+    for path in USER_OWNED_PATHS_BASELINE:
+        report.mark_preserved("user", path)
+    for path in LOCAL_ONLY_PATHS_BASELINE:
+        report.mark_preserved("local", path)
+
+
+def _mark_preserved_paths(report: OperationReport, manifest: ForgeInstallManifest) -> None:
+    for path in manifest.user_owned_paths:
+        report.mark_preserved("user", path)
+    for path in manifest.local_only_paths:
+        report.mark_preserved("local", path)
+
+
+def _print_report(
+    *,
+    report: OperationReport,
+    locale: str,
+    title: str,
+    target_root: Path,
+    profile: str,
+    selected_tools: tuple[str, ...],
+    mode: str,
+    detected_tools: tuple[str, ...] | None = None,
+) -> None:
+    context = [
+        (_msg(locale, "target"), str(target_root)),
+        (_msg(locale, "profile"), profile),
+        (_msg(locale, "selected_tools"), ", ".join(selected_tools)),
+        (_msg(locale, "mode"), _msg(locale, f"{mode}_mode")),
+    ]
+    if detected_tools is not None:
+        context.append((_msg(locale, "detected_tools"), ", ".join(detected_tools)))
+    report.print(locale=locale, title=title, context=context)
+
+
+def _read_ui_language(target_root: Path) -> str:
+    config_path = target_root / ".forge/forge.config.yaml"
+    if not config_path.exists():
+        return UI_LANGUAGE_EN
+
+    in_ui = False
+    for raw in config_path.read_text(encoding="utf-8").splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if not raw.startswith(" "):
+            in_ui = stripped == "ui:"
+            continue
+        if not in_ui:
+            continue
+        child = stripped
+        if child.startswith("language:"):
+            value = _strip_yaml_scalar(child.split(":", 1)[1].strip()).lower()
+            if value in SUPPORTED_UI_LANGUAGES:
+                return value
+            return UI_LANGUAGE_EN
+    return UI_LANGUAGE_EN
+
+
+def _strip_yaml_scalar(value: str) -> str:
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1]
+    return value
+
+
+def _msg(locale: str, key: str, **kwargs: str) -> str:
+    language = locale if locale in MESSAGES else UI_LANGUAGE_EN
+    template = MESSAGES[language][key]
+    return template.format(**kwargs)
+
+
+def _confirm(prompt: str, *, locale: str) -> bool:
     if not sys.stdin.isatty():
-        print("Confirmation required. Re-run with --yes in non-interactive mode.")
+        print(_msg(locale, "confirm_non_interactive"))
         return False
     try:
         response = input(prompt).strip().lower()

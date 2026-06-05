@@ -54,12 +54,13 @@ forge --version
 forge init
 forge init --workspace
 forge update
+forge update --tools codex,claude
 ```
 
 Rules:
 - Current directory is the default target.
 - `--target` may exist for automation, tests, or scripting, but it is not the primary UX.
-- `--tools` supports future non-interactive selection such as `codex,claude`, `codex`, or `all`.
+- `--tools` supports non-interactive selection such as `codex,claude`, `codex`, or `all`.
 - `--yes` supports future non-interactive confirmation.
 - `--dry-run` supports future preview without writing files.
 
@@ -67,7 +68,7 @@ Implemented behavior:
 - `forge --version` is implemented.
 - `forge init` writes the service profile.
 - `forge init --workspace` writes the workspace profile.
-- `forge update` updates managed files and supports manifest-less adoption preview.
+- `forge update` updates managed files, supports `--tools`, and supports manifest-less adoption preview.
 
 Recommended CLI validation examples:
 
@@ -163,7 +164,7 @@ Minimum schema:
 
 ```yaml
 manifest_version: "1"
-forge_version: "0.4.0a0"
+forge_version: "0.5.0a0"
 profile: service
 selected_tools:
   - codex
@@ -196,6 +197,8 @@ local_only_paths:
 managed_file_hashes:
   .forge/adapter.md: "<sha256>"
   .forge/forge.config.yaml: "<sha256>"
+  .forge/context/00-meta/conventions.md: "<sha256>"
+  .forge/context/modes/ask.md: "<sha256>"
 ```
 
 The manifest exists to:
@@ -203,6 +206,8 @@ The manifest exists to:
 - define managed vs user-owned vs local-only boundaries
 - support safe updates
 - support adoption-preview for older manifest-less installs
+
+`forge update --tools ...` updates `selected_tools`, adds missing selected entrypoints safely, and does not prune older entrypoints unless a future explicit prune flag is introduced.
 
 ---
 
