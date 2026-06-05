@@ -43,6 +43,7 @@ def main() -> int:
             run_case("version", lambda: case_version())
             run_case("init help", lambda: case_help("init"))
             run_case("update help", lambda: case_help("update"))
+            run_case("readme release surface", case_readme_release_surface)
             run_case("service init", lambda: case_service_init(scratch / "service"))
             run_case("workspace init", lambda: case_workspace_init(scratch / "workspace"))
             run_case("workspace init contract", lambda: case_workspace_init_contract(scratch / "workspace-contract"))
@@ -89,7 +90,24 @@ def run_case(name: str, fn) -> None:
 def case_version() -> None:
     result = run_cli(["--version"])
     assert_ok(result)
-    assert_contains(result.stdout, "forge 0.5.0a0")
+    assert_contains(result.stdout, "forge 0.12.0a0")
+
+
+def case_readme_release_surface() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    getting_started = (ROOT / "docs" / "getting-started.md").read_text(encoding="utf-8")
+
+    for text in (readme, getting_started):
+        assert_contains(text, "uv tool install git+https://github.com/yogayulanda/forge-context-engine.git")
+        assert_contains(text, "forge init")
+        assert_contains(text, "forge init --workspace")
+        assert_contains(text, "forge update")
+        assert_contains(text, "forge update --dry-run")
+
+    assert_contains(readme, "## Known Limitations")
+    assert_contains(readme, "## Troubleshooting")
+    assert_contains(getting_started, "## Troubleshooting And Recovery")
+    assert_contains(getting_started, "## Release Checklist")
 
 
 def case_help(command: str) -> None:

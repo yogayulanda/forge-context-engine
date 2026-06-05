@@ -4,10 +4,10 @@ Use this guide when you want the first successful Forge setup and invocation in 
 
 Goal: within 10-15 minutes, a new engineer should be able to install the runtime template, invoke one mode, and understand the next workflow step.
 
-Status note:
-- v0.7 lifecycle polish is current
-- `forge init`, `forge init --workspace`, and `forge update` are now implemented
-- manual runtime copy remains a compatible fallback for direct repo use
+Release note:
+- v0.12 release hardening focuses on install, init, update, adoption, workspace usage, and recovery guidance
+- `forge init`, `forge init --workspace`, and `forge update` are the primary user flows
+- manual runtime copy remains a compatible fallback when the CLI install path is not available
 
 ## What You Need
 
@@ -25,19 +25,19 @@ Forge does not require a server, daemon, workflow engine, scheduler, or separate
 
 Current CLI flow:
 
-```text
+```bash
 uv tool install git+https://github.com/yogayulanda/forge-context-engine.git
 
 cd my-service
 forge init
 
+cd existing-forge-repo
+forge update
+forge update --dry-run
+forge update --tools codex,claude
+
 cd work-context
 forge init --workspace
-
-cd initialized-repo
-forge update --dry-run
-forge update --yes
-forge update --tools codex,claude --yes
 ```
 
 Current behavior:
@@ -46,14 +46,28 @@ Current behavior:
 - `forge init --workspace` writes the workspace profile in the current directory by default
 - `forge update` updates managed runtime files, supports `--tools`, supports dry-run preview, and supports manifest-less adoption preview
 - workspace profile is represented in `.forge/forge-install.yaml` as `profile: "workspace"`
+- use `--yes` only for non-interactive automation or scripted adoption
 
 Local CLI smoke examples:
 
-```text
+```bash
 uv run python -m forge_context_engine.cli --version
 uv run python -m forge_context_engine.cli init --help
 uv run python -m forge_context_engine.cli update --help
 ```
+
+## What Forge Is
+
+- a repo-local workflow and context contract for AI coding tools
+- a safe init/update path that writes thin wrappers plus `.forge/`
+- a shared lifecycle across Codex, Claude, and optional Copilot
+- a boundary between curated context, generated working artifacts, and reviewable context promotions
+
+## What Forge Is Not
+
+- not a daemon, background agent, scheduler, CI/CD layer, or memory/vector service
+- not a replacement for code, docs, ADRs, or human approval
+- not a reason to store repo cognition in `AGENTS.md`, `CLAUDE.md`, or Copilot wrappers
 
 ## Manual Setup Flow
 
@@ -132,6 +146,20 @@ Manual setup remains available when you want to copy runtime files directly.
 
    Default behavior is still chat output first. Saved artifacts are working files only; they are not `.forge/context`, and they are not auto-promoted into durable context.
 
+## Fresh Repo, Existing Repo, And Workspace
+
+Use the smallest matching entrypoint:
+
+- Fresh service repo: `forge init`
+- Existing or legacy Forge repo: `forge update`
+- Workspace coordination repo: `forge init --workspace`
+- Safer preview before a managed refresh: `forge update --dry-run`
+
+Existing or legacy repo adoption guidance:
+- if Forge files already exist without `.forge/forge-install.yaml`, `forge update` is the adoption path
+- adoption preserves user-owned context and local-only directories
+- adoption may stop on locally modified managed files so you can review them instead of losing changes
+
 ## CLAUDE.md And AGENTS.md Usage
 
 Use `CLAUDE.md` for Claude-compatible assistants. It should be a thin wrapper that tells the assistant to:
@@ -208,6 +236,20 @@ Use Forge review mode from .forge/generated/reports/2026-06-05-add-export-execut
 
 Next, read [First Workflow](first-workflow.md) to see this path end to end, then use [Mode Selection](mode-selection.md) when you need to choose the smallest fitting lifecycle mode.
 
+## Artifact Directories And Boundaries
+
+Use these paths consistently:
+
+- `.forge/context/` for curated source-of-truth context
+- `.forge/generated/plans/`, `.forge/generated/ecp/`, `.forge/generated/reports/`, `.forge/generated/reviews/` for saved working artifacts
+- `.forge/context-patches/` for reviewable durable-context update proposals
+- `.forge/temp/` and `.forge/cache/` for local-only scratch and cache
+
+Short rule:
+- context is durable truth
+- generated is working output
+- context-patches are proposals awaiting review
+
 ## Common Beginner Mistakes
 
 | Mistake | Better approach |
@@ -219,6 +261,47 @@ Next, read [First Workflow](first-workflow.md) to see this path end to end, then
 | Putting repo facts in `CLAUDE.md`, `AGENTS.md`, or adapters. | Put repo cognition in `.forge/context`. |
 | Using an incident scenario as a redesign request. | Diagnose first; hand off approved remediation to `plan`, `implementation`, and `execute` as needed. |
 | Treating Copilot, Claude, or Codex behavior as separate Forge versions. | Keep the tool surface thin, route to `.forge/adapter.md`, and preserve the same artifact boundaries. |
+
+## Known Limitations
+
+- The documented install path is GitHub plus `uv`; PyPI publishing is not part of this release flow.
+- `forge update` refreshes managed runtime files; it does not redesign an existing repository.
+- Copilot support is opt-in and may depend on the host environment's prompt-file behavior.
+- Manifest-less legacy repos can be adopted, but local managed-file edits may require manual conflict resolution.
+- Workspace repos coordinate linked services; they do not replace service-repo evidence.
+
+## Troubleshooting And Recovery
+
+- `forge: command not found`
+  Reinstall with `uv tool install git+https://github.com/yogayulanda/forge-context-engine.git` and confirm the `uv` tool bin directory is on `PATH`.
+- Running from the wrong directory
+  Run Forge from the repository root you want to initialize or update. `forge update` expects an existing Forge runtime in that repo.
+- Dirty repo before update
+  Review `git status` and run `forge update --dry-run` first so managed-file changes are obvious before you apply them.
+- Legacy config migration
+  If update detects an older config shape, Forge backs up the old file as `.forge/forge.config.legacy.yaml` before writing the current managed config.
+- Managed file conflict
+  Forge stops instead of overwriting a locally modified managed file. Keep your edits, inspect the conflicting file, and decide whether to preserve or replace it.
+- Wrapper already exists
+  Forge can adopt an existing Forge-like wrapper and avoid duplicating the managed block. Check the update report to confirm adoption.
+- `forge update --dry-run` still shows changes
+  That usually means the repo has not yet adopted the current managed template set, selected tools changed, or a managed file is out of date.
+- Copilot opt-in behavior
+  `.github/copilot-instructions.md` is created only when Copilot is selected. Existing non-Copilot repos do not get `.github/` output by default.
+- Accidental local artifacts such as `__pycache__`
+  Delete local cache files and directories before packaging, release review, or template sync checks.
+
+## Release Checklist
+
+- `git diff --check`
+- `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 scripts/validate_forge_cli.py`
+- fresh service init smoke
+- workspace init smoke
+- legacy/adoption update smoke
+- idempotent update dry-run
+- runtime/template sync check
+- artifact hygiene check
+- docs sanity check
 
 ## Lightweight Setup Example
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "forge-context-engine"
-version = "0.5.0a0"
+version = "0.12.0a0"
 description = "Forge Context Engine packaging and CLI foundation"
 readme = "README.md"
 requires-python = ">=3.10"

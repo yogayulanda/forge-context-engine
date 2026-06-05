@@ -2,6 +2,12 @@
 
 This document is the canonical reference for the Forge end-to-end engineering workflow. For the mode selection decision guide see `docs/mode-selection.md`. For a worked example see `docs/first-workflow.md`.
 
+For repository setup and adoption:
+- fresh repo: `forge init`
+- existing or legacy Forge repo: `forge update`
+- workspace repo: `forge init --workspace`
+- preview before managed refresh: `forge update --dry-run`
+
 ---
 
 ## The Workflow
@@ -25,6 +31,7 @@ Saved artifact continuity is optional:
 - default behavior is chat output first
 - save to `.forge/generated/...` only when requested or approved
 - generated artifacts are reusable working files, not curated context
+- durable context changes still go through `.forge/context-patches/...` review
 
 Adapter parity expectations:
 - `.forge/adapter.md` owns shared lifecycle, context-loading, artifact, and safety rules for every supported tool

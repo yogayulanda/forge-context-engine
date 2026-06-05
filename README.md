@@ -2,6 +2,24 @@
 
 Forge is a repo-native workflow and context layer for AI coding tools. It gives tools like Codex, Claude Code, and Copilot a shared lifecycle, curated repo context, and safe approval boundaries.
 
+Fresh repo:
+
+```bash
+forge init
+```
+
+Existing or legacy Forge repo:
+
+```bash
+forge update
+```
+
+Workspace repo:
+
+```bash
+forge init --workspace
+```
+
 ## Why Forge Exists
 
 AI tools are useful, but they drift in three predictable ways:
@@ -16,12 +34,20 @@ Forge keeps the workflow inside the target repository so the assistant sees the 
 
 - `forge init` to install the runtime into a repo
 - `forge update` to refresh Forge-managed files later
+- `forge update --dry-run` to preview adoption or managed-file changes safely
 - shared `.forge/adapter.md` entry behavior and adapter parity rules
 - curated `.forge/context` as the committed source of truth
 - tool entrypoints such as `AGENTS.md`, `CLAUDE.md`, and optional Copilot instructions
 - lifecycle modes for `init -> ask -> plan -> implementation -> execute -> review -> verify-context`
 - optional generated artifacts under `.forge/generated/...`
 - reviewable context promotions under `.forge/context-patches/...`
+
+## What Forge Is Not
+
+- not a hosted service, scheduler, CI/CD system, or agent runtime
+- not a memory store, vector DB, or background orchestration layer
+- not a replacement for repository docs, code, ADRs, or human approval
+- not a second workflow per tool; wrappers stay thin and share one repo contract
 
 ## When To Use Forge
 
@@ -73,7 +99,7 @@ forge --version
 
 ## Initialize A Repository
 
-Service repo:
+Fresh service repo:
 
 ```bash
 cd my-service
@@ -98,6 +124,13 @@ forge init --tools all
 
 ## Update An Existing Repo
 
+Existing or legacy Forge repo:
+
+```bash
+cd initialized-repo
+forge update
+```
+
 Preview first:
 
 ```bash
@@ -107,15 +140,30 @@ forge update --dry-run
 Apply updates:
 
 ```bash
-forge update --yes
-forge update --tools codex,claude --yes
+forge update
+forge update --tools codex,claude
 ```
 
 - `--dry-run` previews changes.
+- `forge update` is the normal adoption and refresh path for existing repos.
 - `forge update` refreshes Forge-managed files only.
 - user-owned context is preserved.
 - local-only files are preserved.
 - update is intended to be idempotent.
+- use `--yes` for non-interactive automation or scripted adoption.
+
+## Daily Lifecycle
+
+Typical day-to-day flow:
+
+1. `ask` to understand current behavior.
+2. `plan` when the change is non-trivial.
+3. human approval.
+4. `implementation` to produce the ECP.
+5. human approval.
+6. `execute` to apply the approved scope.
+7. `review` to assess the result.
+8. `verify-context` only when durable context may need refresh.
 
 ## Using Forge With AI Tools
 
@@ -186,6 +234,11 @@ Continuation mapping:
 - saved execution report artifact -> `review`
 - saved review report artifact -> follow-up planning or context patch proposal
 
+Boundary summary:
+- `.forge/context` is curated source of truth
+- `.forge/generated/...` is working output only
+- `.forge/context-patches/...` is reviewable promotion proposal only
+
 Continuation guardrails:
 - read the artifact first
 - verify type-to-mode fit
@@ -207,6 +260,44 @@ flowchart TD
   Patch --> HumanReview[Human review]
   HumanReview --> Context[.forge/context]
 ```
+
+## Safety Boundaries
+
+- `plan`, `implementation`, and `review` are read-only.
+- `execute` edits only approved scoped files.
+- Forge does not auto-commit, auto-push, auto-merge, or auto-open PRs.
+- Forge does not write generated artifacts by default.
+- Forge does not directly mutate `.forge/context` from generated artifacts.
+- Copilot support is opt-in and remains a thin wrapper, not a separate runtime.
+
+## Known Limitations
+
+- GitHub install uses `uv`; there is no PyPI release path documented here.
+- `forge update` manages Forge-owned files only; it does not migrate arbitrary repo conventions.
+- Legacy manifest-less repos can be adopted, but local edits to managed files may require manual review.
+- Workspace repos coordinate linked services; they do not replace service-local context.
+- Tool syntax differs across Codex, Claude, and Copilot even though the lifecycle contract is shared.
+
+## Troubleshooting
+
+- `forge: command not found`: reinstall with `uv tool install ...` and ensure `uv` tool binaries are on `PATH`.
+- Wrong directory: run Forge from the repository root that should contain `AGENTS.md`, `CLAUDE.md`, and `.forge/`.
+- Dirty repo before `forge update`: review the diff first; use `forge update --dry-run` before applying changes.
+- Managed file conflict: keep your local edits, inspect the conflicting Forge-managed file, and re-run after deciding whether to preserve or replace it.
+- Wrapper already exists: Forge adopts Forge-like wrappers when possible and preserves user-owned wrapper content around managed blocks.
+- Local junk such as `__pycache__` or `*.pyc`: remove it before release or commit review.
+
+## Release Checklist
+
+- `git diff --check`
+- `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 scripts/validate_forge_cli.py`
+- fresh service init smoke
+- workspace init smoke
+- legacy/adoption update smoke
+- idempotent update dry-run
+- runtime/template sync check
+- artifact hygiene check
+- docs sanity check
 
 ## Recommended First Workflow
 
@@ -245,10 +336,9 @@ Then move through the normal path when a change is needed:
 
 ## Status
 
-- Current release focus: v0.11 adapter parity.
-- Validated against a real Go repository.
-- CLI install/update and lifecycle contracts are working.
-- Further polish can continue without changing the lifecycle semantics.
+- Release hardening target: v0.12.
+- Validated against real repo-shaped service and workspace flows.
+- CLI install/update and lifecycle contracts are in release-hardening mode, not v1.0 finalization.
 
 ## More Docs
 
