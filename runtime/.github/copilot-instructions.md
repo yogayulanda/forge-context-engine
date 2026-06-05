@@ -6,4 +6,4 @@ Read `.forge/adapter.md` and follow it. `.forge/context` remains the curated sou
 
 Copilot may receive Forge requests through natural prompts or tool-specific `/forge-<mode>` syntax when available. Resolve those invocations to the active Forge core lifecycle or clearly labeled compatibility/scenario guidance.
 
-Do not store repository cognition, lifecycle logic, validation policy, or artifact policy in this file.
+Keep suggestions inside the approved file and scope boundary. Do not promise autonomous workflow execution, and do not store repository cognition, lifecycle logic, validation policy, or artifact policy in this file.

@@ -42,6 +42,7 @@ Default persistence behavior:
 - Use human-readable dated kebab-case filenames with an artifact-type suffix.
 - Promote durable context only through reviewed `.forge/context-patches/...`.
 - Do not force artifact-save status into every response; mention persistence status only when the user asks or when save behavior is part of the workflow.
+- Keep universal artifacts tool-neutral unless tool-specific hints appear only under a clearly labeled `Target Tool Notes` section.
 
 ## Incorrect Behaviors Forge Must Reject
 
@@ -56,6 +57,7 @@ Default persistence behavior:
 - Treating a review `Context Impact` result as permission to auto-write curated context.
 - Overwriting an existing generated artifact without explicit approval.
 - Storing raw logs, one-off task artifacts, or scratchpad notes in `.forge/context`.
+- Leaking tool-specific edit mechanics into universal artifacts without explicit target-tool labeling.
 - Committing `.forge/temp` or `.forge/cache`.
 - Storing raw secrets, hidden chain-of-thought, or broad conversation history in artifacts.
 

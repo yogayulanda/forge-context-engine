@@ -14,6 +14,17 @@ updated: 2026-06-05
 
 Thin adapter contract for target-repository entrypoints such as `AGENTS.md`, `CLAUDE.md`, and optional `.github/copilot-instructions.md`.
 
+## Adapter parity rules
+
+- All tools must honor Forge lifecycle mode boundaries.
+- All tools must load context selectively.
+- All tools must treat `.forge/context` as the curated source of truth.
+- All tools must treat `.forge/generated/...` as working artifacts, not context.
+- All tools must treat `.forge/context-patches/...` as proposals only until reviewed and promoted.
+- Tool-specific edit mechanics belong in tool wrappers or a clearly labeled `Target Tool Notes` section, not in universal lifecycle artifacts.
+- Universal Plan, ECP, Execution Report, and Review artifacts stay tool-neutral unless explicitly targeted.
+- Commit, push, merge, and similar repository publication actions remain human-controlled unless explicitly requested.
+
 ## Core lifecycle
 
 Use only these active core modes:
@@ -71,6 +82,11 @@ Normal prompt UX:
 - `.forge/temp` and `.forge/cache` are local-only and must not be pushed.
 - Adapters are entrypoints only. They do not own lifecycle, policy, validation, artifact, or repository-cognition semantics.
 
+Artifact boundary rules:
+- Universal artifacts must not say things like `Use apply_patch`, `Use Codex`, or `Run Claude tool X` unless the artifact is explicitly target-tool-specific.
+- When tool-specific guidance is useful inside a universal artifact, isolate it under a clearly labeled `Target Tool Notes` section.
+- `Target Tool Notes` may contain concise tool-specific hints, but the approved scope, task sequence, safety constraints, and validation expectations remain universal.
+
 Artifact continuation examples:
 
 ```text
@@ -86,6 +102,17 @@ Continuation guardrails:
 - Check for material drift when repository or context evidence contradicts the artifact.
 - Do not execute from a plan artifact directly.
 - Do not mutate `.forge/context` based only on generated artifact content.
+
+## Cross-tool output expectations
+
+Keep lifecycle artifacts concise. Minimum common shape:
+
+- Plan: `Mode Boundary`, `Assumptions`, `Goal / Scope / Non-goals`, `Evidence`, `Risks`, `Acceptance Criteria`, `Validation Commands`, `Next Step`, `Status`
+- ECP: `Approved Scope`, `Files likely to change`, `Task sequence`, `Coding rules`, `Safety constraints`, `Validation commands`, `Stop conditions`, `Expected execution report`, `Status`
+- Execution Report: `Changed files`, `What changed`, `Validation run`, `Deviations`, `Remaining risks`, `Status`
+- Review: `Verdict`, `Diff Reviewed`, `Findings`, `Validation assessment`, `Context Impact`, `Recommended next step`, `Status`
+
+Tool wrappers may add invocation hints, but they must not redefine these lifecycle expectations or expand them into tool-specific schemas.
 
 ## Target repo surface
 

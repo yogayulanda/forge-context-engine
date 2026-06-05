@@ -25,12 +25,13 @@ Additional output only when GitHub Copilot is explicitly selected:
 .github/copilot-instructions.md
 ```
 
-`AGENTS.md` and `CLAUDE.md` stay thin wrappers that point to `.forge/adapter.md` and `.forge/context`.
+`AGENTS.md`, `CLAUDE.md`, and optional `.github/copilot-instructions.md` stay thin wrappers that point to `.forge/adapter.md` and `.forge/context`.
 
 ## Incorrect Behaviors Forge Must Reject
 
 - Copying `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, or `runtime/skills/` into every target repository by default.
 - Making `AGENTS.md` or `CLAUDE.md` the source of truth for lifecycle, policy, validation, artifact semantics, or repository cognition.
+- Making `.github/copilot-instructions.md` a source of truth for lifecycle, policy, validation, artifact semantics, or repository cognition.
 - Creating `.github/copilot-instructions.md` when Copilot was not selected.
 - Treating `.forge/temp` or `.forge/cache` as pushable target-repo content.
 

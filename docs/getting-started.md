@@ -103,7 +103,7 @@ Manual setup remains available when you want to copy runtime files directly.
 
 5. Keep tool entrypoints thin.
 
-   `CLAUDE.md` and `AGENTS.md` should point to `.forge/adapter.md` and `.forge/context`. They should not store repo-specific cognition, lifecycle logic, or artifact policy.
+   `CLAUDE.md` and `AGENTS.md` should point to `.forge/adapter.md` and `.forge/context`. Optional `.github/copilot-instructions.md` should do the same. These wrappers should not store repo-specific cognition, lifecycle logic, or artifact policy.
 
 6. Make one scoped first request.
 
@@ -144,6 +144,8 @@ Use `AGENTS.md` for Codex-compatible assistants. It should be a thin wrapper tha
 
 Both files are entrypoints only. `.forge/context` remains the source of truth, `.forge/generated` remains generated output only, and `.forge/temp` plus `.forge/cache` stay local-only.
 
+Universal lifecycle artifacts stay tool-neutral. If you need tool-specific hints, place them under a clearly labeled `Target Tool Notes` section instead of mixing them into universal Plan, ECP, Execute Report, or Review instructions.
+
 Workspace repos add one more rule: `.forge/workspace.yaml` coordinates linked services, but service repo `.forge/context` remains authoritative for service-specific facts.
 
 ## Supported Tool Overview
@@ -152,7 +154,7 @@ Workspace repos add one more rule: `.forge/workspace.yaml` coordinates linked se
 |---|---|---|
 | Claude | `/forge-plan`, `/forge-review`, or natural language | `CLAUDE.md`, `.forge/adapter.md`, `.forge/context/` |
 | Codex | `$forge-review`, `/skill forge-review`, or natural language | `AGENTS.md`, `.forge/adapter.md`, `.forge/context/` |
-| GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask` prompt files | `.github/copilot-instructions.md` when selected |
+| GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask`, or natural language | `.github/copilot-instructions.md` when selected |
 
 Tool syntax may differ. The expected behavior should resolve to:
 
@@ -216,7 +218,7 @@ Next, read [First Workflow](first-workflow.md) to see this path end to end, then
 | Treating generated artifacts as source of truth. | Use artifacts as handoff records; current repo evidence wins. |
 | Putting repo facts in `CLAUDE.md`, `AGENTS.md`, or adapters. | Put repo cognition in `.forge/context`. |
 | Using an incident scenario as a redesign request. | Diagnose first; hand off approved remediation to `plan`, `implementation`, and `execute` as needed. |
-| Treating Copilot, Claude, or Codex behavior as separate Forge versions. | Keep the tool surface thin and resolve to shared skills. |
+| Treating Copilot, Claude, or Codex behavior as separate Forge versions. | Keep the tool surface thin, route to `.forge/adapter.md`, and preserve the same artifact boundaries. |
 
 ## Lightweight Setup Example
 

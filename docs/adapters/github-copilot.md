@@ -23,7 +23,7 @@ Copilot prompt -> prompt wrapper -> shared skill -> .forge/context mode -> scope
 Runtime adapter files live under:
 
 ```text
-runtime/adapters/copilot/
+runtime/.github/copilot-instructions.md
 runtime/adapters/copilot/prompts/
 ```
 

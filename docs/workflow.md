@@ -26,6 +26,11 @@ Saved artifact continuity is optional:
 - save to `.forge/generated/...` only when requested or approved
 - generated artifacts are reusable working files, not curated context
 
+Adapter parity expectations:
+- `.forge/adapter.md` owns shared lifecycle, context-loading, artifact, and safety rules for every supported tool
+- `AGENTS.md`, `CLAUDE.md`, and optional `.github/copilot-instructions.md` stay thin wrappers
+- universal lifecycle artifacts stay tool-neutral unless a clearly labeled `Target Tool Notes` section is needed
+
 For multi-repo work, this workflow still runs in bounded scope:
 - repo-scoped work starts from the current service repo context
 - cross-repo planning may load workspace context first, then only the relevant linked service contexts
@@ -47,6 +52,12 @@ For multi-repo work, this workflow still runs in bounded scope:
 | `forge-review` | Verdict + diff reviewed + findings + validation assessment + context impact | No |
 | `forge-verify-context` | Context health/freshness result | No |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
+
+Minimum common artifact shape across tools:
+- Plan: `Mode Boundary`, `Assumptions`, `Goal / Scope / Non-goals`, `Evidence`, `Risks`, `Acceptance Criteria`, `Validation Commands`, `Next Step`, `Status`
+- ECP: `Approved Scope`, `Files likely to change`, `Task sequence`, `Coding rules`, `Safety constraints`, `Validation commands`, `Stop conditions`, `Expected execution report`, `Status`
+- Execution Report: `Changed files`, `What changed`, `Validation run`, `Deviations`, `Remaining risks`, `Status`
+- Review: `Verdict`, `Diff Reviewed`, `Findings`, `Validation assessment`, `Context Impact`, `Recommended next step`, `Status`
 
 Optional saved artifact paths:
 

@@ -16,7 +16,7 @@ Forge keeps the workflow inside the target repository so the assistant sees the 
 
 - `forge init` to install the runtime into a repo
 - `forge update` to refresh Forge-managed files later
-- shared `.forge/adapter.md` entry behavior
+- shared `.forge/adapter.md` entry behavior and adapter parity rules
 - curated `.forge/context` as the committed source of truth
 - tool entrypoints such as `AGENTS.md`, `CLAUDE.md`, and optional Copilot instructions
 - lifecycle modes for `init -> ask -> plan -> implementation -> execute -> review -> verify-context`
@@ -124,6 +124,8 @@ Forge keeps the repo contract shared while the tool entrypoints stay thin.
 - Codex uses `AGENTS.md`
 - Claude Code uses `CLAUDE.md`
 - Copilot can use optional `.github/copilot-instructions.md` and prompt wrappers
+
+Universal artifacts remain tool-neutral across those tools. If a workflow needs tool-specific notes, isolate them under `Target Tool Notes` instead of embedding tool mechanics in shared Plan, ECP, execution report, or review content.
 
 Example requests:
 
@@ -243,7 +245,7 @@ Then move through the normal path when a change is needed:
 
 ## Status
 
-- Current release focus: v0.10 artifact continuity.
+- Current release focus: v0.11 adapter parity.
 - Validated against a real Go repository.
 - CLI install/update and lifecycle contracts are working.
 - Further polish can continue without changing the lifecycle semantics.

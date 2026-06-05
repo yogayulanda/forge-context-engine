@@ -28,7 +28,7 @@ COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
-    COPILOT_TEMPLATE_PATH: ("copilot", ".github/copilot-instructions.md"),
+    COPILOT_TEMPLATE_PATH: ("base", ".github/copilot-instructions.md"),
 }
 REGULAR_MANAGED_HASH_EXCLUDES = {
     ".forge/forge-install.yaml",
@@ -616,7 +616,7 @@ def _build_init_files(
     files = {
         rel: content
         for rel, content in iter_template_files("base").items()
-        if rel not in {"AGENTS.md", "CLAUDE.md", ".forge/forge.config.yaml"}
+        if rel not in {"AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md", ".forge/forge.config.yaml"}
     }
 
     files[".forge/forge.config.yaml"] = _render_forge_config(
@@ -631,7 +631,7 @@ def _build_init_files(
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
     if "copilot" in selected_tools:
-        files[COPILOT_TEMPLATE_PATH] = read_template("copilot", COPILOT_TEMPLATE_PATH)
+        files[COPILOT_TEMPLATE_PATH] = read_template("base", COPILOT_TEMPLATE_PATH)
     if profile == PROFILE_WORKSPACE:
         files[".forge/workspace.yaml"] = _render_workspace_yaml(target_root.name, selected_tools)
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Mode Invocation Protocol |
-| Version | 3.5 |
+| Version | 3.6 |
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
@@ -44,6 +44,7 @@ v3.2 hardens bounded execution against unintended file churn, residual review bl
 v3.3 clarifies read-only mode boundaries, normal prompt UX for plan/implementation/review, `ui.language` behavior for narration versus project artifacts, and chat-first artifact persistence. It does not add modes, CLI redesign, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
 v3.4 adds a lightweight `Context Impact` review contract, reviewable `.forge/context-patches/...` proposal shape, and bounded verify-context patch/quality checks. It does not add modes, CLI commands, runtime agent behavior, schedulers, CI/CD, memory, or vector storage.
 v3.5 clarifies saved generated artifact directories, naming, minimal metadata, save-on-request behavior, and safe continue-from-artifact checks for cross-session and cross-tool handoff. It does not add runtime agent behavior, schedulers, CI/CD, memory, vector storage, or new lifecycle modes.
+v3.6 hardens adapter parity across Codex, Claude Code, and Copilot by keeping shared lifecycle rules in `.forge/adapter.md`, keeping wrappers thin, requiring tool-neutral universal artifacts unless explicitly labeled, and defining one minimum cross-tool artifact shape. It does not add runtime agent behavior, schedulers, CI/CD, memory, vector storage, or new lifecycle modes.
 
 This document does NOT:
 - Redesign Forge architecture.
@@ -150,6 +151,8 @@ All modes follow these rules:
 - State whether the requested mode was insufficient when that affects the task.
 - Treat lifecycle artifacts as generated continuity helpers; never treat them as source of truth over repository evidence.
 - Keep mode-boundary statements separate from assumptions in human-facing plan/ECP/review outputs.
+- Keep tool-specific edit mechanics in wrappers or clearly labeled `Target Tool Notes`, not in universal artifact instructions.
+- Keep universal Plan, ECP, Execution Report, and Review outputs tool-neutral unless the artifact is explicitly target-tool-specific.
 
 ## 2.1 Scoped Loading, Drift, Cross-Repo, and Governance
 

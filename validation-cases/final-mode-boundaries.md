@@ -30,6 +30,7 @@ Mode boundaries:
 - `plan` includes assumptions when ambiguity exists plus acceptance criteria and validation commands.
 - `implementation` emits ECP/readiness output, includes a dedicated Mode Boundary section, and does not edit code.
 - `implementation` keeps `Target Tool Instructions` tool-aware rather than universally Codex-specific.
+- All tool wrappers resolve to the same lifecycle boundaries and do not redefine mode behavior locally.
 - `execute` applies an approved ECP, runs per-task scoped validation and final validation, and may fix in-scope failures.
 - `review` uses verdicts, includes a dedicated Mode Boundary section plus `Diff Reviewed`, and checks goal alignment, validation evidence, lifecycle boundary compliance, security, and context impact.
 - `review` includes a lightweight `Context Impact` check and proposes `.forge/context-patches/...` when durable repo knowledge changes.

@@ -66,6 +66,7 @@ def main() -> int:
             run_case("update tools dry-run writes nothing", lambda: case_update_tools_dry_run_writes_nothing(scratch / "update-tools-dry"))
             run_case("update summary reporting", lambda: case_update_summary_reporting(scratch / "update-summary"))
             run_case("update checks context contract files", lambda: case_update_checks_context_contract_files(scratch / "context-contract"))
+            run_case("entrypoints preserve adapter parity", lambda: case_entrypoints_preserve_adapter_parity(scratch / "adapter-parity"))
             run_case("newline-only managed drift stays unchanged", lambda: case_newline_only_managed_drift_stays_unchanged(scratch / "newline-drift"))
             run_case("ui language id", lambda: case_ui_language_id(scratch / "ui-id"))
             run_case("ui language en default", lambda: case_ui_language_en_default(scratch / "ui-en"))
@@ -376,8 +377,32 @@ def case_update_checks_context_contract_files(target: Path) -> None:
     assert_contains(review, "Context Impact.")
     assert_contains(adapter, "Resolve the requested core mode or compatibility/scenario guidance and read only that contract file.")
     assert_contains(adapter, "Do not broad-load `.forge/context`, do not load every mode file by default")
+    assert_contains(adapter, "## Adapter parity rules")
+    assert_contains(adapter, "Universal Plan, ECP, Execution Report, and Review artifacts stay tool-neutral unless explicitly targeted.")
+    assert_contains(adapter, "Target Tool Notes")
+    assert_contains(adapter, "## Cross-tool output expectations")
     assert_contains(planning, "compatibility or historical guidance")
     assert_contains(testing, "compatibility, scenario, or historical guidance")
+
+
+def case_entrypoints_preserve_adapter_parity(target: Path) -> None:
+    run_cli(["init", "--yes", "--tools", "all", "--target", str(target)])
+    agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+    claude = (target / "CLAUDE.md").read_text(encoding="utf-8")
+    copilot = (target / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
+    adapter = (target / ".forge" / "adapter.md").read_text(encoding="utf-8")
+
+    for body in (agents, claude, copilot):
+        assert_contains(body, "Read `.forge/adapter.md` and follow it.")
+        assert_contains(body, ".forge/context")
+        assert_not_contains(body, "## Core lifecycle")
+        assert_not_contains(body, "## Cross-tool output expectations")
+        assert_not_contains(body, "apply_patch")
+
+    assert_contains(agents, "Target Tool Notes")
+    assert_contains(claude, "Target Tool Notes")
+    assert_contains(copilot, "approved file and scope boundary")
+    assert_contains(adapter, "Commit, push, merge, and similar repository publication actions remain human-controlled unless explicitly requested.")
 
 
 def case_newline_only_managed_drift_stays_unchanged(target: Path) -> None:
@@ -452,7 +477,7 @@ def seed_manifestless_runtime(target: Path, tools: tuple[str, ...] = ("codex", "
     if "copilot" in tools:
         copilot = target / ".github" / "copilot-instructions.md"
         copilot.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(runtime_root / "adapters" / "copilot" / "copilot-instructions.md", copilot)
+        shutil.copy2(runtime_root / ".github" / "copilot-instructions.md", copilot)
     manifest = target / ".forge" / "forge-install.yaml"
     if manifest.exists():
         manifest.unlink()

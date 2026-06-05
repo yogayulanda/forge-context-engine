@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Artifact Lifecycle Specification |
-| Version | 1.5 |
+| Version | 1.6 |
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Minimal generated artifact continuity for lifecycle handoff |
@@ -23,6 +23,7 @@ Artifacts are NOT:
 - Conversational history.
 - Chain-of-thought storage.
 - Workflow, DAG, agent, scheduler, CI/CD, deploy, or runtime execution state.
+- Tool-specific instruction containers unless explicitly marked for a target tool.
 
 ---
 
@@ -37,6 +38,11 @@ When an artifact conflicts with code, repository docs, ADRs, or explicit human c
 - The conflict must be surfaced as a validation or review concern when it affects execution safety.
 
 Artifacts may summarize approved intent and results, but they never override repository truth.
+
+Universal artifact neutrality:
+- Universal Plan, ECP, execution report, and review report artifacts must stay tool-neutral.
+- Avoid universal instructions such as `Use apply_patch`, `Use Codex`, or `Run Claude tool X`.
+- If tool-specific hints are useful, isolate them under a clearly labeled `Target Tool Notes` section.
 
 ---
 
@@ -180,8 +186,16 @@ Recommended save path:
 Minimum contents:
 - Title.
 - Status.
+- Mode Boundary.
+- Assumptions.
 - Plan type: Quick Plan or SDD.
 - Reason for chosen type.
+- Goal / Scope / Non-goals.
+- Evidence.
+- Risks.
+- Acceptance Criteria.
+- Validation Commands.
+- Next Step.
 - Required decisions.
 - Blockers.
 - Boundaries.
@@ -206,13 +220,16 @@ Recommended save path:
 ```
 
 Minimum contents:
+- Approved Scope.
 - Readiness status.
+- Files likely to change.
 - Task sequence.
+- Coding rules.
+- Safety constraints.
+- Validation commands.
 - Stop conditions.
-- Do-not-change boundaries.
 - Acceptance criteria.
-- Validation requirements.
-- Security constraints.
+- Expected execution report.
 - Derived-from approved plan reference.
 
 ### 4.3 Execution Report Artifact
@@ -234,6 +251,11 @@ Recommended save path:
 
 Minimum contents:
 - Execution result.
+- Changed files.
+- What changed.
+- Validation run.
+- Deviations.
+- Remaining risks.
 - Changed file groups.
 - Validation status.
 - Manual follow-up.
@@ -258,6 +280,13 @@ Recommended save path:
 ```
 
 Minimum contents:
+- Verdict.
+- Diff reviewed.
+- Findings.
+- Validation assessment.
+- Context Impact.
+- Recommended next step.
+- Status.
 - Review Report.
 - Verdict.
 - Mode Boundary.
