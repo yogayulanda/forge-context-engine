@@ -43,9 +43,17 @@ Legacy names such as `planning`, `testing`, `incident`, and `refactor` are not a
 4. Read `.forge/context/00-meta/conventions.md` when task behavior, output shape, evidence handling, validation reporting, risk boundaries, or language rules need it.
 5. Load scoped convention files only when relevant to the task category.
 6. Use `.forge/context/00-meta/context-manifest.md` only as a routing index when navigation help is needed.
-7. Load only the smallest relevant repository evidence and scoped `.forge/context` needed for the task.
+7. If `.forge/workspace.yaml` exists, treat it as a thin coordination layer for cross-repo planning only; it does not replace service-repo context.
+8. Load only the smallest relevant repository evidence and scoped `.forge/context` needed for the task.
 
 Do not broad-load `.forge/context`, do not load every mode file by default, and do not load compatibility/scenario files unless the request or evidence makes them relevant. For small plans, inspect the smallest relevant code surface first. If context remains insufficient, state what is missing instead of reading everything.
+
+Workspace loading rule:
+- Start from the current repo context for repo-scoped work.
+- Load workspace context only when the task spans multiple repos/services, integration boundaries, ownership, dependency flow, or cross-repo planning.
+- When workspace context is relevant, load the workspace summary first and then only the linked services needed for the current task.
+- Do not treat workspace context as authority for service-specific implementation details; read that service repo's own `.forge/context` when deeper facts are needed.
+- When making a cross-repo claim, cite which repo or workspace context source the claim came from.
 
 Normal prompt UX:
 - Use: `Use Forge plan mode for adding a small health check function.`

@@ -21,6 +21,11 @@ forge-init
 
 Each step produces a defined output. Each transition between plan and implementation, and between implementation and execution, requires explicit human approval. No assistant may self-approve either transition.
 
+For multi-repo work, this workflow still runs in bounded scope:
+- repo-scoped work starts from the current service repo context
+- cross-repo planning may load workspace context first, then only the relevant linked service contexts
+- workspace context coordinates ownership and boundaries; it does not replace service-specific source of truth
+
 ---
 
 ## What Each Step Produces

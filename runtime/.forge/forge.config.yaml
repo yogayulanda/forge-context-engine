@@ -3,6 +3,7 @@
 
 forge:
   version: "0.5.0a0"
+  profile: service
 
 ui:
   # Controls human-facing narration/progress language. Copyable project artifacts stay English by default unless explicitly requested otherwise.

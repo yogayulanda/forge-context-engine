@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 
 os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
+sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = [sys.executable, "-B", "-m", "forge_context_engine.cli"]
@@ -44,12 +45,14 @@ def main() -> int:
             run_case("update help", lambda: case_help("update"))
             run_case("service init", lambda: case_service_init(scratch / "service"))
             run_case("workspace init", lambda: case_workspace_init(scratch / "workspace"))
+            run_case("workspace init contract", lambda: case_workspace_init_contract(scratch / "workspace-contract"))
             run_case("tools codex", lambda: case_tools_codex(scratch / "tools-codex"))
             run_case("tools codex,claude", lambda: case_tools_codex_claude(scratch / "tools-default"))
             run_case("tools all", lambda: case_tools_all(scratch / "tools-all"))
             run_case("dry-run no writes", lambda: case_dry_run_init(scratch / "dry-run"))
             run_case("update dry-run no runtime", lambda: case_update_no_runtime(scratch / "no-runtime"))
             run_case("update preserves user-owned", lambda: case_update_preserves_user_owned(scratch / "preserve"))
+            run_case("workspace update preserves links", lambda: case_workspace_update_preserves_links(scratch / "workspace-preserve"))
             run_case("update preserves entrypoint user content", lambda: case_update_preserves_entrypoint_user_content(scratch / "preserve-entrypoint"))
             run_case("update conflicts on modified managed", lambda: case_update_conflict(scratch / "conflict"))
             run_case("adoption dry-run", lambda: case_adoption_dry_run(scratch / "adopt-dry"))
@@ -100,6 +103,7 @@ def case_service_init(target: Path) -> None:
     assert_exists(target / "AGENTS.md")
     assert_exists(target / "CLAUDE.md")
     assert_exists(target / ".forge" / "forge-install.yaml")
+    assert_contains((target / ".forge" / "forge.config.yaml").read_text(encoding="utf-8"), "profile: service")
     for rel in REQUIRED_META_FILES + REQUIRED_MODE_FILES:
         assert_exists(target / rel)
 
@@ -110,6 +114,25 @@ def case_workspace_init(target: Path) -> None:
     workspace = target / ".forge" / "workspace.yaml"
     assert_exists(workspace)
     assert_contains(workspace.read_text(encoding="utf-8"), "linked_services: []")
+
+
+def case_workspace_init_contract(target: Path) -> None:
+    result = run_cli(["init", "--workspace", "--yes", "--target", str(target)])
+    assert_ok(result)
+    workspace = target / ".forge" / "workspace.yaml"
+    manifest = target / ".forge" / "forge-install.yaml"
+    config = target / ".forge" / "forge.config.yaml"
+    body = workspace.read_text(encoding="utf-8")
+    manifest_body = manifest.read_text(encoding="utf-8")
+    config_body = config.read_text(encoding="utf-8")
+    assert_contains(body, "workspace:")
+    assert_contains(body, "default_context_policy: selective")
+    assert_contains(body, 'default: "service-first"')
+    assert_contains(body, 'cross_repo: "load workspace summary, then only relevant linked service context"')
+    assert_contains(body, "Workspace context coordinates services; service context owns repo-specific facts.")
+    assert_contains(manifest_body, 'profile: "workspace"')
+    assert_contains(manifest_body, "  - .forge/workspace.yaml")
+    assert_contains(config_body, "profile: workspace")
 
 
 def case_tools_codex(target: Path) -> None:
@@ -156,6 +179,28 @@ def case_update_preserves_user_owned(target: Path) -> None:
     result = run_cli(["update", "--yes", "--target", str(target)])
     assert_ok(result)
     assert_contains(product.read_text(encoding="utf-8"), "user-owned context")
+
+
+def case_workspace_update_preserves_links(target: Path) -> None:
+    run_cli(["init", "--workspace", "--yes", "--target", str(target)])
+    workspace = target / ".forge" / "workspace.yaml"
+    workspace.write_text(
+        workspace.read_text(encoding="utf-8").replace(
+            "linked_services: []\n",
+            (
+                "linked_services:\n"
+                "  - name: service-a\n"
+                "    path: ../service-a\n"
+                "    role: api\n"
+                "    context_root: .forge/context\n"
+                '    notes: "primary integration path"\n'
+            ),
+        ),
+        encoding="utf-8",
+    )
+    result = run_cli(["update", "--yes", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(workspace.read_text(encoding="utf-8"), "name: service-a")
 
 
 def case_update_preserves_entrypoint_user_content(target: Path) -> None:

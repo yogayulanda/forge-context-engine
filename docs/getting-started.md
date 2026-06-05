@@ -45,6 +45,7 @@ Current behavior:
 - `forge init` writes the service profile in the current directory by default
 - `forge init --workspace` writes the workspace profile in the current directory by default
 - `forge update` updates managed runtime files, supports `--tools`, supports dry-run preview, and supports manifest-less adoption preview
+- workspace profile is represented in `.forge/forge-install.yaml` as `profile: "workspace"`
 
 Local CLI smoke examples:
 
@@ -92,11 +93,19 @@ Manual setup remains available when you want to copy runtime files directly.
 
    Start from runtime skeleton files, then populate repo facts from code, docs, ADRs, and human confirmations. Do not copy broad assumptions into context.
 
-4. Keep tool entrypoints thin.
+4. Keep service and workspace responsibilities separate.
+
+   - Service repo context owns repo-specific facts and implementation detail.
+   - Workspace context owns cross-repo coordination, ownership, and dependency flow only.
+   - For repo-scoped work, start from the current repo's `.forge/context`.
+   - Load workspace context only when the task spans multiple repos/services or cross-repo boundaries.
+   - For cross-repo work, load only the relevant linked services; do not broad-load every repo.
+
+5. Keep tool entrypoints thin.
 
    `CLAUDE.md` and `AGENTS.md` should point to `.forge/adapter.md` and `.forge/context`. They should not store repo-specific cognition, lifecycle logic, or artifact policy.
 
-5. Make one scoped first request.
+6. Make one scoped first request.
 
    ```text
    Use Forge ask mode to explain how this service handles retries. Cite the repository evidence and list unknowns.
@@ -121,6 +130,8 @@ Use `CLAUDE.md` for Claude-compatible assistants. It should be a thin wrapper th
 Use `AGENTS.md` for Codex-compatible assistants. It should be a thin wrapper that maps natural prompts such as `Use Forge review mode` to the Forge lifecycle defined in `.forge/adapter.md`.
 
 Both files are entrypoints only. `.forge/context` remains the source of truth, `.forge/generated` remains generated output only, and `.forge/temp` plus `.forge/cache` stay local-only.
+
+Workspace repos add one more rule: `.forge/workspace.yaml` coordinates linked services, but service repo `.forge/context` remains authoritative for service-specific facts.
 
 ## Supported Tool Overview
 
@@ -180,6 +191,7 @@ Next, read [First Workflow](first-workflow.md) to see this path end to end, then
 |---|---|
 | Asking `execute` to start before scope or values are clear. | Use `plan` or `implementation` first. |
 | Loading all of `.forge/context` for every question. | Load the requested mode and task-relevant context only. |
+| Treating workspace context as a replacement for service context. | Use workspace context for cross-repo coordination only; read the service repo's `.forge/context` for service facts. |
 | Treating generated artifacts as source of truth. | Use artifacts as handoff records; current repo evidence wins. |
 | Putting repo facts in `CLAUDE.md`, `AGENTS.md`, or adapters. | Put repo cognition in `.forge/context`. |
 | Using an incident scenario as a redesign request. | Diagnose first; hand off approved remediation to `plan`, `implementation`, and `execute` as needed. |

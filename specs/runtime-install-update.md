@@ -111,6 +111,11 @@ Additional output only when GitHub Copilot is explicitly selected:
 
 Service profile stores repository-local service context. Forge does not choose or create a global workspace location.
 
+Service profile expectations:
+- service context owns repo-specific facts and implementation detail
+- service context is the default source for repo-scoped tasks and code execution
+- service context does not become a workspace-wide coordination file
+
 Tool defaults:
 - default selected tools: `codex`, `claude`
 - Copilot is opt-in
@@ -126,7 +131,7 @@ Workspace profile is selected with:
 forge init --workspace
 ```
 
-Workspace profile stores cross-service and domain context in the current repository only.
+Workspace profile stores cross-service and domain context in the current repository only. It is a thin coordination layer and does not replace service repo context.
 
 Expected additions relative to service profile:
 - `.forge/workspace.yaml`
@@ -135,11 +140,22 @@ Expected `.forge/workspace.yaml` shape:
 
 ```yaml
 version: 1
-name: <workspace-name>
+workspace:
+  name: <workspace-name>
+  description: ""
+  default_context_policy: selective
 linked_services:
   - name: <service-name>
     path: <relative-path-or-reference>
+    role: <optional-service-role>
+    context_root: .forge/context
     notes: <optional-user-note>
+boundaries:
+  - Workspace context coordinates services; service context owns repo-specific facts.
+  - Do not duplicate service-level implementation details here.
+loading_policy:
+  default: service-first
+  cross_repo: load workspace summary, then only relevant linked service context
 default_tools:
   - codex
   - claude
@@ -147,6 +163,12 @@ default_tools:
 
 Rules:
 - linked services are user-editable
+- workspace summary is human-editable and must remain lightweight
+- workspace context coordinates repos/services but does not duplicate service-local implementation detail
+- service repo `.forge/context` remains authoritative for service-specific facts
+- repo-scoped tasks start from current repo context first
+- cross-repo tasks load workspace context first, then only relevant linked service context
+- broad-loading all linked repos by default is forbidden
 - Forge does not choose workspace location automatically
 - workspace repositories do not imply global state or background coordination
 

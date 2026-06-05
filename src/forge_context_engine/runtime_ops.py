@@ -57,6 +57,7 @@ DETAIL_ADOPTION_PREVIEW = "adoption preview only"
 DETAIL_LEGACY_PRESERVED = "legacy managed file preserved; current hash adopted"
 DETAIL_LEGACY_CONFIG_MIGRATION = "legacy config migration"
 DETAIL_ENTRYPOINT_ADOPTED = "existing Forge-like wrapper adopted"
+DETAIL_WORKSPACE_PRESERVED = "user-edited workspace file preserved"
 
 
 MESSAGES = {
@@ -619,6 +620,7 @@ def _build_init_files(
     }
 
     files[".forge/forge.config.yaml"] = _render_forge_config(
+        profile=profile,
         selected_tools=selected_tools,
         ui_language=ui_language,
     )
@@ -750,6 +752,10 @@ def _apply_regular_file(
             report.add("skipped", rel_path, DETAIL_LEGACY_PRESERVED)
             return False
         if sha256_text(existing) != expected_hash:
+            if rel_path == ".forge/workspace.yaml":
+                report.override_hash(rel_path, sha256_text(existing))
+                report.add("skipped", rel_path, DETAIL_WORKSPACE_PRESERVED)
+                return False
             report.add("conflict", rel_path, DETAIL_CONFLICT_LOCAL)
             return True
         if dry_run:
@@ -834,7 +840,9 @@ def _manifest_from_current_runtime(
     )
 
 
-def _render_forge_config(*, selected_tools: tuple[str, ...], ui_language: str) -> str:
+def _render_forge_config(
+    *, profile: str, selected_tools: tuple[str, ...], ui_language: str
+) -> str:
     adapters = _yaml_list(selected_tools)
     default_adapter = selected_tools[0]
     package_targets = _yaml_list(selected_tools)
@@ -842,7 +850,8 @@ def _render_forge_config(*, selected_tools: tuple[str, ...], ui_language: str) -
         "# forge-context-engine - Engine Configuration\n"
         "# Not a narrative context file. Customize during Context Initialization for the target repo.\n\n"
         "forge:\n"
-        f'  version: "{__version__}"\n\n'
+        f'  version: "{__version__}"\n'
+        f"  profile: {profile}\n\n"
         "ui:\n"
         f"  language: {ui_language}\n\n"
         "run:\n"
@@ -898,8 +907,17 @@ def _render_workspace_yaml(name: str, selected_tools: tuple[str, ...]) -> str:
     tools = "".join(f"  - {tool}\n" for tool in selected_tools or DEFAULT_SELECTED_TOOLS)
     return (
         "version: 1\n"
-        f"name: {name}\n"
+        "workspace:\n"
+        f"  name: {name}\n"
+        '  description: ""\n'
+        "  default_context_policy: selective\n"
         "linked_services: []\n"
+        "boundaries:\n"
+        '  - "Workspace context coordinates services; service context owns repo-specific facts."\n'
+        '  - "Do not duplicate service-level implementation details here."\n'
+        "loading_policy:\n"
+        '  default: "service-first"\n'
+        '  cross_repo: "load workspace summary, then only relevant linked service context"\n'
         "default_tools:\n"
         f"{tools}"
     )

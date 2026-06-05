@@ -243,22 +243,27 @@ Use this as:
 | F117 | Artifact/context drift is reported with `DRIFT_DETECTED`, `DRIFT_RISK`, or `NO_DRIFT_FOUND` when material to the task | warning | manual |
 | F118 | Stale artifacts, stale generated context, or old assumptions never override current code/repository evidence | critical | manual |
 | F119 | Cross-repo behavior, ownership, runtime topology, and contracts are not assumed without evidence from the referenced repo or authoritative source | error | manual |
-| F120 | Incident scenarios distinguish symptoms from causes, use `LIKELY_CAUSE`, `POSSIBLE_CAUSE`, or `NEEDS_MORE_EVIDENCE`, and include confidence when discussing cause | error | manual |
-| F121 | Incident scenarios do not claim root cause without direct supporting evidence | critical | manual |
-| F122 | Refactor scenarios classify risk as `LOW`, `MEDIUM`, or `HIGH`, and HIGH-risk refactors require a plan/implementation path before execution | error | manual |
-| F123 | Refactor scenarios do not present architecture rewrite, paradigm migration, or broad redesign as a normal refactor | error | manual |
-| F124 | Fintech HIGH-risk governance decisions require human approval and are not auto-approved by AI or orchestrator | critical | manual |
-| F125 | Governance output remains concise, risk-focused, operational, and evidence-based instead of becoming generic audit bureaucracy | warning | manual |
-| F126 | Payment, balance, ledger, settlement, reconciliation, or transaction correctness is never classified as LOW risk | critical | manual |
-| F127 | Governance-sensitive output never logs, persists, quotes, or copies raw secrets or raw PII | critical | manual |
-| F128 | Intelligence/governance semantics do not add tooling, RAG, vector search, knowledge graphs, persistent AI memory, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops | critical | manual |
-| F129 | Root adapters such as `CLAUDE.md` and `AGENTS.md` remain thin bootstrap/invocation adapters and do not duplicate Forge cognition, lifecycle, validation, drift, artifact, governance, or secret semantics | error | manual |
-| F130 | Adapter files point to `.forge/context` and specs for normative behavior instead of creating parallel source-of-truth rules | error | manual |
-| F131 | Execute preserves existing formatting and line endings, avoids file-wide rewrites, and limits mutation to approved task scope | error | manual |
-| F132 | Execute finalization confirms changed files are intended, unrelated file changes are absent, and no broad formatting or line-ending churn occurred | error | manual |
-| F133 | Execute checks API/docs/contract wording against relevant source files, such as proto, OpenAPI, grpc-gateway, generated docs, route/schema files, or existing contract sources, before finalizing when those surfaces changed | error | manual |
-| F134 | Execute after review verifies prior findings are resolved or explicitly still open and does not finalize with obvious residual review blockers | error | manual |
-| F135 | Lifecycle outputs include one concise `Recommended next action`, such as proceed, fix before merge, remediate first, track as later cleanup, or needs human confirmation | warning | manual |
+| F120 | Workspace context is treated as a thin coordination layer and does not replace service repo context as the source of repo-specific facts | error | manual |
+| F121 | Repo-scoped work starts from current service repo context and does not load workspace context by default | warning | manual |
+| F122 | Cross-repo planning loads workspace context first and then only the relevant linked service contexts rather than broad-loading every linked repo | warning | manual |
+| F123 | `.forge/workspace.yaml` stores linked-service references, ownership/boundary guidance, and loading policy without duplicating service-specific implementation detail | warning | manual |
+| F124 | Cross-repo claims cite which repo or workspace context source provided the fact or uncertainty | warning | manual |
+| F125 | Incident scenarios distinguish symptoms from causes, use `LIKELY_CAUSE`, `POSSIBLE_CAUSE`, or `NEEDS_MORE_EVIDENCE`, and include confidence when discussing cause | error | manual |
+| F126 | Incident scenarios do not claim root cause without direct supporting evidence | critical | manual |
+| F127 | Refactor scenarios classify risk as `LOW`, `MEDIUM`, or `HIGH`, and HIGH-risk refactors require a plan/implementation path before execution | error | manual |
+| F128 | Refactor scenarios do not present architecture rewrite, paradigm migration, or broad redesign as a normal refactor | error | manual |
+| F129 | Fintech HIGH-risk governance decisions require human approval and are not auto-approved by AI or orchestrator | critical | manual |
+| F130 | Governance output remains concise, risk-focused, operational, and evidence-based instead of becoming generic audit bureaucracy | warning | manual |
+| F131 | Payment, balance, ledger, settlement, reconciliation, or transaction correctness is never classified as LOW risk | critical | manual |
+| F132 | Governance-sensitive output never logs, persists, quotes, or copies raw secrets or raw PII | critical | manual |
+| F133 | Intelligence/governance semantics do not add tooling, RAG, vector search, knowledge graphs, persistent AI memory, agents, orchestration, workflow engines, schedulers, CI/CD, deploy workflow, runtime executors, or autonomous loops | critical | manual |
+| F134 | Root adapters such as `CLAUDE.md` and `AGENTS.md` remain thin bootstrap/invocation adapters and do not duplicate Forge cognition, lifecycle, validation, drift, artifact, governance, or secret semantics | error | manual |
+| F135 | Adapter files point to `.forge/context` and specs for normative behavior instead of creating parallel source-of-truth rules | error | manual |
+| F136 | Execute preserves existing formatting and line endings, avoids file-wide rewrites, and limits mutation to approved task scope | error | manual |
+| F137 | Execute finalization confirms changed files are intended, unrelated file changes are absent, and no broad formatting or line-ending churn occurred | error | manual |
+| F138 | Execute checks API/docs/contract wording against relevant source files, such as proto, OpenAPI, grpc-gateway, generated docs, route/schema files, or existing contract sources, before finalizing when those surfaces changed | error | manual |
+| F139 | Execute after review verifies prior findings are resolved or explicitly still open and does not finalize with obvious residual review blockers | error | manual |
+| F140 | Lifecycle outputs include one concise `Recommended next action`, such as proceed, fix before merge, remediate first, track as later cleanup, or needs human confirmation | warning | manual |
 
 ### Category G — Knowledge Ledger Integrity
 
@@ -703,21 +708,26 @@ ANTI-DUPLICATION
 [ ] F117 drift statuses reported when material
 [ ] F118 stale artifacts/context never override current repo evidence
 [ ] F119 cross-repo behavior is not assumed without evidence
-[ ] F120 incident cause status and confidence are present
-[ ] F121 incident root cause is not claimed without evidence
-[ ] F122 refactor scenario risk is classified and HIGH risk requires a plan/implementation path
-[ ] F123 architecture rewrite is not presented as normal refactor
-[ ] F124 fintech HIGH-risk governance decisions are not auto-approved
-[ ] F125 governance output stays concise, operational, and evidence-based
-[ ] F126 payment/transaction correctness is never LOW risk
-[ ] F127 raw secrets/PII are not logged, persisted, quoted, or copied
-[ ] F128 intelligence/governance semantics do not add tooling/RAG/vector DB/knowledge graph/orchestration/agents/runtime behavior
-[ ] F129 root adapters remain thin and do not duplicate Forge operational semantics
-[ ] F130 adapter files point to `.forge/context` and specs instead of creating parallel source-of-truth rules
-[ ] F131 execute preserves formatting/line endings and avoids file-wide rewrites
-[ ] F132 execute finalization confirms intended changes, no unrelated files, and no churn
-[ ] F133 execute contract/docs/API wording is checked against source files when relevant
-[ ] F134 execute after review verifies prior findings and does not finalize with residual blockers
+[ ] F120 workspace context stays a thin coordination layer and does not replace service context
+[ ] F121 repo-scoped work does not load workspace context by default
+[ ] F122 cross-repo planning loads workspace then only relevant linked services
+[ ] F123 `.forge/workspace.yaml` stays lightweight and avoids service-detail duplication
+[ ] F124 cross-repo claims cite their repo/workspace source
+[ ] F125 incident cause status and confidence are present
+[ ] F126 incident root cause is not claimed without evidence
+[ ] F127 refactor scenario risk is classified and HIGH risk requires a plan/implementation path
+[ ] F128 architecture rewrite is not presented as normal refactor
+[ ] F129 fintech HIGH-risk governance decisions are not auto-approved
+[ ] F130 governance output stays concise, operational, and evidence-based
+[ ] F131 payment/transaction correctness is never LOW risk
+[ ] F132 raw secrets/PII are not logged, persisted, quoted, or copied
+[ ] F133 intelligence/governance semantics do not add tooling/RAG/vector DB/knowledge graph/orchestration/agents/runtime behavior
+[ ] F134 root adapters remain thin and do not duplicate Forge operational semantics
+[ ] F135 adapter files point to `.forge/context` and specs instead of creating parallel source-of-truth rules
+[ ] F136 execute preserves formatting/line endings and avoids file-wide rewrites
+[ ] F137 execute finalization confirms intended changes, no unrelated files, and no churn
+[ ] F138 execute contract/docs/API wording is checked against source files when relevant
+[ ] F139 execute after review verifies prior findings and does not finalize with residual blockers
 [ ] F135 lifecycle outputs include one concise Recommended next action
 
 KNOWLEDGE LEDGERS

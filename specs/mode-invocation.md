@@ -181,6 +181,14 @@ Cross-repo awareness is evidence-limited:
 - Forge must not assume another repo's behavior, runtime topology, deploy state, ownership, or contract implementation from references alone.
 - Forge must not modify multiple repositories automatically or introduce cross-repo orchestration.
 
+Workspace-aware loading rules:
+- Start from the current repo context for repo-scoped work.
+- Load `.forge/workspace.yaml` and workspace summary context only when the task spans multiple repos/services, integration boundaries, ownership, dependency flow, or cross-repo planning.
+- When workspace context is loaded, treat it as a coordination layer only; service repo `.forge/context` remains authoritative for service facts.
+- For cross-repo work, load the workspace summary first and then only the relevant linked service contexts needed for the current task.
+- Broad-loading all linked repos by default is forbidden.
+- Cross-repo claims should cite which repo or workspace context source the claim came from.
+
 Governance checks are concise risk signals. Relevant modes should surface:
 - PII / sensitive data.
 - Secrets / credentials.

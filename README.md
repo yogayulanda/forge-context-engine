@@ -86,6 +86,8 @@ cd work-context
 forge init --workspace
 ```
 
+Use workspace repos as thin coordination layers for linked services. Keep repo-specific facts in each service repo's `.forge/context`, and load workspace context only for cross-repo planning.
+
 Tool selection:
 
 ```bash
