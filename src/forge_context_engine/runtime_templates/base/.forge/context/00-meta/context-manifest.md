@@ -6,7 +6,7 @@ status: unknown
 confidence: high
 source: human
 owner: unresolved
-updated: 2026-05-25
+updated: 2026-06-09
 ---
 
 # Context Manifest
@@ -42,6 +42,7 @@ Index and routing map for the entire context system. Not a knowledge source.
 - `00-meta/glossary.md` *(if exists)*
 - relevant `01-core/*`
 - `00-meta/context-manifest.md` only when routing help is needed
+- `00-meta/ai-readiness-factors.md` only during `ai-readiness` audits (factor catalog and band→verdict map)
 
 ## Scoped Convention Files (On Demand)
 
