@@ -142,9 +142,9 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
     if "codex" in selected_tools:
         paths.append("AGENTS.md")
     if "claude" in selected_tools:
-        paths.append("CLAUDE.md")
+        paths.extend(("CLAUDE.md", ".claude/commands/"))
     if "copilot" in selected_tools:
-        paths.append(".github/copilot-instructions.md")
+        paths.extend((".github/copilot-instructions.md", ".github/prompts/"))
     if profile == PROFILE_WORKSPACE:
         paths.append(".forge/workspace.yaml")
     return tuple(paths)

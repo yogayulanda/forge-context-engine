@@ -213,6 +213,7 @@ def case_tools_codex_claude(target: Path) -> None:
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
     assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_not_exists(target / ".github")
 
 
@@ -221,6 +222,7 @@ def case_tools_space_separated(target: Path) -> None:
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
     assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_not_exists(target / ".github")
 
 
@@ -230,6 +232,7 @@ def case_tools_repeatable_flag(target: Path) -> None:
     assert_exists(target / "AGENTS.md")
     assert_not_exists(target / "CLAUDE.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
+    assert_exists(target / ".github" / "prompts" / "forge-plan.prompt.md")
 
 
 def case_tools_numeric_aliases(target: Path) -> None:
@@ -237,6 +240,7 @@ def case_tools_numeric_aliases(target: Path) -> None:
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
     assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_not_exists(target / ".github")
 
 
@@ -245,7 +249,9 @@ def case_tools_all(target: Path) -> None:
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
     assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
+    assert_exists(target / ".github" / "prompts" / "forge-plan.prompt.md")
 
 
 def case_dry_run_init(target: Path) -> None:
@@ -405,7 +411,9 @@ def case_update_tools_all_adds_copilot(target: Path) -> None:
     result = run_cli(["update", "--yes", "--tools", "all", "--target", str(target)])
     assert_ok(result)
     assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".claude" / "commands" / "forge-review.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
+    assert_exists(target / ".github" / "prompts" / "forge-review.prompt.md")
     assert_exists(target / "AGENTS.md")
     manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
     assert_contains(manifest, "  - codex")
@@ -564,6 +572,7 @@ def case_package_data_includes_hidden_runtime_templates() -> None:
         'runtime_templates/**/.forge/**/*.md',
         'runtime_templates/**/.forge/**/*.yaml',
         'runtime_templates/**/.forge/**/*.txt',
+        'runtime_templates/**/.claude/**/*.md',
         'runtime_templates/**/.github/**/*.md',
     )
     for entry in required_entries:
@@ -577,10 +586,12 @@ def seed_manifestless_runtime(target: Path, tools: tuple[str, ...] = ("codex", "
         shutil.copy2(runtime_root / "AGENTS.md", target / "AGENTS.md")
     if "claude" in tools:
         shutil.copy2(runtime_root / "CLAUDE.md", target / "CLAUDE.md")
+        shutil.copytree(runtime_root / "adapters" / "claude" / "commands", target / ".claude" / "commands", dirs_exist_ok=True)
     if "copilot" in tools:
         copilot = target / ".github" / "copilot-instructions.md"
         copilot.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(runtime_root / ".github" / "copilot-instructions.md", copilot)
+        shutil.copytree(runtime_root / "adapters" / "copilot" / "prompts", target / ".github" / "prompts", dirs_exist_ok=True)
     manifest = target / ".forge" / "forge-install.yaml"
     if manifest.exists():
         manifest.unlink()

@@ -25,7 +25,10 @@ from .version import __version__
 
 
 FORGE_LOCAL_GITIGNORE = ".forge/temp/\n.forge/cache/\n"
+CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
+COPILOT_PROMPTS_PREFIX = ".github/prompts/"
+OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -617,10 +620,12 @@ def _build_init_files(
     selected_tools: tuple[str, ...],
     ui_language: str,
 ) -> dict[str, str]:
+    template_files = iter_template_files("base")
     files = {
         rel: content
-        for rel, content in iter_template_files("base").items()
+        for rel, content in template_files.items()
         if rel not in {"AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md", ".forge/forge.config.yaml"}
+        and not rel.startswith(OPTIONAL_TEMPLATE_PREFIXES)
     }
 
     files[".forge/forge.config.yaml"] = _render_forge_config(
@@ -634,8 +639,10 @@ def _build_init_files(
         files["AGENTS.md"] = read_template("base", "AGENTS.md")
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
+        files.update({rel: content for rel, content in template_files.items() if rel.startswith(CLAUDE_COMMANDS_PREFIX)})
     if "copilot" in selected_tools:
         files[COPILOT_TEMPLATE_PATH] = read_template("base", COPILOT_TEMPLATE_PATH)
+        files.update({rel: content for rel, content in template_files.items() if rel.startswith(COPILOT_PROMPTS_PREFIX)})
     if profile == PROFILE_WORKSPACE:
         files[".forge/workspace.yaml"] = _render_workspace_yaml(target_root.name, selected_tools)
 
@@ -945,9 +952,9 @@ def _detect_tools(target_root: Path) -> tuple[str, ...]:
     selected: list[str] = []
     if (target_root / "AGENTS.md").exists():
         selected.append("codex")
-    if (target_root / "CLAUDE.md").exists():
+    if (target_root / "CLAUDE.md").exists() or (target_root / ".claude" / "commands").exists():
         selected.append("claude")
-    if (target_root / ".github/copilot-instructions.md").exists():
+    if (target_root / ".github/copilot-instructions.md").exists() or (target_root / ".github" / "prompts").exists():
         selected.append("copilot")
     return tuple(selected) or DEFAULT_SELECTED_TOOLS
 
@@ -959,7 +966,11 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return "codex" in selected_tools
     if rel_path == "CLAUDE.md":
         return "claude" in selected_tools
+    if rel_path.startswith(CLAUDE_COMMANDS_PREFIX):
+        return "claude" in selected_tools
     if rel_path == COPILOT_TEMPLATE_PATH:
+        return "copilot" in selected_tools
+    if rel_path.startswith(COPILOT_PROMPTS_PREFIX):
         return "copilot" in selected_tools
     if rel_path in {".forge/adapter.md", ".forge/forge.config.yaml"}:
         return True
