@@ -82,9 +82,12 @@ Rules:
 
 `ai-readiness` returns one compact audit report with these sections:
 - `AI Readiness Report`
+- `At a Glance` (human-scannable header — see 4.1)
 - `Executive Summary`
 - `Verdict`
 - `Readiness Band`
+- `Readiness Score` (derived 0–100, shown with coverage — see 6.1)
+- `Readiness Trend` (only when a comparable prior report exists — see 6.1)
 - `Readiness Profile`
 - `Key Strengths`
 - `Priority Risks`
@@ -103,6 +106,18 @@ When persistence is requested or approved, recommended artifact paths are:
 - `.forge/generated/reports/YYYY-MM-DD-<slug>-ai-readiness-report.md`
 - `.forge/generated/reports/YYYY-MM-DD-<slug>-ai-readiness-roadmap.md`
 - `.forge/context-patches/YYYY-MM-DD-<slug>-ai-readiness-context-patch.md` when durable context updates are proposed
+
+### 4.1 At a Glance (human-facing output format)
+
+The report leads with an `At a Glance` block a non-author can understand in seconds. It must read in **plain English** — use the plain-language label tables in the factor catalog (`00-meta/ai-readiness-factors.md`) and keep machine vocabulary out of the box. Rules:
+- **State the report's purpose first:** one line on what it answers ("Can AI safely help with code here, and what to fix first?") and that everything below the block is supporting detail.
+- **Headline in plain words:** the overall `Readiness Score /100` plus the plain headline sentence mapped from the verdict (e.g. "PARTLY READY — AI can help with small, reviewed changes"), and coverage stated plainly ("we checked 21 of 26 things"). Do **not** show the raw `verdict`/band enum here.
+- **`What needs your decision`:** if any `Questions For Human` exist, list each in plain terms with what it gates, so verdict-gating asks are never buried. Full options stay in the detailed `Questions For Human` section.
+- **`Where it stands, by area`, weakest first:** plain area names (not `FAR-*` codes), each with a 5-block bar and the word `weak`/`fair`/`good`, anchored with `← start here` / `← strongest`.
+- **`Fix these first`:** a short imperative list of the highest-payoff actions.
+- **No machine internals on screen:** raw `verdict`/band enums, `FAR-*` IDs, factor decimals (0.0–1.0), and weight math stay out of the box; they belong in the `Executive Summary` and detail sections below.
+
+The `Executive Summary` (precise machine fields), detailed `FAR-*` factor table, full findings, and full `Questions For Human` entries follow below the At a Glance block.
 
 ## 5. Findings Contract
 
@@ -140,7 +155,7 @@ Status values:
 - `needs_confirmation`
 - `blocked`
 
-The verdict is derived from the dominant readiness band using the band → verdict map in the factor catalog (`Optimized` → `autonomous_ready`, `Ready` → `assist_ready`, `Limited` → `context_limited`, `Conditional` → `confirmation_required`, `Blocked` → `blocked`). Bands weight Context, Architecture, and Interface factors most heavily and require no numeric scoring.
+The verdict is derived from the dominant readiness band using the band → verdict map in the factor catalog (`Optimized` → `autonomous_ready`, `Ready` → `assist_ready`, `Limited` → `context_limited`, `Conditional` → `confirmation_required`, `Blocked` → `blocked`). Bands weight Context, Architecture, and Interface factors most heavily. The band remains authoritative; the derived `Readiness Score` (6.1) is an optional summary of the same band judgments, never an independent measurement.
 
 Guidance:
 - `autonomous_ready`: bounded multi-file AI work is plausible with acceptable evidence and safety signals.
@@ -148,6 +163,18 @@ Guidance:
 - `context_limited`: repository/context quality materially reduces AI reliability.
 - `confirmation_required`: important readiness conclusions depend on unresolved human decisions.
 - `blocked`: evidence or access is too incomplete for a trustworthy audit.
+
+### 6.1 Readiness Score and Trend
+
+The factor catalog (`00-meta/ai-readiness-factors.md`) defines the derived score. Summary:
+- Per-factor band → value (`Green` 1.0, `Warning` 0.5, `Red` 0.0); `not-evaluated` excluded from the denominator.
+- Family weights: High ×3 (`FAR-CTX`, `FAR-ARCH`, `FAR-IFACE`), Medium ×2 (`FAR-CODE`, `FAR-TEST`, `FAR-SAFE`), Low ×1 (`FAR-DOC`, `FAR-DISC`, `FAR-NOISE`).
+- `Score = Σ(family_mean × weight) / Σ(weight) × 100`, over evaluated families only.
+- A Critical finding caps the score at 40 regardless of the average.
+- Score → band cut-points are provisional and require calibration; the qualitative band wins on conflict, with the gap logged as a calibration note.
+- The score is always shown with coverage (`37/100 (coverage 23/26)`).
+
+`Readiness Trend` appears only when a prior saved report shares the same `scoring_method` and `engine_version`. It reports the score delta and the families that moved; bands are AI judgments, so cross-version comparisons are flagged as non-comparable rather than shown as a delta.
 
 ## 7. Evidence and Ambiguity Rules
 
@@ -171,12 +198,11 @@ Each question should include:
 - `Impact If Unanswered`
 
 Question design rules:
-- Keep questions short, operational, and answerable.
+- Keep questions specific, operational, and answerable; ground each in repository evidence (name the files/domains in question) so the reader understands exactly what is being decided and where it leads.
 - Ask only for decisions that cannot be safely derived from repository evidence.
-- Provide two options by default.
-- Allow a third option only when the decision truly has a material third path.
+- Provide three distinct, mutually-exclusive options by default. Drop to two only when a genuine third path does not exist; never pad with a filler option (that would violate the no-fabrication rule).
 - Do not emit more than three options for one question.
-- Put the recommended option first when practical and state why it is recommended.
+- Name exactly one Recommended Option and state, in one line, why it is recommended.
 - Escalate to verdict `confirmation_required` when unanswered decisions materially affect architecture boundaries, contract ownership, runtime behavior, security posture, validation trust, or durable context accuracy.
 - Use status `needs_confirmation` when the audit is otherwise usable but important readiness conclusions remain conditional on human answers.
 - Keep minor informational unknowns under `Ambiguities` without forcing a human question.
