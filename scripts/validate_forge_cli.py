@@ -45,10 +45,14 @@ def main() -> int:
             run_case("update help", lambda: case_help("update"))
             run_case("readme release surface", case_readme_release_surface)
             run_case("service init", lambda: case_service_init(scratch / "service"))
+            run_case("service init seeds repo context", lambda: case_service_init_seeds_repo_context(scratch / "service-context"))
             run_case("workspace init", lambda: case_workspace_init(scratch / "workspace"))
             run_case("workspace init contract", lambda: case_workspace_init_contract(scratch / "workspace-contract"))
             run_case("tools codex", lambda: case_tools_codex(scratch / "tools-codex"))
             run_case("tools codex,claude", lambda: case_tools_codex_claude(scratch / "tools-default"))
+            run_case("tools space separated", lambda: case_tools_space_separated(scratch / "tools-space"))
+            run_case("tools repeatable flag", lambda: case_tools_repeatable_flag(scratch / "tools-repeat"))
+            run_case("tools numeric prompt syntax via flag", lambda: case_tools_numeric_aliases(scratch / "tools-numeric"))
             run_case("tools all", lambda: case_tools_all(scratch / "tools-all"))
             run_case("dry-run no writes", lambda: case_dry_run_init(scratch / "dry-run"))
             run_case("update dry-run no runtime", lambda: case_update_no_runtime(scratch / "no-runtime"))
@@ -137,6 +141,37 @@ def case_service_init(target: Path) -> None:
         assert_exists(target / rel)
 
 
+def case_service_init_seeds_repo_context(target: Path) -> None:
+    target.mkdir(parents=True, exist_ok=True)
+    (target / "README.md").write_text("# Billing Service\n\nProcesses invoice events for downstream systems.\n", encoding="utf-8")
+    (target / "pyproject.toml").write_text(
+        "[project]\nname = \"billing-service\"\nrequires-python = \">=3.11\"\n",
+        encoding="utf-8",
+    )
+    (target / "src").mkdir()
+    (target / "src" / "app.py").write_text("print('ok')\n", encoding="utf-8")
+    (target / "tests").mkdir()
+    (target / "tests" / "test_app.py").write_text("def test_ok():\n    assert True\n", encoding="utf-8")
+
+    result = run_cli(["init", "--yes", "--target", str(target)])
+    assert_ok(result)
+
+    product = (target / ".forge" / "context" / "01-core" / "product.md").read_text(encoding="utf-8")
+    architecture = (target / ".forge" / "context" / "01-core" / "architecture.md").read_text(encoding="utf-8")
+    inferred = (target / ".forge" / "context" / "knowledge" / "inferred.md").read_text(encoding="utf-8")
+    unknowns = (target / ".forge" / "context" / "knowledge" / "unknowns.md").read_text(encoding="utf-8")
+    repo_map = (target / ".forge" / "context" / "repo-map" / "overview.md").read_text(encoding="utf-8")
+    system = (target / ".forge" / "context" / "systems" / "service-context" / "system.md").read_text(encoding="utf-8")
+
+    assert_contains(product, "status: inferred")
+    assert_contains(product, "Processes invoice events for downstream systems.")
+    assert_not_contains(product, "TBD")
+    assert_contains(architecture, "single-service application layout")
+    assert_contains(inferred, "single-service application layout")
+    assert_contains(unknowns, "Repository owner and confirmation authority")
+    assert_contains(repo_map, "`src/`")
+    assert_contains(system, "system_type: service")
+
 def case_workspace_init(target: Path) -> None:
     result = run_cli(["init", "--workspace", "--yes", "--target", str(target)])
     assert_ok(result)
@@ -174,6 +209,30 @@ def case_tools_codex(target: Path) -> None:
 
 def case_tools_codex_claude(target: Path) -> None:
     result = run_cli(["init", "--yes", "--tools", "codex,claude", "--target", str(target)])
+    assert_ok(result)
+    assert_exists(target / "AGENTS.md")
+    assert_exists(target / "CLAUDE.md")
+    assert_not_exists(target / ".github")
+
+
+def case_tools_space_separated(target: Path) -> None:
+    result = run_cli(["init", "--yes", "--tools", "codex", "claude", "--target", str(target)])
+    assert_ok(result)
+    assert_exists(target / "AGENTS.md")
+    assert_exists(target / "CLAUDE.md")
+    assert_not_exists(target / ".github")
+
+
+def case_tools_repeatable_flag(target: Path) -> None:
+    result = run_cli(["init", "--yes", "--tool", "codex", "--tool", "copilot", "--target", str(target)])
+    assert_ok(result)
+    assert_exists(target / "AGENTS.md")
+    assert_not_exists(target / "CLAUDE.md")
+    assert_exists(target / ".github" / "copilot-instructions.md")
+
+
+def case_tools_numeric_aliases(target: Path) -> None:
+    result = run_cli(["init", "--yes", "--tools", "1+2", "--target", str(target)])
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
     assert_exists(target / "CLAUDE.md")

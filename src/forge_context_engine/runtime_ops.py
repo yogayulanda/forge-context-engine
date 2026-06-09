@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .context_builder import build_repo_context_seed
 from .fs_ops import normalize_text, resolve_target_paths, sha256_text, to_manifest_path
 from .install_manifest import (
     DEFAULT_SELECTED_TOOLS,
@@ -318,6 +319,9 @@ def run_init(
         profile=profile,
         selected_tools=selected_tools,
         ui_language=UI_LANGUAGE_EN,
+    )
+    desired_files.update(
+        build_repo_context_seed(target_root=paths.target_root, profile=profile).files
     )
     conflicts = _apply_init_files(paths.target_root, desired_files, report, dry_run)
     _ensure_local_only_dirs(paths.target_root, report, dry_run)

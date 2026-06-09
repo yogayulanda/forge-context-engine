@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .install_manifest import DEFAULT_SELECTED_TOOLS, parse_tools_arg
+from .install_manifest import DEFAULT_SELECTED_TOOLS, ALL_SUPPORTED_TOOLS, parse_tools_args
 from .runtime_ops import run_init, run_update
 from .version import __version__
 
@@ -35,7 +35,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     init_parser.add_argument(
         "--tools",
-        help="Select tools: codex, claude, copilot, all, or comma combinations such as codex,claude.",
+        nargs="+",
+        help=(
+            "Select one or more tools. Accepts values like `codex`, `claude`, `copilot`, `all`, "
+            "comma-separated lists, or space-separated lists such as `--tools codex claude`."
+        ),
+    )
+    init_parser.add_argument(
+        "--tool",
+        action="append",
+        help="Repeatable single-tool selector, for example `--tool codex --tool claude`.",
     )
     init_parser.add_argument(
         "--yes",
@@ -60,7 +69,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     update_parser.add_argument(
         "--tools",
-        help="Select tools: codex, claude, copilot, all, or comma combinations such as codex,claude.",
+        nargs="+",
+        help=(
+            "Select one or more tools. Accepts values like `codex`, `claude`, `copilot`, `all`, "
+            "comma-separated lists, or space-separated lists such as `--tools codex claude`."
+        ),
+    )
+    update_parser.add_argument(
+        "--tool",
+        action="append",
+        help="Repeatable single-tool selector, for example `--tool codex --tool claude`.",
     )
     update_parser.add_argument(
         "--yes",
@@ -101,7 +119,7 @@ def _handle_init(args: argparse.Namespace) -> int:
 
 def _handle_update(args: argparse.Namespace) -> int:
     try:
-        tools = parse_tools_arg(args.tools) if args.tools else None
+        tools = _resolve_explicit_tools(args)
     except ValueError as exc:
         print(f"ERROR: {exc}")
         return 2
@@ -117,21 +135,32 @@ def _handle_update(args: argparse.Namespace) -> int:
 def _resolve_tools(args: argparse.Namespace) -> tuple[str, ...]:
     """Resolve tool selection from flags or a short interactive prompt."""
 
-    if args.tools:
-        return parse_tools_arg(args.tools)
+    explicit_tools = _resolve_explicit_tools(args)
+    if explicit_tools is not None:
+        return explicit_tools
     if args.yes or not sys.stdin.isatty():
         return DEFAULT_SELECTED_TOOLS
 
+    options = ", ".join(f"{index + 1}:{tool}" for index, tool in enumerate(ALL_SUPPORTED_TOOLS))
     prompt = (
         "Enable AI tools [codex,claude] "
-        "(options: codex, claude, copilot, all; default: codex,claude): "
+        f"(options: {options}, 0:all; you can type names, numbers, comma, or spaces; default: codex,claude): "
     )
     try:
         response = input(prompt).strip()
     except EOFError:
         return DEFAULT_SELECTED_TOOLS
 
-    return parse_tools_arg(response or ",".join(DEFAULT_SELECTED_TOOLS))
+    return parse_tools_args(response or ",".join(DEFAULT_SELECTED_TOOLS))
+
+
+def _resolve_explicit_tools(args: argparse.Namespace) -> tuple[str, ...] | None:
+    raw_values: list[str] = []
+    raw_values.extend(args.tools or [])
+    raw_values.extend(args.tool or [])
+    if not raw_values:
+        return None
+    return parse_tools_args(raw_values)
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+import re
 from typing import Any
 
 from .version import __version__
@@ -62,17 +63,51 @@ class ForgeInstallManifest:
     managed_file_hashes: dict[str, str] = field(default_factory=dict)
 
 
+TOOL_ALIASES = {
+    "0": "all",
+    "1": "codex",
+    "2": "claude",
+    "3": "copilot",
+    "all": "all",
+    "default": "default",
+    "codex": "codex",
+    "code": "codex",
+    "claude": "claude",
+    "claude-code": "claude",
+    "claude_code": "claude",
+    "copilot": "copilot",
+    "github-copilot": "copilot",
+    "github_copilot": "copilot",
+    "gh-copilot": "copilot",
+}
+
+
 def normalize_tools(tools: tuple[str, ...] | list[str]) -> tuple[str, ...]:
     """Normalize tool names into canonical order."""
 
-    seen = {tool.strip().lower() for tool in tools if tool.strip()}
-    if "all" in seen:
-        return ALL_SUPPORTED_TOOLS
+    seen: set[str] = set()
+    unknown: list[str] = []
+    for tool in tools:
+        token = tool.strip().lower()
+        if not token:
+            continue
+        canonical = TOOL_ALIASES.get(token)
+        if canonical is None:
+            unknown.append(tool.strip())
+            continue
+        if canonical == "default":
+            seen.update(DEFAULT_SELECTED_TOOLS)
+            continue
+        if canonical == "all":
+            return ALL_SUPPORTED_TOOLS
+        seen.add(canonical)
 
-    unknown = seen - set(ALL_SUPPORTED_TOOLS)
     if unknown:
-        joined = ", ".join(sorted(unknown))
-        raise ValueError(f"Unsupported tool selection: {joined}")
+        joined = ", ".join(sorted(set(unknown)))
+        raise ValueError(
+            "Unsupported tool selection: "
+            f"{joined}. Use codex, claude, copilot, all, or numeric picks 1/2/3."
+        )
 
     normalized = tuple(tool for tool in ALL_SUPPORTED_TOOLS if tool in seen)
     if not normalized:
@@ -80,14 +115,25 @@ def normalize_tools(tools: tuple[str, ...] | list[str]) -> tuple[str, ...]:
     return normalized
 
 
-def parse_tools_arg(raw: str | None) -> tuple[str, ...]:
-    """Parse `--tools` into a canonical tool tuple."""
+def parse_tools_args(raw: str | list[str] | tuple[str, ...] | None) -> tuple[str, ...]:
+    """Parse friendly tool input into a canonical tool tuple."""
 
     if raw is None:
         return DEFAULT_SELECTED_TOOLS
-    parts = [part.strip() for part in raw.split(",")]
-    return normalize_tools(parts)
+    values = [raw] if isinstance(raw, str) else list(raw)
+    tokens: list[str] = []
+    for value in values:
+        for token in re.split(r"[\s,;+|/]+", value.strip()):
+            cleaned = token.strip()
+            if cleaned:
+                tokens.append(cleaned)
+    return normalize_tools(tokens)
 
+
+def parse_tools_arg(raw: str | None) -> tuple[str, ...]:
+    """Parse `--tools` into a canonical tool tuple."""
+
+    return parse_tools_args(raw)
 
 def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[str, ...]:
     """Build manifest managed paths for the selected profile/tools."""
