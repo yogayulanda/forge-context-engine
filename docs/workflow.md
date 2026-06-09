@@ -57,6 +57,7 @@ For multi-repo work, this workflow still runs in bounded scope:
 | human approval | ECP transitions to approved execution input | N/A |
 | `forge-execute` | Code changes + validation report | Yes, inside approved scope |
 | `forge-review` | Verdict + diff reviewed + findings + validation assessment + context impact | No |
+| `forge-ai-readiness` | AI readiness report + remediation roadmap + proposed context updates | No |
 | `forge-verify-context` | Context health/freshness result | No |
 | fix loop | Bounded code fix | Yes, inside approved fix scope |
 
@@ -65,6 +66,7 @@ Minimum common artifact shape across tools:
 - ECP: `Approved Scope`, `Files likely to change`, `Task sequence`, `Coding rules`, `Safety constraints`, `Validation commands`, `Stop conditions`, `Expected execution report`, `Status`
 - Execution Report: `Changed files`, `What changed`, `Validation run`, `Deviations`, `Remaining risks`, `Status`
 - Review: `Verdict`, `Diff Reviewed`, `Findings`, `Validation assessment`, `Context Impact`, `Recommended next step`, `Status`
+- AI Readiness Report: `Executive Summary`, `Verdict`, `Readiness Profile`, `Key Strengths`, `Priority Risks`, `Findings`, `Ambiguities`, `Questions For Human`, `Context Drift`, `Proposed Context Updates`, `Remediation Roadmap`, `Evidence Coverage`, `Recommended Next Step`, `Status`
 
 Optional saved artifact paths:
 
@@ -72,6 +74,8 @@ Optional saved artifact paths:
 .forge/generated/plans/YYYY-MM-DD-<slug>-plan.md
 .forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md
 .forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md
+.forge/generated/reports/YYYY-MM-DD-<slug>-ai-readiness-report.md
+.forge/generated/reports/YYYY-MM-DD-<slug>-ai-readiness-roadmap.md
 .forge/generated/reviews/YYYY-MM-DD-<slug>-review.md
 ```
 
@@ -147,6 +151,7 @@ Guardrails:
 | `forge-init` | The repository already has confirmed Forge context/config. |
 | `forge-ask` | Intent is already clear; no understanding gaps. |
 | `forge-plan` | Change is simple, bounded, well-understood, no architectural risk. |
+| `forge-ai-readiness` | The repository is already well understood and no readiness audit or remediation prioritization is needed. |
 | `forge-verify-context` | No context card or source evidence could be affected. |
 | Human approval gates | **Never.** Approval between plan -> implementation and implementation -> execute is always required. |
 
@@ -159,6 +164,7 @@ Not every task starts at `forge-plan`.
 | Situation | Entry point |
 |---|---|
 | Understanding code or current state | `forge-ask` |
+| Repository onboarding, AI safety, or context fitness audit | `forge-ai-readiness` |
 | Active incident or production failure | Incident scenario: `ask` -> `plan` -> `implementation` -> `execute` -> `review` as needed |
 | Behavior-preserving cleanup | Refactor scenario: `plan` -> `implementation` -> `execute` -> `review` as needed |
 | Clear, bounded, well-understood change | `forge-implementation` directly, then human approval before execute |

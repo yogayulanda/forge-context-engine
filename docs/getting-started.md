@@ -107,6 +107,8 @@ Manual setup remains available when you want to copy runtime files directly.
 
    Start from runtime skeleton files, then populate repo facts from code, docs, ADRs, and human confirmations. Do not copy broad assumptions into context.
 
+   For a broad audit before trusting larger AI changes, use `ai-readiness` to inspect repository discoverability, context fitness, ambiguity, and remediation priorities without editing code.
+
 4. Keep service and workspace responsibilities separate.
 
    - Service repo context owns repo-specific facts and implementation detail.

@@ -12,6 +12,7 @@ $forge-review
 Use Forge review mode on this branch.
 Use Forge plan mode for this change.
 Use Forge execute mode for the approved ECP.
+Use Forge ai-readiness mode on this repo before larger AI-driven work.
 ```
 
 The expected path is:
@@ -32,6 +33,7 @@ Codex request -> AGENTS.md -> shared skill -> .forge/context mode -> scoped repo
 | `implementation` | `forge-implementation` |
 | `execute` | `forge-execute` |
 | `review` | `forge-review` |
+| `ai-readiness` | `forge-ai-readiness` |
 | `verify-context` | `forge-verify-context` |
 
 Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route validation, incident, or refactor requests through the core lifecycle.
@@ -52,6 +54,13 @@ Good review request:
 ```text
 Use Forge review mode.
 Prioritize bugs, behavioral regressions, validation gaps, security, context impact, and the exact diff reviewed.
+```
+
+Good readiness request:
+
+```text
+Use Forge ai-readiness mode on this repo.
+Audit context fitness, ambiguity, validation readiness, and remediation priorities.
 ```
 
 ## Boundaries

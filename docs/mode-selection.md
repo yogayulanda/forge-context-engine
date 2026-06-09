@@ -12,6 +12,7 @@ Use this page when the question is: Which Forge mode should I use right now?
 | I have an approved plan and need an execution handoff. | `implementation` | Converts the approved plan into an Execution Context Package. |
 | I have an approved ECP and want changes applied. | `execute` | Modifies the repository inside the approved scope. |
 | I need senior MR-style assessment. | `review` | Checks goal alignment, scope drift, validation honesty, lifecycle compliance, security, and context impact. |
+| I need to know whether this repo is ready for effective AI-assisted work. | `ai-readiness` | Audits context fitness, discoverability, ambiguity, change-safety hotspots, and remediation priorities without editing code. |
 | I need to check context freshness/health. | `verify-context` | Verifies `.forge/context` health only. |
 
 ## Ask vs Scenario Diagnosis
@@ -53,6 +54,17 @@ Use Forge review mode on this branch.
 Focus on correctness, validation honesty, rollback, security, context impact, and the exact diff reviewed.
 ```
 
+## AI-Readiness vs Verify-Context
+
+Use `ai-readiness` when the question is broader than context freshness:
+
+```text
+Use Forge ai-readiness mode on this repo.
+Audit AI readiness, list ambiguities that need human confirmation, and produce a remediation roadmap.
+```
+
+Use `verify-context` only when the question is whether `.forge/context` itself is stale, contradictory, or incomplete.
+
 ## Execute Boundaries
 
 Use `execute` only when the approved ECP and change boundary are clear.
@@ -92,6 +104,7 @@ Do not use `verify-context` to review code, approve an MR, validate a test suite
 | "I want to know what to change, but not code yet." | `plan` |
 | "I know the change; I need the handoff package." | `implementation` |
 | "The code is changed; are we ready to merge?" | `review` |
+| "Can AI safely work in this repo yet?" | `ai-readiness` |
 | "Tests are failing; why?" | Incident scenario starting with `ask`; use `execute` only for an approved fix. |
 | "Can the assistant fix the review findings?" | `execute` with the approved finding scope, or `implementation` first for major fixes. |
 | "Can we clean this package while preserving behavior?" | Refactor scenario using `plan`, `implementation`, `execute`, and `review` as needed. |
@@ -140,6 +153,10 @@ Run the narrow tests available in this repo and report any environment blockers.
 
 ```text
 Use Forge review mode on this MR and report verdict plus Diff Reviewed.
+```
+
+```text
+Use Forge ai-readiness mode on this repo and produce an AI readiness report plus remediation roadmap.
 ```
 
 ```text

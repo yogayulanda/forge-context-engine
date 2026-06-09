@@ -198,8 +198,8 @@ Rules:
 - `notes` = concise human/AI guidance only.
 - Modes MUST NOT re-list `00-meta/*` and `01-core/*` unless explicitly needed.
 - Modes MUST NOT contain domain knowledge, large workflow playbooks, repository-specific implementation instructions, or duplicate `conventions.md`.
-- Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
-- Ask owns lightweight repo understanding; plan must stay strategic; implementation must produce a human-reviewable ECP; execute owns approved repository modification behavior; review owns correctness/risk and validation-gap assessment; verify-context owns context health. Incident, refactor, and test-focused work are workflow scenarios, not core lifecycle modes.
+- Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `ai-readiness`, and `verify-context`.
+- Ask owns lightweight repo understanding; plan must stay strategic; implementation must produce a human-reviewable ECP; execute owns approved repository modification behavior; review owns correctness/risk and validation-gap assessment; ai-readiness owns repository AI-readiness audit behavior; verify-context owns context health. Incident, refactor, and test-focused work are workflow scenarios, not core lifecycle modes.
 - Token budget labels such as `medium`, `medium-high`, or `large` are invalid; use values such as `4000`, `8000`, or `12000`.
 
 ### Status Rules (Phase 1)
@@ -480,7 +480,7 @@ Complete `00-meta/context-manifest.md` File Registry with all files created duri
 [ ] At least ADR-0001 exists
 [ ] modes/* expose Markdown sections: include/on_demand/exclude/token_budget/notes
 [ ] modes/* token_budget is numeric only
-[ ] visible core modes constrained to init/ask/plan/implementation/execute/review/verify-context
+[ ] visible core modes constrained to init/ask/plan/implementation/execute/review/ai-readiness/verify-context
 [ ] implementation mode produces task breakdowns without code modification
 [ ] execute mode owns repository modification behavior
 [ ] validation activity remains distinct across execute/review and does not become a core lifecycle mode

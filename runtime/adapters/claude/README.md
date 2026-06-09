@@ -20,6 +20,7 @@ Claude slash commands live under `commands/` when materialized. They wrap shared
 - `/forge-implementation` -> `runtime/skills/forge-implementation/SKILL.md`
 - `/forge-execute` -> `runtime/skills/forge-execute/SKILL.md`
 - `/forge-review` -> `runtime/skills/forge-review/SKILL.md`
+- `/forge-ai-readiness` -> `runtime/skills/forge-ai-readiness/SKILL.md`
 - `/forge-verify-context` -> `runtime/skills/forge-verify-context/SKILL.md`
 
 Compatibility wrappers such as `/forge-implement`, `/forge-test`, `/forge-incident`, and `/forge-refactor` must route into the final lifecycle and must not define core modes.

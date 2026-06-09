@@ -26,6 +26,7 @@ Codex should treat these as Forge skill entrypoints:
 | `Use Forge implementation mode` | `forge-implementation` |
 | `Use Forge execute mode` | `forge-execute` |
 | `Use Forge review mode` | `forge-review` |
+| `Use Forge ai-readiness mode` | `forge-ai-readiness` |
 | `Use Forge verify-context mode` | `forge-verify-context` |
 
 `forge-test`, `forge-incident`, and `forge-refactor` are scenario compatibility skills, not core modes.

@@ -1,0 +1,207 @@
+# AI Readiness Mode
+
+| Field | Value |
+|---|---|
+| Document | Forge AI Readiness Mode |
+| Version | 1.0 |
+| Date | 2026-06-09 |
+| Status | `decision` |
+| Scope | Read-only repository audit for AI readiness, context fitness, ambiguity detection, and remediation guidance |
+| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/context/modes/ai-readiness.md`, `runtime/skills/forge-ai-readiness/SKILL.md` |
+
+## 0. Purpose
+
+`ai-readiness` is a read-only Forge mode for auditing whether a repository is ready for safe, effective AI-assisted engineering.
+
+It exists to answer questions such as:
+- Is this repository navigable enough for AI to reason safely?
+- Is `.forge/context` representative, fresh, and actionable?
+- Which ambiguities still require human confirmation?
+- Which risks make autonomous or multi-file AI changes unsafe right now?
+- Which context updates or remediation steps would improve readiness fastest?
+
+`ai-readiness` does not replace `review`, `verify-context`, `plan`, or `execute`.
+It inspects repository readiness for AI usage across codebase evidence, context quality, and operational safety.
+
+## 1. Mode Boundary
+
+`ai-readiness` is read-only by definition.
+
+Allowed:
+- Read scoped repository evidence.
+- Read relevant `.forge/context` files.
+- Compare current evidence to context and generated artifacts.
+- Report readiness strengths, risks, ambiguities, drift, and remediation.
+- Propose reviewable `.forge/context-patches/...` updates.
+- Save report and roadmap artifacts only when the user explicitly asks or approves persistence.
+
+Forbidden:
+- Edit source code, tests, configs, deployment files, or runtime behavior.
+- Silently overwrite `.forge/context`.
+- Promote generated output directly into curated context.
+- Invent ownership, contracts, business rules, or runtime behavior without evidence.
+- Collapse into a generic security/compliance audit disconnected from AI task safety.
+
+## 2. Inputs
+
+- `.forge/forge.config.yaml`
+- `.forge/context/modes/ai-readiness.md`
+- `.forge/context/00-meta/conventions.md`
+- Relevant `.forge/context` cards
+- Current repository evidence: docs, manifests, structure, representative source files, tests, validation entrypoints, and integration boundaries
+- Optional prior readiness report or context patch proposal when explicitly referenced
+
+## 3. Readiness Focus Areas
+
+Minimum audit categories:
+- AI Entrypoint Readiness
+- Context Coverage and Freshness
+- Repository Discoverability
+- Architecture and Boundary Clarity
+- Contract and Interface Clarity
+- Test and Validation Readiness
+- Change-Safety Hotspots
+- Governance and Operational Signals
+- Generated Noise and Indexing Hygiene
+- Human-Decision Dependency
+
+The mode should stay evidence-first and scoped. It should read only enough code and context to justify the readiness conclusions.
+
+## 4. Output Contract
+
+`ai-readiness` returns one compact audit report with these sections:
+- `AI Readiness Report`
+- `Executive Summary`
+- `Verdict`
+- `Readiness Profile`
+- `Key Strengths`
+- `Priority Risks`
+- `Findings`
+- `Ambiguities`
+- `Questions For Human`
+- `Context Drift`
+- `Proposed Context Updates`
+- `Artifact Recommendations`
+- `Remediation Roadmap`
+- `Evidence Coverage`
+- `Recommended Next Step`
+- `Status`
+
+When persistence is requested or approved, recommended artifact paths are:
+- `.forge/generated/reports/YYYY-MM-DD-<slug>-ai-readiness-report.md`
+- `.forge/generated/reports/YYYY-MM-DD-<slug>-ai-readiness-roadmap.md`
+- `.forge/context-patches/YYYY-MM-DD-<slug>-ai-readiness-context-patch.md` when durable context updates are proposed
+
+## 5. Findings Contract
+
+Findings must be grouped by severity:
+- `Critical Findings`
+- `High Findings`
+- `Medium Findings`
+- `Low Findings`
+
+Each finding should stay compact and include:
+- `ID`
+- `Category`
+- `Title`
+- `Why It Matters For AI`
+- `Evidence`
+- `Impact`
+- `Recommended Direction`
+- `Confidence`
+
+Avoid long repeated prose when several findings share the same failure pattern.
+
+## 6. Verdict and Status
+
+Primary verdict values:
+- `autonomous_ready`
+- `assist_ready`
+- `context_limited`
+- `confirmation_required`
+- `blocked`
+
+Status values:
+- `completed`
+- `partial_evidence`
+- `needs_confirmation`
+- `blocked`
+
+Guidance:
+- `autonomous_ready`: bounded multi-file AI work is plausible with acceptable evidence and safety signals.
+- `assist_ready`: AI is useful for analysis and bounded edits, but important readiness gaps remain.
+- `context_limited`: repository/context quality materially reduces AI reliability.
+- `confirmation_required`: important readiness conclusions depend on unresolved human decisions.
+- `blocked`: evidence or access is too incomplete for a trustworthy audit.
+
+## 7. Evidence and Ambiguity Rules
+
+- Current repository evidence wins over stale context or generated artifacts.
+- Deterministic evidence should be preferred when available.
+- Partial evidence is acceptable if the report clearly labels the resulting confidence and blind spots.
+- Unknowns that affect safe AI use belong under `Ambiguities` or `Questions For Human`, not silent inference.
+- Context contradictions belong under `Context Drift`.
+
+## 7.1 Questions For Human Contract
+
+When unresolved ambiguity materially affects safe AI use, `ai-readiness` must emit a structured `Questions For Human` section instead of leaving the issue as a generic unknown.
+
+Each question should include:
+- `ID`
+- `Decision Needed`
+- `Why This Is Unresolved`
+- `Options`
+- `Recommended Option`
+- `Why Recommended`
+- `Impact If Unanswered`
+
+Question design rules:
+- Keep questions short, operational, and answerable.
+- Ask only for decisions that cannot be safely derived from repository evidence.
+- Provide two options by default.
+- Allow a third option only when the decision truly has a material third path.
+- Do not emit more than three options for one question.
+- Put the recommended option first when practical and state why it is recommended.
+- Escalate to verdict `confirmation_required` when unanswered decisions materially affect architecture boundaries, contract ownership, runtime behavior, security posture, validation trust, or durable context accuracy.
+- Use status `needs_confirmation` when the audit is otherwise usable but important readiness conclusions remain conditional on human answers.
+- Keep minor informational unknowns under `Ambiguities` without forcing a human question.
+
+## 8. Context Update Proposal Rules
+
+`ai-readiness` may recommend durable context updates, but must not apply them directly.
+
+When a context update is warranted, the report should name:
+- target context file
+- reason for update
+- evidence basis
+- confidence
+- whether a reviewable context patch is recommended now
+
+Durable updates should be proposed through `.forge/context-patches/...`.
+
+## 9. Roadmap Contract
+
+The remediation roadmap must be practical and grouped by time horizon:
+- `Immediate`
+- `Near Term`
+- `Medium Term`
+
+Each roadmap item should include:
+- `Priority`
+- `Outcome`
+- `Target Area`
+- `Why It Improves AI Readiness`
+- `Suggested Action`
+- `Dependencies`
+- `Effort`
+
+Roadmap items should optimize for the highest readiness gain per unit of effort.
+
+## 10. Relationship To Other Modes
+
+- Use `ask` for focused repository understanding without a readiness audit.
+- Use `verify-context` when the only goal is `.forge/context` health/freshness.
+- Use `review` for MR or executed-result assessment.
+- Use `plan` when the output of the readiness audit turns into an approved change initiative.
+
+`ai-readiness` may recommend those modes, but must not perform their responsibilities itself.

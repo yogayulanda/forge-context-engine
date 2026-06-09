@@ -20,6 +20,7 @@ Copy or materialize these files into a target repository when Copilot prompt fil
     +-- forge-implementation.prompt.md
     +-- forge-execute.prompt.md
     +-- forge-review.prompt.md
+    +-- forge-ai-readiness.prompt.md
     +-- forge-verify-context.prompt.md
 ```
 
@@ -43,6 +44,7 @@ GitHub Copilot prompt invocation may use:
 - `/forge-implementation`
 - `/forge-execute`
 - `/forge-review`
+- `/forge-ai-readiness`
 - `/forge-verify-context`
 
 Prompt behavior must resolve to the matching shared skill:

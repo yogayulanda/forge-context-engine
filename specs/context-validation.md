@@ -137,7 +137,7 @@ Use this as:
 | F15 | Mode invocation reads `.forge/forge.config.yaml` before `.forge/context/modes/<mode>.md` | warning | manual |
 | F16 | Mode invocation keeps context-loading details concise in normal output and reports missing evidence that affects the task | warning | manual |
 | F17 | Mode invocation does not broad-load `.forge/context` by default when the mode delta is sufficient | warning | manual |
-| F18 | Init, ask, plan, implementation, execute, review, and verify-context preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
+| F18 | Init, ask, plan, implementation, execute, review, ai-readiness, and verify-context preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
 | F19 | Mode invocation reports unresolved ambiguity and only highlights mode insufficiency when it affects the task | warning | manual |
 | F20 | Mode-specific execution behavior lives in `modes/<mode>.md` rather than being duplicated in globally loaded `00-meta/conventions.md` | warning | manual |
 | F21 | Unknown handling distinguishes `blocking`, `proposed-default`, and `informational` behavior | warning | manual |
@@ -146,7 +146,7 @@ Use this as:
 | F24 | `run.interaction: manual` remains interactive-first and uses ask-first clarification for blocking decisions | warning | manual |
 | F25 | Plan output discourages excessive architecture-option generation and open-ended brainstorming | warning | manual |
 | F26 | Proposed defaults do not silently become confirmed facts, topology, ownership, contracts, or production runtime behavior | warning | manual |
-| F27 | Visible core modes are constrained to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context` | warning | manual |
+| F27 | Visible core modes are constrained to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `ai-readiness`, and `verify-context` | warning | manual |
 | F28 | Plan mode produces Quick Plan or SDD and does not collapse into detailed executable coding tasks | warning | manual |
 | F29 | Implementation mode produces an ECP only after critical blockers are resolved, without modifying code | warning | manual |
 | F30 | Execute mode owns actual repository modification behavior and reports modified files grouped by responsibility | warning | manual |
@@ -155,7 +155,7 @@ Use this as:
 | F33 | Validation activity remains evidence-based inside execute/review workflows and does not become a separate core mode | warning | manual |
 | F34 | Execute mode reports scoped validation without replacing review | warning | manual |
 | F35 | Review mode checks validation evidence and gaps without becoming execution | warning | manual |
-| F36 | Mode responsibilities remain separated across init, ask, plan, implementation, execute, review, and verify-context | warning | manual |
+| F36 | Mode responsibilities remain separated across init, ask, plan, implementation, execute, review, ai-readiness, and verify-context | warning | manual |
 | F37 | Test placement respects existing repository conventions and does not force the recommended `testing/` layout without evidence | warning | manual |
 | F38 | Unit tests are not placed far from the target package/file without a repository convention or explicit reason | warning | manual |
 | F39 | Integration/e2e tests are not mixed into unit test folders without a repository convention or explicit reason | warning | manual |
@@ -173,6 +173,8 @@ Use this as:
 | F51 | Interactive implementation confirmation includes blocker title, practical why-it-matters explanation, Recommended option with reason, Alternative option with tradeoff, and clear reply instructions | warning | manual |
 | F52 | Interactive implementation confirmation uses 2 options by default and at most 3 only for major architecture tradeoffs | warning | manual |
 | F53 | Implementation output includes exactly one readiness status: `NEEDS_CONFIRMATION`, `NEEDS_HUMAN_APPROVAL`, `READY_FOR_PARTIAL_EXECUTION`, or `READY_FOR_EXECUTION` | warning | manual |
+| F54 | AI-readiness questions for human are emitted only for material unresolved decisions and include bounded options, a recommended option, recommendation reason, and impact if unanswered | warning | manual |
+| F55 | AI-readiness does not ask more than 3 options for one human question and avoids open-ended clarification when bounded options are possible | warning | manual |
 | F54 | `READY_FOR_EXECUTION` is not used with conditional language such as assumed values, values provided later, unknown topics/schema/groups/DLQ, unknown duplicate policy, missing contract details, or pending production confirmation | error | manual |
 | F55 | Execution-sensitive `READY_FOR_EXECUTION` output includes concrete execution values before executor instructions | error | manual |
 | F56 | Final executor instructions do not contain unresolved required execution values | error | manual |
@@ -616,7 +618,7 @@ ANTI-DUPLICATION
 [ ] F24 run.interaction manual remains interactive-first
 [ ] F25 excessive architecture-option generation discouraged
 [ ] F26 proposed defaults not promoted to confirmed facts
-[ ] F27 visible core modes constrained to init/ask/plan/implementation/execute/review/verify-context
+[ ] F27 visible core modes constrained to init/ask/plan/implementation/execute/review/ai-readiness/verify-context
 [ ] F28 plan produces Quick Plan or SDD, not detailed coding tasks
 [ ] F29 implementation produces an ECP only after critical blockers are resolved
 [ ] F30 execute owns repository modification behavior and groups changed files by responsibility
@@ -626,6 +628,8 @@ ANTI-DUPLICATION
 [ ] F34 execute reports scoped validation without replacing review
 [ ] F35 review checks validation evidence without becoming execution
 [ ] F36 mode responsibilities remain separated
+[ ] F54 ai-readiness human questions are structured and bounded
+[ ] F55 ai-readiness avoids open-ended clarification when bounded options are possible
 [ ] F37 test placement respects existing repo conventions
 [ ] F38 unit tests not placed far from target package without reason
 [ ] F39 integration/e2e tests not mixed into unit folders without reason

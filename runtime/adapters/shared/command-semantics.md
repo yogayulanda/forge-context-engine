@@ -37,6 +37,7 @@ The shared skill owns Purpose, Load, Invocation, Focus, Output, and Do NOT.
 | `implementation` | `forge-implementation` | ECP generation |
 | `execute` | `forge-execute` | Approved ECP execution |
 | `review` | `forge-review` | Executed-result review |
+| `ai-readiness` | `forge-ai-readiness` | Repository AI-readiness audit |
 | `verify-context` | `forge-verify-context` | Context health/freshness only |
 
 Scenario compatibility skills:
@@ -59,6 +60,7 @@ Core shared skills:
 - `forge-implementation`
 - `forge-execute`
 - `forge-review`
+- `forge-ai-readiness`
 - `forge-verify-context`
 
 Compatibility aliases such as `forge-implement`, `forge-test`, `forge-incident`, and `forge-refactor` must remain thin pointers into the final lifecycle.

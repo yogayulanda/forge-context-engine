@@ -9,6 +9,7 @@ Common requests:
 ```text
 /forge-plan
 /forge-review
+/forge-ai-readiness
 Use Forge ask mode to explain this service flow.
 Use Forge verify-context mode to check context freshness.
 ```
@@ -44,6 +45,11 @@ Preserve the public event schema and list validation needed.
 ```text
 Use Forge review mode on this branch.
 Focus on correctness, validation honesty, security, context impact, and the exact diff reviewed.
+```
+
+```text
+Use Forge ai-readiness mode on this repo.
+Produce an AI readiness report, grouped findings, and a remediation roadmap.
 ```
 
 ## Boundaries

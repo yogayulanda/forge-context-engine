@@ -323,14 +323,15 @@ forge-plan
 forge-implementation
 forge-execute
 forge-review
+forge-ai-readiness
 forge-verify-context
 ```
 
 Compatibility scenario skills may exist for older prompts: `forge-test`, `forge-incident`, `forge-refactor`, and `forge-implement`. They must route into the final lifecycle and must not define core modes.
 
 Tool syntax examples:
-- Claude: `/forge-review`, `/forge-plan`
-- Codex: `$forge-review`, `/skill forge-review`, future-compatible `/forge-review`
+- Claude: `/forge-review`, `/forge-plan`, `/forge-ai-readiness`
+- Codex: `$forge-review`, `/skill forge-review`, future-compatible `/forge-review`, natural `Use Forge ai-readiness mode`
 - Scoped variants: `forge:review:security`, `forge:execute:contract-validation`
 
 Scope suffixes must describe loading or output focus. They must not imply new modes.

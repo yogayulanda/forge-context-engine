@@ -12,6 +12,7 @@ Common prompt-file style:
 /forge-ask
 /forge-plan
 /forge-review
+/forge-ai-readiness
 ```
 
 The expected path is:
@@ -53,6 +54,11 @@ Preserve the event schema and list validation needed.
 ```text
 /forge-review
 Review this MR for correctness, validation honesty, and rollback readiness.
+```
+
+```text
+/forge-ai-readiness
+Audit whether this repository is ready for safe AI-assisted changes.
 ```
 
 ## Boundaries

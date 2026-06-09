@@ -13,7 +13,7 @@
 
 ## 0. Purpose
 
-Mode invocation defines how an AI assistant uses Forge mode files during `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context` work.
+Mode invocation defines how an AI assistant uses Forge mode files during `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `ai-readiness`, and `verify-context` work.
 
 The protocol ensures:
 - Mode files are operational contracts, not optional hints.
@@ -460,9 +460,9 @@ Runtime placement follows these boundaries:
 - `runtime/AGENTS.md` and tool adapters keep the same thin invocation-only boundary.
 - `00-meta/conventions.md` keeps global cognition principles and mode-loading discipline.
 - `modes/<mode>.md` owns mode-specific execution and reporting behavior in `## notes`.
-- Mode-specific `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context` behavior should not be duplicated in globally loaded conventions.
+- Mode-specific `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `ai-readiness`, and `verify-context` behavior should not be duplicated in globally loaded conventions.
 - Runtime, validation, drift, artifact, governance, and secret semantics are referenced from adapters, not duplicated in adapters.
-- Visible core modes remain limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
+- Visible core modes remain limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `ai-readiness`, and `verify-context`.
 
 This placement reduces globally loaded operational text while preserving invocation guarantees.
 
@@ -497,6 +497,7 @@ See `docs/workflow.md` for the canonical workflow narrative, approval gate UX, a
 | `implementation` | ECP generation | Execution Context Package (`status: proposed`) | Before execute |
 | `execute` | Approved ECP application | Code changes + result report | After ECP approval |
 | `review` | Executed-result assessment | Review Result | No (independent) |
+| `ai-readiness` | Repository AI-readiness audit | AI Readiness Report | No |
 | `verify-context` | Context health/freshness | Context Verification Result | No |
 | Incident scenario | Issue and incident diagnosis using core modes | Scenario artifact when needed | Uses core-mode gates |
 | Refactor scenario | Conservative behavior-preserving cleanup using core modes | Scenario artifact when needed | Uses core-mode gates |
@@ -518,6 +519,7 @@ ECP readiness in implementation output is a readiness signal, not autonomous per
 - `implementation` produces an ECP/readiness package with exact likely files, task sequence, coding rules, safety constraints, acceptance criteria, validation commands, stop conditions, and expected execution report format; it does not modify code directly.
 - `execute` implements approved ECP scope; it does not redesign architecture or absorb review responsibilities.
 - `review` assesses goal alignment, scope drift, lifecycle boundary compliance, validation evidence, security/risk boundaries, and context impact using verdicts `accept`, `request_changes`, `needs_more_validation`, or `blocked`; it performs a small per-task Context Impact Check and may propose a reviewable context patch, but it does not modify code or mutate `.forge/context` directly.
+- `ai-readiness` audits whether the repository is ready for safe, effective AI-assisted work across context fitness, discoverability, architecture/interface clarity, validation readiness, ambiguity, and change-safety hotspots; it is read-only, may produce readiness artifacts, and may propose reviewable context patches, but it does not modify code or mutate `.forge/context` directly.
 - `verify-context` checks `.forge/context` health, freshness, and reviewable patch quality; it may validate context quality issues or context-patch proposals, but it does not validate plans, ECPs, code diffs, MR readiness, or general code quality.
 - Incident scenarios diagnose symptoms to root cause through `ask`, `plan`, `implementation`, `execute`, and `review` as needed; they do not become core lifecycle modes or redesign architecture.
 - Refactor scenarios improve code conservatively through `plan`, `implementation`, `execute`, and `review` as needed; they preserve behavior and do not hide architecture changes.
@@ -624,7 +626,7 @@ The following are invalid mode invocation behaviors. See `runtime/.forge/context
 - Treating a proposed default as confirmed.
 
 **Mode boundaries:**
-- Collapsing init, ask, plan, implementation, execute, review, and verify-context into generic reasoning behavior.
+- Collapsing init, ask, plan, implementation, execute, review, ai-readiness, and verify-context into generic reasoning behavior.
 - Treating incident, refactor, or test-focused scenarios as separate core lifecycle modes.
 - Allowing plan to produce detailed executable coding tasks instead of Quick Plan or SDD.
 - Allowing implementation mode to emit final executable tasks while critical blockers remain unresolved.
@@ -680,7 +682,7 @@ Mode invocation validation checks that runtime behavior follows this protocol. S
 - `CONTEXT_BUDGET_LIMITED` used when required evidence exceeds scoped budget.
 
 **Mode boundary integrity:**
-- All seven core modes retain distinct operational behavior per section 6.
+- All eight core modes retain distinct operational behavior per section 6.
 - No mode collapsed into another or absorbed out-of-scope responsibilities.
 - Mode-specific behavior lives in mode files, not globally loaded conventions.
 

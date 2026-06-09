@@ -61,10 +61,10 @@ Load based on task type. Do not load all for every task.
 | `layers/<layer>` | Mode referencing that layer |
 | `systems/<unit>` | Mode + task intent on that unit |
 | `knowledge/decisions/` | `plan`, `implementation`, `execute`, `review`; on-demand in `ask` |
-| `knowledge/assumptions.md`, `unknowns.md` | `plan`; on-demand in `ask`/`implementation`/`execute`/`review`/`verify-context` |
-| `knowledge/inferred.md` | `ask`, `implementation`, `execute`; on-demand in `plan`/`review`/`verify-context` |
+| `knowledge/assumptions.md`, `unknowns.md` | `plan`; on-demand in `ask`/`implementation`/`execute`/`review`/`ai-readiness`/`verify-context` |
+| `knowledge/inferred.md` | `ask`, `implementation`, `execute`; on-demand in `plan`/`review`/`ai-readiness`/`verify-context` |
 | `.forge/generated/*` | On-demand |
-| `.forge/context-patches/*` | Explicit reference, context impact, or `verify-context` only |
+| `.forge/context-patches/*` | Explicit reference, context impact, `ai-readiness`, or `verify-context` only |
 
 ## Never Auto-Loaded
 

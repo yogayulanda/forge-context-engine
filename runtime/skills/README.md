@@ -32,6 +32,7 @@ Skills are not:
 | `implementation` | `forge-implementation` |
 | `execute` | `forge-execute` |
 | `review` | `forge-review` |
+| `ai-readiness` | `forge-ai-readiness` |
 | `verify-context` | `forge-verify-context` |
 
 Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route into the core lifecycle. They are not core modes.

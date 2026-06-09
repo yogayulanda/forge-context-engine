@@ -9,6 +9,7 @@ Core examples:
 - "Use Forge implementation mode to create an ECP."
 - "Use Forge execute mode for the approved ECP."
 - "Use Forge review mode for this MR."
+- "Use Forge ai-readiness mode to audit this repo before trusting larger AI changes."
 - "Use Forge verify-context mode to check context freshness."
 
 Scenario compatibility examples:
@@ -46,6 +47,7 @@ Do not broad-load `.forge/context`.
 | `forge-implementation` | ECP generation |
 | `forge-execute` | Approved ECP execution |
 | `forge-review` | Executed-result review |
+| `forge-ai-readiness` | Repository AI-readiness audit |
 | `forge-verify-context` | Context health/freshness only |
 | `forge-test` | Scenario compatibility: validation guidance |
 | `forge-incident` | Scenario compatibility: diagnosis |
