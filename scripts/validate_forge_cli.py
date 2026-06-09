@@ -78,6 +78,7 @@ def main() -> int:
             run_case("no source copy", lambda: case_no_source_copy(scratch / "no-source"))
             run_case("no engine-only copy", lambda: case_no_engine_only_copy(scratch / "no-engine"))
             run_case("template hygiene", case_template_hygiene)
+            run_case("package data includes hidden runtime templates", case_package_data_includes_hidden_runtime_templates)
         except ValidationError as exc:
             print(f"FAIL: {exc}")
             return 1
@@ -556,6 +557,17 @@ def case_template_hygiene() -> None:
     if forbidden:
         raise ValidationError(f"engine-only paths packaged into runtime_templates: {forbidden}")
 
+
+def case_package_data_includes_hidden_runtime_templates() -> None:
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    required_entries = (
+        'runtime_templates/**/.forge/**/*.md',
+        'runtime_templates/**/.forge/**/*.yaml',
+        'runtime_templates/**/.forge/**/*.txt',
+        'runtime_templates/**/.github/**/*.md',
+    )
+    for entry in required_entries:
+        assert_contains(pyproject, entry)
 
 def seed_manifestless_runtime(target: Path, tools: tuple[str, ...] = ("codex", "claude")) -> None:
     runtime_root = ROOT / "runtime"

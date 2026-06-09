@@ -35,4 +35,12 @@ forge_context_engine = [
   "runtime_templates/**/*.txt",
   "runtime_templates/**/.gitignore",
   "runtime_templates/**/.gitkeep",
+  "runtime_templates/**/.forge/**/*.md",
+  "runtime_templates/**/.forge/**/*.yaml",
+  "runtime_templates/**/.forge/**/*.txt",
+  "runtime_templates/**/.forge/**/.gitignore",
+  "runtime_templates/**/.forge/**/.gitkeep",
+  "runtime_templates/**/.github/**/*.md",
+  "runtime_templates/**/.github/**/*.yaml",
+  "runtime_templates/**/.github/**/*.txt",
 ]
