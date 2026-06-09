@@ -20,6 +20,7 @@ updated: 2026-06-09
 
 ## on_demand
 - `00-meta/context-manifest.md`
+- `00-meta/ai-readiness-factors.md`
 - `knowledge/decisions/`
 - `knowledge/assumptions.md`
 - `systems/<related>`
@@ -45,7 +46,10 @@ Audit whether the repository is ready for safe, effective AI-assisted engineerin
 - Optional prior readiness artifacts when explicitly referenced.
 
 ## behavior
-- Assess repository discoverability, context fitness, architecture clarity, interface clarity, validation readiness, change-safety hotspots, governance signals, ambiguity, and generated-noise hygiene.
+- Assess repository discoverability, context fitness, code cognitive load, architecture and boundary clarity, interface clarity, validation readiness, change-safety hotspots, governance signals, ambiguity, and generated-noise hygiene.
+- Evaluate against the `FAR-*` factor families in `00-meta/ai-readiness-factors.md`. Bands are evidence-anchored qualitative judgments, not tool scores; Forge runs no scanners. Mark a factor not-evaluated rather than guessing when evidence is thin.
+- Cite the primary `FAR-*` factor ID in each finding so results stay trackable across scans.
+- Derive the verdict from the dominant readiness band using the band→verdict map in `00-meta/ai-readiness-factors.md`.
 - Separate confirmed facts, inferred risks, ambiguities, and questions that require human confirmation.
 - Emit structured `Questions For Human` entries when unresolved decisions materially affect safe AI use. Each question should include `ID`, `Decision Needed`, `Why This Is Unresolved`, `Options`, `Recommended Option`, `Why Recommended`, and `Impact If Unanswered`.
 - Prefer current repository evidence when context or artifacts drift.
@@ -58,7 +62,8 @@ Audit whether the repository is ready for safe, effective AI-assisted engineerin
 ## outputs
 - AI Readiness Report.
 - Verdict.
-- Readiness Profile.
+- Readiness Band (`Optimized`, `Ready`, `Limited`, `Conditional`, `Blocked`).
+- Readiness Profile (compact table of factor families with status and confidence).
 - Key Strengths.
 - Priority Risks.
 - Critical Findings.

@@ -7,7 +7,7 @@
 | Date | 2026-06-09 |
 | Status | `decision` |
 | Scope | Read-only repository audit for AI readiness, context fitness, ambiguity detection, and remediation guidance |
-| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/context/modes/ai-readiness.md`, `runtime/skills/forge-ai-readiness/SKILL.md` |
+| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/context/modes/ai-readiness.md`, `runtime/.forge/context/00-meta/ai-readiness-factors.md`, `runtime/skills/forge-ai-readiness/SKILL.md` |
 
 ## 0. Purpose
 
@@ -57,6 +57,7 @@ Minimum audit categories:
 - AI Entrypoint Readiness
 - Context Coverage and Freshness
 - Repository Discoverability
+- Code Cognitive Load
 - Architecture and Boundary Clarity
 - Contract and Interface Clarity
 - Test and Validation Readiness
@@ -67,12 +68,23 @@ Minimum audit categories:
 
 The mode should stay evidence-first and scoped. It should read only enough code and context to justify the readiness conclusions.
 
+### 3.1 Readiness Factor Catalog
+
+Each focus area resolves to stable factors defined in `runtime/.forge/context/00-meta/ai-readiness-factors.md`. That catalog is the single source of truth for factor IDs (`FAR-<FAMILY>-NN`), the qualitative green/warning/red bands, and the readiness-band → verdict mapping.
+
+Rules:
+- Factor bands are evidence-anchored qualitative judgments, not tool scores. Forge runs no scanners; bands borrow thresholds only as calibration guidance.
+- Findings cite the primary `FAR-*` factor ID so results stay comparable across scans.
+- Mark a factor `not-evaluated` when evidence is too thin instead of guessing.
+- The catalog is loaded on demand only during `ai-readiness`; the mode file stays compact and references it rather than duplicating it.
+
 ## 4. Output Contract
 
 `ai-readiness` returns one compact audit report with these sections:
 - `AI Readiness Report`
 - `Executive Summary`
 - `Verdict`
+- `Readiness Band`
 - `Readiness Profile`
 - `Key Strengths`
 - `Priority Risks`
@@ -103,6 +115,7 @@ Findings must be grouped by severity:
 Each finding should stay compact and include:
 - `ID`
 - `Category`
+- `Factor` (primary `FAR-*` ID from the factor catalog)
 - `Title`
 - `Why It Matters For AI`
 - `Evidence`
@@ -126,6 +139,8 @@ Status values:
 - `partial_evidence`
 - `needs_confirmation`
 - `blocked`
+
+The verdict is derived from the dominant readiness band using the band → verdict map in the factor catalog (`Optimized` → `autonomous_ready`, `Ready` → `assist_ready`, `Limited` → `context_limited`, `Conditional` → `confirmation_required`, `Blocked` → `blocked`). Bands weight Context, Architecture, and Interface factors most heavily and require no numeric scoring.
 
 Guidance:
 - `autonomous_ready`: bounded multi-file AI work is plausible with acceptable evidence and safety signals.

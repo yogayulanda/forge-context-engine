@@ -11,19 +11,22 @@ Expected compact output shape:
 ## Executive Summary
 
 - Verdict: `assist_ready`
+- Readiness Band: `Ready`
 - Status: `needs_confirmation`
 - Evidence Coverage: partial but sufficient for a bounded readiness audit
 - Summary: The repository is navigable enough for scoped AI assistance, but durable context, contract ownership, and validation confidence are not yet strong enough for larger multi-file AI changes.
 
 ## Readiness Profile
 
-| Category | Status | Confidence | Key Reason |
+| Factor Family | Status | Confidence | Key Reason |
 |---|---|---|---|
-| AI Entrypoint Readiness | pass | high | Thin wrappers and scoped mode loading are present |
-| Context Coverage and Freshness | warning | medium | Core context exists, but system-specific cards are thin |
-| Repository Discoverability | warning | medium | Entry paths are visible, but public interfaces are under-documented |
-| Test and Validation Readiness | warning | medium | Narrow validation exists, but critical flows lack explicit safety notes |
-| Human-Decision Dependency | fail | high | Contract ownership and domain defaults are unresolved |
+| Entrypoint and docs (`FAR-DOC-*`) | pass | high | Thin wrappers and scoped mode loading are present |
+| Context fitness (`FAR-CTX-*`) | warning | medium | Core context exists, but system-specific cards are thin |
+| Discoverability (`FAR-DISC-*`) | warning | medium | Entry paths are visible, but public interfaces are under-documented |
+| Code cognitive load (`FAR-CODE-*`) | pass | medium | Modules are small and consistently named; no oversized units observed |
+| Architecture boundaries (`FAR-ARCH-*`) | warning | medium | Layering is implied but boundary rules are undocumented |
+| Validation readiness (`FAR-TEST-*`) | warning | medium | Narrow validation exists, but critical flows lack explicit safety notes |
+| Safety and decisions (`FAR-SAFE-*`) | fail | high | Contract ownership and domain defaults are unresolved |
 
 ## Key Strengths
 
@@ -39,7 +42,8 @@ Expected compact output shape:
 
 ## Critical Findings
 
-### AR-001 | Contract Clarity
+### AR-001 | Contract and Interface Clarity
+- Factor: `FAR-IFACE-01`
 - Title: Shared contract ownership is not explicitly documented
 - Why It Matters For AI: Without contract authority, AI may edit the wrong repository or misstate compatibility boundaries.
 - Evidence: current repo references the shared boundary, but no owner record or context decision confirms authority.
@@ -49,7 +53,8 @@ Expected compact output shape:
 
 ## High Findings
 
-### AR-002 | Context Coverage
+### AR-002 | Context Coverage and Freshness
+- Factor: `FAR-CTX-03`
 - Title: System-level context is present but under-specified
 - Why It Matters For AI: Larger edits need clearer service responsibilities and boundary notes.
 - Evidence: `systems/<service>/system.md` exists but lacks explicit integration and ownership coverage.
