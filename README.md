@@ -119,6 +119,7 @@ Tool selection:
 
 ```bash
 forge init --tools codex,claude
+forge init --tools opencode
 forge init --tools all
 ```
 
@@ -142,6 +143,7 @@ Apply updates:
 ```bash
 forge update
 forge update --tools codex,claude
+forge update --tools opencode
 ```
 
 - `--dry-run` previews changes.
@@ -170,6 +172,7 @@ Typical day-to-day flow:
 Forge keeps the repo contract shared while the tool entrypoints stay thin.
 
 - Codex uses `AGENTS.md`
+- OpenCode uses `AGENTS.md`
 - Claude Code uses `CLAUDE.md`
 - Copilot can use optional `.github/copilot-instructions.md` and prompt wrappers
 

@@ -27,6 +27,8 @@ Additional output only when GitHub Copilot is explicitly selected:
 
 `AGENTS.md`, `CLAUDE.md`, and optional `.github/copilot-instructions.md` stay thin wrappers that point to `.forge/adapter.md` and `.forge/context`.
 
+`AGENTS.md` may be shared by Codex and OpenCode. Selecting OpenCode must not create a second root wrapper file.
+
 ## Incorrect Behaviors Forge Must Reject
 
 - Copying `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, or `runtime/skills/` into every target repository by default.

@@ -101,7 +101,7 @@ Manual setup remains available when you want to copy runtime files directly.
    - `workflow.default_mode: ask` unless the repository has an explicit reason to start elsewhere.
    - `context.root: .forge/context` so context stays repository-local.
    - `policy.require_human_confirmation_for` covers important domain, data, architecture, contract, security, and migration changes.
-   - `tools.adapters` defaults to `codex` and `claude`; add Copilot only when needed.
+   - `tools.adapters` defaults to `codex` and `claude`; add Copilot or OpenCode only when needed.
 
 3. Keep `.forge/context` repository-first.
 
@@ -119,7 +119,7 @@ Manual setup remains available when you want to copy runtime files directly.
 
 5. Keep tool entrypoints thin.
 
-   `CLAUDE.md` and `AGENTS.md` should point to `.forge/adapter.md` and `.forge/context`. Optional `.github/copilot-instructions.md` should do the same. These wrappers should not store repo-specific cognition, lifecycle logic, or artifact policy.
+   `CLAUDE.md` and the shared `AGENTS.md` wrapper should point to `.forge/adapter.md` and `.forge/context`. Optional `.github/copilot-instructions.md` should do the same. These wrappers should not store repo-specific cognition, lifecycle logic, or artifact policy.
 
 6. Make one scoped first request.
 
@@ -170,7 +170,7 @@ Use `CLAUDE.md` for Claude-compatible assistants. It should be a thin wrapper th
 - treat `.forge/context` as source of truth
 - follow the requested lifecycle mode with scoped context only
 
-Use `AGENTS.md` for Codex-compatible assistants. It should be a thin wrapper that maps natural prompts such as `Use Forge review mode` to the Forge lifecycle defined in `.forge/adapter.md`.
+Use `AGENTS.md` for AGENTS-compatible assistants such as Codex and OpenCode. It should be a thin wrapper that maps natural prompts such as `Use Forge review mode` to the Forge lifecycle defined in `.forge/adapter.md`.
 
 Both files are entrypoints only. `.forge/context` remains the source of truth, `.forge/generated` remains generated output only, and `.forge/temp` plus `.forge/cache` stay local-only.
 
@@ -185,6 +185,7 @@ Workspace repos add one more rule: `.forge/workspace.yaml` coordinates linked se
 | Claude | `/forge-plan`, `/forge-review`, or natural language | `CLAUDE.md`, `.forge/adapter.md`, `.forge/context/` |
 | Codex | `$forge-review`, `/skill forge-review`, or natural language | `AGENTS.md`, `.forge/adapter.md`, `.forge/context/` |
 | GitHub Copilot | `/forge-review`, `/forge-plan`, `/forge-ask`, or natural language | `.github/copilot-instructions.md` when selected |
+| OpenCode | `Use Forge review mode`, `/forge-review`, or natural language | `AGENTS.md`, `.forge/adapter.md`, `.forge/context/` |
 
 Tool syntax may differ. The expected behavior should resolve to:
 

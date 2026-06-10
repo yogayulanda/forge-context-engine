@@ -13,6 +13,7 @@
 
 - `.forge/adapter.md` is the shared contract for lifecycle rules, context loading, artifact policy, and safety boundaries.
 - `AGENTS.md`, `CLAUDE.md`, and optional `.github/copilot-instructions.md` stay thin wrappers that point to `.forge/adapter.md` and `.forge/context`.
+- `AGENTS.md` may be shared by multiple AGENTS-compatible tools such as Codex and OpenCode without becoming a second lifecycle store.
 - All tools honor the same mode boundaries, selective loading rules, and human approval gates.
 - All tools treat `.forge/context` as curated source of truth, `.forge/generated/...` as working artifacts, and `.forge/context-patches/...` as proposals only.
 - Universal Plan, ECP, Execution Report, and Review artifacts stay tool-neutral unless explicitly target-tool-specific.
@@ -29,6 +30,7 @@ Minimum common artifact shape:
 ## Incorrect Behaviors Forge Must Reject
 
 - Duplicating the full lifecycle contract inside `AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`.
+- Treating shared `AGENTS.md` usage as permission to fork Codex and OpenCode lifecycle behavior.
 - Treating Copilot instructions as a second workflow system or promising autonomous execution.
 - Emitting universal artifact instructions such as `Use apply_patch`, `Use Codex`, or `Run Claude tool X`.
 - Treating `.forge/generated/...` as curated context or `.forge/context-patches/...` as accepted context.

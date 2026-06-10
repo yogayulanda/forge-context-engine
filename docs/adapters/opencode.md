@@ -1,24 +1,25 @@
-# Codex Adapter
+# OpenCode Adapter
 
-Codex enters Forge through the shared `AGENTS.md` surface and shared Forge skills.
+OpenCode enters Forge through `AGENTS.md` and shared Forge skills.
+
+OpenCode's official `/init` flow creates `AGENTS.md` in the repository root, so Forge should reuse that surface instead of introducing a separate root wrapper.
 
 ## How Invocation Works
 
-Codex invocation syntax may vary by surface or version. Acceptable request styles include:
+OpenCode invocation syntax may vary by surface or version. Acceptable request styles include:
 
 ```text
-$forge-review
-/skill forge-review
-Use Forge review mode on this branch.
+Use Forge ask mode on this repository.
 Use Forge plan mode for this change.
 Use Forge execute mode for the approved ECP.
-Use Forge ai-readiness mode on this repo before larger AI-driven work.
+/forge-review
+forge-review
 ```
 
 The expected path is:
 
 ```text
-Codex request -> AGENTS.md -> shared skill -> .forge/context mode -> scoped repository evidence
+OpenCode request -> AGENTS.md -> shared skill -> .forge/context mode -> scoped repository evidence
 ```
 
 ## What The Adapter Does
@@ -38,11 +39,11 @@ The shared `AGENTS.md` wrapper maps user wording to shared skills:
 
 Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route validation, incident, or refactor requests through the core lifecycle.
 
-Codex remains skills-first. There is no separate Codex command-wrapper layer unless a future Codex runtime explicitly requires one. OpenCode may use the same `AGENTS.md` surface, but Codex invocation notes remain documented here.
+OpenCode remains skills-first. There is no separate OpenCode command-wrapper layer unless a future OpenCode runtime explicitly requires one.
 
 ## Expected Usage Style
 
-Good Codex request:
+Good OpenCode request:
 
 ```text
 Use Forge execute mode for this approved ECP.
@@ -65,7 +66,7 @@ Audit context fitness, ambiguity, validation readiness, and remediation prioriti
 
 ## Boundaries
 
-The Codex adapter must not:
+The OpenCode adapter must not:
 
 - store repo-specific facts
 - duplicate `.forge/context`

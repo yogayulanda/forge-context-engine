@@ -48,6 +48,8 @@ Copilot remains opt-in and adds:
 .github/copilot-instructions.md
 ```
 
+OpenCode remains opt-in and reuses `AGENTS.md` instead of adding a second root wrapper.
+
 ## Incorrect Behaviors Forge Must Reject
 
 - Treating engine docs/specs/validation assets as target-repo runtime output.

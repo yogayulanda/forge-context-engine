@@ -11,9 +11,12 @@ adapters/
 +-- claude/
 +-- codex/
 +-- copilot/
++-- opencode/
 +-- cursor/
 +-- shared/
 ```
+
+`AGENTS.md` is the shared root wrapper for AGENTS-compatible tools such as Codex and OpenCode.
 
 ## Boundary
 

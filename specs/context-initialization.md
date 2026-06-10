@@ -72,7 +72,7 @@ Phase 7:    Human Confirmation Pass            ← NEW (operational feedback v1.
    - Set `run.interaction` for manual or automation-safe behavior.
    - Set `workflow.default_mode` based on immediate work type.
    - Confirm `context.root`, policy confirmation boundaries, artifact directories, and tool adapter defaults.
-   - Keep `tools.adapters` defaulted to `codex` and `claude_code`; add Copilot only when that repository explicitly opts in.
+   - Keep `tools.adapters` defaulted to `codex` and `claude_code`; add Copilot or OpenCode only when that repository explicitly opts in.
 3. Merge `.gitignore` entries with target repo's existing `.gitignore`.
 4. Verify `.forge/` structure is intact after copy.
 5. Keep `.forge/temp/` and `.forge/cache/` local-only; do not push them.

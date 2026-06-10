@@ -74,7 +74,7 @@ Ownership:
 
 - `runtime/.forge/adapter.md` is the shared compact adapter source copied into target repositories.
 - `runtime/CLAUDE.md` is the Claude-compatible root adapter wrapper.
-- `runtime/AGENTS.md` is the Codex/agent-compatible root adapter wrapper.
+- `runtime/AGENTS.md` is the shared AGENTS-compatible root adapter wrapper for tools such as Codex and OpenCode.
 - `runtime/adapters/<tool>/` contains engine/package tool-specific invocation notes and optional templates.
 - `runtime/adapters/shared/` contains portable adapter and command conventions.
 - `runtime/.forge/` contains Forge runtime context, modes, configuration, and repository-native cognition structure.
@@ -452,7 +452,7 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 
 ### 6.1 Naming
 
-- Adapter folders use lowercase tool names: `claude`, `codex`, `copilot`, `cursor`.
+- Adapter folders use lowercase tool names: `claude`, `codex`, `copilot`, `opencode`, `cursor`.
 - Shared conventions live in `adapters/shared`.
 - Command files use lowercase kebab-case when materialized as files.
 - Command names use `forge:<mode>` and optional suffixes.
@@ -464,8 +464,9 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 |---|---|
 | `.forge/adapter.md` | Shared compact adapter source for copied target-repo wrappers. |
 | `adapters/claude/` | Engine/package Claude invocation notes and optional slash-command templates. |
-| `adapters/codex/` | Engine/package Codex invocation notes and `AGENTS.md` mapping references. |
+| `adapters/codex/` | Engine/package Codex invocation notes and shared `AGENTS.md` mapping references. |
 | `adapters/copilot/` | Opt-in GitHub Copilot instruction and prompt-wrapper templates. |
+| `adapters/opencode/` | Engine/package OpenCode invocation notes and shared `AGENTS.md` mapping references. |
 | `adapters/cursor/` | Engine/package Cursor rules/invocation notes. |
 | `adapters/shared/` | Portable command semantics and anti-duplication rules. |
 

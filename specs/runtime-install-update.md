@@ -56,12 +56,13 @@ forge init --workspace
 forge update
 forge update --dry-run
 forge update --tools codex,claude
+forge update --tools opencode
 ```
 
 Rules:
 - Current directory is the default target.
 - `--target` may exist for automation, tests, or scripting, but it is not the primary UX.
-- `--tools` supports non-interactive selection such as `codex,claude`, `codex`, or `all`.
+- `--tools` supports non-interactive selection such as `codex,claude`, `opencode`, `codex,opencode`, or `all`.
 - `--yes` supports future non-interactive confirmation.
 - `--dry-run` supports future preview without writing files.
 
@@ -119,7 +120,7 @@ Service profile expectations:
 
 Tool defaults:
 - default selected tools: `codex`, `claude`
-- Copilot is opt-in
+- Copilot and OpenCode are opt-in
 - only selected tool entrypoints are created
 
 ---
@@ -240,7 +241,7 @@ The manifest exists to:
 
 Managed paths may be updated by `forge update` when safe:
 - `.forge/.gitignore`
-- `AGENTS.md` when Codex selected
+- `AGENTS.md` when Codex or OpenCode selected
 - `CLAUDE.md` when Claude selected
 - `.github/copilot-instructions.md` when Copilot selected
 - `.forge/adapter.md`
@@ -299,8 +300,8 @@ Rules:
 
 Tool selection contract:
 - default selected tools: `codex`, `claude`
-- Copilot is opt-in
-- `all` means `codex`, `claude`, `copilot`
+- Copilot and OpenCode are opt-in
+- `all` means `codex`, `claude`, `copilot`, `opencode`
 - only selected tool entrypoints are created
 
 Default target output stays:
@@ -316,6 +317,8 @@ Copilot adds:
 ```text
 .github/copilot-instructions.md
 ```
+
+OpenCode does not add a second root wrapper. It uses the shared `AGENTS.md` surface when selected.
 
 Detailed adapter docs remain in the Forge engine repository/package and are not copied into every target repository.
 

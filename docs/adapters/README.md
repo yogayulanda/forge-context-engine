@@ -9,6 +9,7 @@ Start with the adapter for your tool:
 | Claude | [claude.md](claude.md) |
 | Codex | [codex.md](codex.md) |
 | GitHub Copilot | [github-copilot.md](github-copilot.md) |
+| OpenCode | [opencode.md](opencode.md) |
 
 Adapter rule:
 

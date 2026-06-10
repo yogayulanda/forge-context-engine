@@ -635,7 +635,7 @@ def _build_init_files(
     )
     files[".forge/.gitignore"] = FORGE_LOCAL_GITIGNORE
 
-    if "codex" in selected_tools:
+    if "codex" in selected_tools or "opencode" in selected_tools:
         files["AGENTS.md"] = read_template("base", "AGENTS.md")
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
@@ -963,7 +963,7 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
     if rel_path == ".forge/.gitignore":
         return True
     if rel_path == "AGENTS.md":
-        return "codex" in selected_tools
+        return "codex" in selected_tools or "opencode" in selected_tools
     if rel_path == "CLAUDE.md":
         return "claude" in selected_tools
     if rel_path.startswith(CLAUDE_COMMANDS_PREFIX):
@@ -1033,6 +1033,7 @@ def _preserve_non_selected_entrypoints(
 ) -> None:
     selected_paths = {
         "codex": "AGENTS.md",
+        "opencode": "AGENTS.md",
         "claude": "CLAUDE.md",
         "copilot": COPILOT_TEMPLATE_PATH,
     }

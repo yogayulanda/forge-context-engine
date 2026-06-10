@@ -18,7 +18,7 @@ class ManagedBlockTarget:
 
 
 MANAGED_BLOCK_TARGETS = (
-    ManagedBlockTarget(path="AGENTS.md", label="Codex entrypoint"),
+    ManagedBlockTarget(path="AGENTS.md", label="AGENTS-compatible entrypoint"),
     ManagedBlockTarget(path="CLAUDE.md", label="Claude entrypoint"),
     ManagedBlockTarget(
         path=".github/copilot-instructions.md",

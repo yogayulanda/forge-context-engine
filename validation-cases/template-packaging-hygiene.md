@@ -21,6 +21,8 @@ Packaged target-runtime payload includes:
 - `CLAUDE.md`
 - optional `.github/copilot-instructions.md`
 
+`AGENTS.md` is the shared packaged wrapper for AGENTS-compatible tools such as Codex and OpenCode.
+
 Packaged payload must not include:
 - `__pycache__/`
 - `*.pyc`

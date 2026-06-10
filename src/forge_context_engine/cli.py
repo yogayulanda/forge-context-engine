@@ -37,7 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--tools",
         nargs="+",
         help=(
-            "Select one or more tools. Accepts values like `codex`, `claude`, `copilot`, `all`, "
+            "Select one or more tools. Accepts values like `codex`, `claude`, `copilot`, `opencode`, `all`, "
             "comma-separated lists, or space-separated lists such as `--tools codex claude`."
         ),
     )
@@ -71,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--tools",
         nargs="+",
         help=(
-            "Select one or more tools. Accepts values like `codex`, `claude`, `copilot`, `all`, "
+            "Select one or more tools. Accepts values like `codex`, `claude`, `copilot`, `opencode`, `all`, "
             "comma-separated lists, or space-separated lists such as `--tools codex claude`."
         ),
     )

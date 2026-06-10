@@ -36,6 +36,7 @@ Saved artifact continuity is optional:
 Adapter parity expectations:
 - `.forge/adapter.md` owns shared lifecycle, context-loading, artifact, and safety rules for every supported tool
 - `AGENTS.md`, `CLAUDE.md`, and optional `.github/copilot-instructions.md` stay thin wrappers
+- `AGENTS.md` may be shared by multiple AGENTS-compatible tools such as Codex and OpenCode
 - universal lifecycle artifacts stay tool-neutral unless a clearly labeled `Target Tool Notes` section is needed
 
 For multi-repo work, this workflow still runs in bounded scope:

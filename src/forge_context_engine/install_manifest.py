@@ -16,7 +16,7 @@ PROFILE_WORKSPACE = "workspace"
 INSTALLED_FROM = "git+https://github.com/yogayulanda/forge-context-engine.git"
 
 DEFAULT_SELECTED_TOOLS = ("codex", "claude")
-ALL_SUPPORTED_TOOLS = ("codex", "claude", "copilot")
+ALL_SUPPORTED_TOOLS = ("codex", "claude", "copilot", "opencode")
 
 MANAGED_PATHS_BASELINE = (
     ".forge/.gitignore",
@@ -68,6 +68,7 @@ TOOL_ALIASES = {
     "1": "codex",
     "2": "claude",
     "3": "copilot",
+    "4": "opencode",
     "all": "all",
     "default": "default",
     "codex": "codex",
@@ -79,6 +80,9 @@ TOOL_ALIASES = {
     "github-copilot": "copilot",
     "github_copilot": "copilot",
     "gh-copilot": "copilot",
+    "opencode": "opencode",
+    "open-code": "opencode",
+    "open_code": "opencode",
 }
 
 
@@ -106,7 +110,7 @@ def normalize_tools(tools: tuple[str, ...] | list[str]) -> tuple[str, ...]:
         joined = ", ".join(sorted(set(unknown)))
         raise ValueError(
             "Unsupported tool selection: "
-            f"{joined}. Use codex, claude, copilot, all, or numeric picks 1/2/3."
+            f"{joined}. Use codex, claude, copilot, opencode, all, or numeric picks 1/2/3/4."
         )
 
     normalized = tuple(tool for tool in ALL_SUPPORTED_TOOLS if tool in seen)
@@ -139,7 +143,7 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
     """Build manifest managed paths for the selected profile/tools."""
 
     paths = list(MANAGED_PATHS_BASELINE)
-    if "codex" in selected_tools:
+    if "codex" in selected_tools or "opencode" in selected_tools:
         paths.append("AGENTS.md")
     if "claude" in selected_tools:
         paths.extend(("CLAUDE.md", ".claude/commands/"))
