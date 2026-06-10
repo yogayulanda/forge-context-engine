@@ -70,6 +70,7 @@ def main() -> int:
             run_case("wrapper adoption avoids duplicate managed block", lambda: case_wrapper_adoption_avoids_duplicate_managed_block(scratch / "wrapper-adopt"))
             run_case("update tools adds codex to adopted claude repo", lambda: case_update_tools_adds_codex_to_adopted_repo(scratch / "adopt-tools"))
             run_case("update tools all adds copilot", lambda: case_update_tools_all_adds_copilot(scratch / "tools-update-all"))
+            run_case("update tools is additive", lambda: case_update_tools_is_additive(scratch / "tools-update-additive"))
             run_case("init guidance on initialized repo", lambda: case_init_guidance_on_initialized_repo(scratch / "init-guidance"))
             run_case("update tools dry-run writes nothing", lambda: case_update_tools_dry_run_writes_nothing(scratch / "update-tools-dry"))
             run_case("update summary reporting", lambda: case_update_summary_reporting(scratch / "update-summary"))
@@ -235,10 +236,12 @@ def case_tools_opencode(target: Path) -> None:
     result = run_cli(["init", "--yes", "--tools", "opencode", "--target", str(target)])
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
+    assert_exists(target / ".opencode" / "opencode.json")
     assert_exists(target / "skills" / "forge-plan" / "SKILL.md")
     assert_exists(target / "skills" / "forge-review" / "SKILL.md")
     manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
     assert_contains(manifest, "  - skills/")
+    assert_contains(manifest, "  - .opencode/opencode.json")
     assert_contains(manifest, 'selected_tools:\n  - opencode')
     assert_not_exists(target / "CLAUDE.md")
     assert_not_exists(target / ".github")
@@ -480,6 +483,24 @@ def case_update_tools_all_adds_copilot(target: Path) -> None:
     assert_contains(manifest, "  - codex")
     assert_contains(manifest, "  - claude")
     assert_contains(manifest, "  - copilot")
+
+
+def case_update_tools_is_additive(target: Path) -> None:
+    run_cli(["init", "--yes", "--tools", "codex,claude,copilot", "--target", str(target)])
+    result = run_cli(["update", "--yes", "--tools", "opencode", "--target", str(target)])
+    assert_ok(result)
+    config = (target / ".forge" / "forge.config.yaml").read_text(encoding="utf-8")
+    manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
+    assert_contains(config, "    - codex")
+    assert_contains(config, "    - claude")
+    assert_contains(config, "    - copilot")
+    assert_contains(config, "    - opencode")
+    assert_contains(config, "default_adapter: codex")
+    assert_contains(manifest, "  - codex")
+    assert_contains(manifest, "  - claude")
+    assert_contains(manifest, "  - copilot")
+    assert_contains(manifest, "  - opencode")
+    assert_exists(target / ".opencode" / "opencode.json")
 
 
 def case_init_guidance_on_initialized_repo(target: Path) -> None:

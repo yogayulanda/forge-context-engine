@@ -29,6 +29,7 @@ CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 COPILOT_PROMPTS_PREFIX = ".github/prompts/"
 OPENCODE_SKILLS_PREFIX = "skills/"
+OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
 OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, OPENCODE_SKILLS_PREFIX)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
@@ -429,7 +430,7 @@ def run_update(
 
     if manifest_path.exists():
         manifest = load_manifest(manifest_path)
-        effective_tools = selected_tools or manifest.selected_tools
+        effective_tools = _merge_selected_tools(manifest.selected_tools, selected_tools)
         if effective_tools != manifest.selected_tools:
             report.add_note(
                 f"{_msg(locale, 'tool_selection_change')}: "
@@ -483,7 +484,7 @@ def run_update(
 
     adopted_profile = _detect_profile(paths.target_root)
     detected_tools = _detect_tools(paths.target_root)
-    effective_tools = selected_tools or detected_tools
+    effective_tools = _merge_selected_tools(detected_tools, selected_tools)
     if selected_tools and selected_tools != detected_tools:
         report.add_note(_msg(locale, "adoption_override", tools=",".join(selected_tools)))
     elif selected_tools is None and detected_tools != DEFAULT_SELECTED_TOOLS:
@@ -695,6 +696,7 @@ def _build_init_files(
         files["AGENTS.md"] = read_template("base", "AGENTS.md")
     if "opencode" in selected_tools:
         files.update({rel: content for rel, content in template_files.items() if rel.startswith(OPENCODE_SKILLS_PREFIX)})
+        files[OPENCODE_CONFIG_PATH] = _render_opencode_config()
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
         files.update({rel: content for rel, content in template_files.items() if rel.startswith(CLAUDE_COMMANDS_PREFIX)})
@@ -992,8 +994,28 @@ def _render_workspace_yaml(name: str, selected_tools: tuple[str, ...]) -> str:
     )
 
 
+def _render_opencode_config() -> str:
+    return (
+        "{\n"
+        '  "$schema": "https://opencode.ai/config.json",\n'
+        '  "skills": {\n'
+        '    "paths": ["./skills"]\n'
+        "  }\n"
+        "}\n"
+    )
+
+
 def _yaml_list(items: tuple[str, ...]) -> str:
     return "".join(f"    - {item}\n" for item in items)
+
+
+def _merge_selected_tools(current_tools: tuple[str, ...], requested_tools: tuple[str, ...] | None) -> tuple[str, ...]:
+    if requested_tools is None:
+        return current_tools
+    merged = set(current_tools)
+    merged.update(requested_tools)
+    canonical_order = ("codex", "claude", "copilot", "opencode")
+    return tuple(tool for tool in canonical_order if tool in merged)
 
 
 def _detect_runtime(target_root: Path) -> bool:
@@ -1022,6 +1044,8 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return True
     if rel_path == "AGENTS.md":
         return "codex" in selected_tools or "opencode" in selected_tools
+    if rel_path == OPENCODE_CONFIG_PATH:
+        return "opencode" in selected_tools
     if rel_path.startswith(OPENCODE_SKILLS_PREFIX):
         return "opencode" in selected_tools
     if rel_path == "CLAUDE.md":
