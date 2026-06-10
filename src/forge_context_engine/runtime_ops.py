@@ -41,6 +41,10 @@ REGULAR_MANAGED_HASH_EXCLUDES = {
     "CLAUDE.md",
     COPILOT_TEMPLATE_PATH,
 }
+REPO_META_SEEDED_FILES = {
+    ".forge/context/00-meta/context-manifest.md",
+    ".forge/context/00-meta/glossary.md",
+}
 RUNTIME_MARKERS = (
     ".forge/adapter.md",
     ".forge/forge.config.yaml",
@@ -88,6 +92,15 @@ MESSAGES = {
         "unchanged": "Unchanged",
         "skipped": "Skipped",
         "conflicts": "Conflicts",
+        "conflict_help": "Conflict resolution guidance",
+        "conflict_reason_existing": "Reason: Forge would need to overwrite an existing file during init.",
+        "conflict_reason_local": "Reason: this Forge-managed file differs from the last recorded managed hash, so Forge stopped to avoid overwriting local changes.",
+        "conflict_reason_generic": "Reason: this path could not be updated safely without risking local changes.",
+        "conflict_action_review": "Review local changes first: `git diff -- {path}`",
+        "conflict_action_replace": "If the local changes are not needed, replace the file with the current Forge-managed version, then rerun `forge update`.",
+        "conflict_action_merge": "If both local changes and new Forge updates matter, merge them manually, then rerun `forge update`.",
+        "conflict_action_init": "If you want to keep the existing file, move or rename it before rerunning `forge init`, or initialize Forge in a clean target.",
+        "update_conflicts": "Update stopped with conflicts. No conflicting managed files were overwritten.",
         "preserved_user_count": "User-owned paths preserved",
         "preserved_local_count": "Local-only paths preserved",
         "initialized_use_update": "Forge is already initialized in {target}. Use `forge update`.",
@@ -138,6 +151,15 @@ MESSAGES = {
         "unchanged": "Unchanged",
         "skipped": "Skipped",
         "conflicts": "Conflicts",
+        "conflict_help": "Panduan penyelesaian konflik",
+        "conflict_reason_existing": "Alasan: Forge perlu menimpa file yang sudah ada saat init.",
+        "conflict_reason_local": "Alasan: file Forge-managed ini berbeda dari hash managed terakhir yang tercatat, jadi Forge berhenti agar perubahan lokal tidak tertimpa.",
+        "conflict_reason_generic": "Alasan: path ini tidak bisa diperbarui dengan aman tanpa berisiko menimpa perubahan lokal.",
+        "conflict_action_review": "Tinjau perubahan lokal dulu: `git diff -- {path}`",
+        "conflict_action_replace": "Jika perubahan lokal tidak diperlukan, ganti file dengan versi Forge-managed terbaru, lalu jalankan ulang `forge update`.",
+        "conflict_action_merge": "Jika perubahan lokal dan update Forge sama-sama penting, merge manual dulu, lalu jalankan ulang `forge update`.",
+        "conflict_action_init": "Jika ingin mempertahankan file yang ada, pindahkan atau rename file tersebut sebelum menjalankan ulang `forge init`, atau inisialisasi Forge di target yang bersih.",
+        "update_conflicts": "Update dihentikan karena ada konflik. File managed yang konflik tidak ditimpa.",
         "preserved_user_count": "User-owned paths preserved",
         "preserved_local_count": "Local-only paths preserved",
         "initialized_use_update": "Forge sudah diinisialisasi di {target}. Gunakan `forge update`.",
@@ -272,6 +294,26 @@ class OperationReport:
         print(f"  {messages['conflicts']}: {self.count('conflict')}")
         print(f"  {messages['preserved_user_count']}: {len(self.preserved_user_paths)}")
         print(f"  {messages['preserved_local_count']}: {len(self.preserved_local_paths)}")
+
+        self._print_conflict_help(locale=locale)
+
+    def _print_conflict_help(self, *, locale: str) -> None:
+        conflicts = self.statuses("conflict")
+        if not conflicts:
+            return
+
+        messages = MESSAGES[locale]
+        print()
+        print(f"{messages['conflict_help']}:")
+        for op in conflicts:
+            print(f"- {op.path}")
+            print(f"  {_conflict_reason(locale, op.detail)}")
+            print(f"  {_msg(locale, 'conflict_action_review', path=op.path)}")
+            if op.detail == DETAIL_CONFLICT_EXISTING:
+                print(f"  {messages['conflict_action_init']}")
+                continue
+            print(f"  {messages['conflict_action_replace']}")
+            print(f"  {messages['conflict_action_merge']}")
 
 
 def run_init(
@@ -414,6 +456,7 @@ def run_update(
                     selected_tools=effective_tools,
                     mode="manifest",
                 )
+                print(_msg(locale, "update_conflicts"))
                 return 1
         _update_from_manifest(
             target_root=paths.target_root,
@@ -509,6 +552,7 @@ def run_update(
             mode="adoption",
             detected_tools=detected_tools,
         )
+        print(_msg(locale, "update_conflicts"))
         return 1
 
     manifest_text = dump_manifest(manifest)
@@ -538,7 +582,18 @@ def run_update(
         mode="adoption",
         detected_tools=detected_tools,
     )
-    return 0 if not report.statuses("conflict") else 1
+    if report.statuses("conflict"):
+        print(_msg(locale, "update_conflicts"))
+        return 1
+    return 0
+
+
+def _conflict_reason(locale: str, detail: str) -> str:
+    if detail == DETAIL_CONFLICT_EXISTING:
+        return _msg(locale, "conflict_reason_existing")
+    if detail == DETAIL_CONFLICT_LOCAL:
+        return _msg(locale, "conflict_reason_local")
+    return _msg(locale, "conflict_reason_generic")
 
 
 def _update_from_manifest(
@@ -559,7 +614,7 @@ def _update_from_manifest(
     desired_files = {
         rel_path: content
         for rel_path, content in all_desired_files.items()
-        if _is_managed_file(rel_path, manifest.profile, selected_tools)
+        if _is_managed_file(rel_path, manifest.profile, selected_tools) and rel_path not in REPO_META_SEEDED_FILES
     }
 
     for rel_path, content in desired_files.items():
@@ -981,6 +1036,8 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return True
     if rel_path == ".forge/workspace.yaml":
         return profile == PROFILE_WORKSPACE
+    if rel_path in REPO_META_SEEDED_FILES:
+        return False
     return rel_path.startswith(".forge/context/00-meta/") or rel_path.startswith(".forge/context/modes/")
 
 

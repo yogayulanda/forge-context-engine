@@ -23,11 +23,18 @@ MANAGED_PATHS_BASELINE = (
     ".forge/adapter.md",
     ".forge/forge.config.yaml",
     ".forge/forge-install.yaml",
-    ".forge/context/00-meta/",
     ".forge/context/modes/",
+    ".forge/context/00-meta/ai-readiness-factors.md",
+    ".forge/context/00-meta/conventions-evidence.md",
+    ".forge/context/00-meta/conventions-language.md",
+    ".forge/context/00-meta/conventions-risk.md",
+    ".forge/context/00-meta/conventions-validation.md",
+    ".forge/context/00-meta/conventions.md",
 )
 
 USER_OWNED_PATHS_BASELINE = (
+    ".forge/context/00-meta/context-manifest.md",
+    ".forge/context/00-meta/glossary.md",
     ".forge/context/01-core/",
     ".forge/context/layers/",
     ".forge/context/repo-map/",

@@ -59,6 +59,7 @@ def main() -> int:
             run_case("dry-run no writes", lambda: case_dry_run_init(scratch / "dry-run"))
             run_case("update dry-run no runtime", lambda: case_update_no_runtime(scratch / "no-runtime"))
             run_case("update preserves user-owned", lambda: case_update_preserves_user_owned(scratch / "preserve"))
+            run_case("update preserves repo meta seed", lambda: case_update_preserves_repo_meta_seed(scratch / "preserve-meta"))
             run_case("workspace update preserves links", lambda: case_workspace_update_preserves_links(scratch / "workspace-preserve"))
             run_case("update preserves entrypoint user content", lambda: case_update_preserves_entrypoint_user_content(scratch / "preserve-entrypoint"))
             run_case("update conflicts on modified managed", lambda: case_update_conflict(scratch / "conflict"))
@@ -312,6 +313,26 @@ def case_update_preserves_user_owned(target: Path) -> None:
     assert_contains(product.read_text(encoding="utf-8"), "user-owned context")
 
 
+def case_update_preserves_repo_meta_seed(target: Path) -> None:
+    run_cli(["init", "--yes", "--target", str(target)])
+    glossary = target / ".forge" / "context" / "00-meta" / "glossary.md"
+    manifest = target / ".forge" / "context" / "00-meta" / "context-manifest.md"
+    glossary.write_text(
+        glossary.read_text(encoding="utf-8").replace("| — | — | — |", "| repo-term | local meaning | alias |"),
+        encoding="utf-8",
+    )
+    manifest.write_text(
+        manifest.read_text(encoding="utf-8").replace("owner: unresolved", "owner: squad.repo"),
+        encoding="utf-8",
+    )
+    result = run_cli(["update", "--yes", "--target", str(target)])
+    assert_ok(result)
+    assert_contains(glossary.read_text(encoding="utf-8"), "repo-term")
+    assert_contains(manifest.read_text(encoding="utf-8"), "owner: squad.repo")
+    assert_not_contains(result.stdout, ".forge/context/00-meta/glossary.md - managed file modified locally")
+    assert_not_contains(result.stdout, ".forge/context/00-meta/context-manifest.md - managed file modified locally")
+
+
 def case_workspace_update_preserves_links(target: Path) -> None:
     run_cli(["init", "--workspace", "--yes", "--target", str(target)])
     workspace = target / ".forge" / "workspace.yaml"
@@ -350,6 +371,10 @@ def case_update_conflict(target: Path) -> None:
     result = run_cli(["update", "--yes", "--target", str(target)], check=False)
     assert_nonzero(result)
     assert_contains(result.stdout, "Conflicts: 1")
+    assert_contains(result.stdout, "Conflict resolution guidance:")
+    assert_contains(result.stdout, "Reason: this Forge-managed file differs from the last recorded managed hash")
+    assert_contains(result.stdout, "git diff -- .forge/context/00-meta/conventions.md")
+    assert_contains(result.stdout, "Update stopped with conflicts.")
 
 
 def case_adoption_dry_run(target: Path) -> None:
