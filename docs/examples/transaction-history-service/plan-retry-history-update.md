@@ -19,6 +19,7 @@ Preserve:
 
 Cover:
 - repository evidence
+- affected surface inventory across handlers, services, repositories, tests, and config
 - proposed change scope
 - idempotency and duplicate replay risks
 - validation plan
@@ -33,6 +34,7 @@ Do not write code.
 
 - plan status
 - current evidence summary
+- affected surface inventory with all discovered usages and entry points
 - goal and non-goals
 - affected files or components
 - proposed phases

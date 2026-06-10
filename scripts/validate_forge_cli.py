@@ -44,6 +44,7 @@ def main() -> int:
             run_case("init help", lambda: case_help("init"))
             run_case("update help", lambda: case_help("update"))
             run_case("readme release surface", case_readme_release_surface)
+            run_case("plan contract coverage", case_plan_contract_coverage)
             run_case("service init", lambda: case_service_init(scratch / "service"))
             run_case("service init seeds repo context", lambda: case_service_init_seeds_repo_context(scratch / "service-context"))
             run_case("workspace init", lambda: case_workspace_init(scratch / "workspace"))
@@ -124,6 +125,25 @@ def case_readme_release_surface() -> None:
 
     for entry in ("build/", "dist/", "*.egg-info/", "__pycache__/", "*.pyc", ".venv/", "uv.lock"):
         assert_contains(gitignore, entry)
+
+
+def case_plan_contract_coverage() -> None:
+    runtime_plan = (ROOT / "runtime" / ".forge" / "context" / "modes" / "plan.md").read_text(encoding="utf-8")
+    template_plan = (
+        ROOT / "src" / "forge_context_engine" / "runtime_templates" / "base" / ".forge" / "context" / "modes" / "plan.md"
+    ).read_text(encoding="utf-8")
+    runtime_skill = (ROOT / "runtime" / "skills" / "forge-plan" / "SKILL.md").read_text(encoding="utf-8")
+    template_skill = (
+        ROOT / "src" / "forge_context_engine" / "runtime_templates" / "base" / "skills" / "forge-plan" / "SKILL.md"
+    ).read_text(encoding="utf-8")
+
+    for text in (runtime_plan, template_plan):
+        assert_contains(text, "Affected Surface Inventory")
+        assert_contains(text, "call sites, references, entry points")
+
+    for text in (runtime_skill, template_skill):
+        assert_contains(text, "search for all known call sites, references, entry points")
+        assert_contains(text, "Do not stop after inspecting only one or two obvious files")
 
 
 def case_help(command: str) -> None:

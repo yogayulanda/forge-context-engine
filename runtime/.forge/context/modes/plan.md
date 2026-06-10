@@ -48,6 +48,8 @@ Convert developer intent into a reviewable Quick Plan or SDD.
 - State assumptions explicitly when the request is ambiguous, even for small changes.
 - Keep small-change output concise, but still include acceptance criteria and validation commands.
 - Prefer the smallest relevant code surface and evidence set that can support the plan.
+- For changes to existing behavior, first map the affected surface area before locking scope: inspect all discoverable call sites, references, entry points, handlers, routes, tests, and configuration touchpoints that materially affect the change.
+- Treat scope as incomplete when only a subset of known usages has been inspected and there is evidence of additional references.
 - Default to chat output; save a plan artifact only when the user explicitly asks or approves persistence.
 - When saving, use `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md` and avoid overwriting an existing artifact without explicit approval.
 - Saved plans are working artifacts only; they are not approved by creation alone and are not durable context.
@@ -63,6 +65,7 @@ Quick Plan:
 - Scope.
 - Non-goals.
 - Relevant Context / Evidence.
+- Affected Surface Inventory.
 - Likely Changes.
 - Risks.
 - Acceptance Criteria.
@@ -79,6 +82,7 @@ SDD:
 - Requirements.
 - Non-goals.
 - Current Evidence.
+- Affected Surface Inventory.
 - Assumptions.
 - Unknowns / Decisions Needed.
 - Architecture / System Impact.
