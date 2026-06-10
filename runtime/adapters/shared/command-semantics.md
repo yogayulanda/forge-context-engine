@@ -63,7 +63,7 @@ Core shared skills:
 - `forge-ai-readiness`
 - `forge-verify-context`
 
-Compatibility aliases such as `forge-implement`, `forge-test`, `forge-incident`, and `forge-refactor` must remain thin pointers into the final lifecycle.
+Compatibility aliases such as `forge-test`, `forge-incident`, and `forge-refactor` must remain thin pointers into the final lifecycle.
 
 Tool-specific surfaces may expose equivalent names, such as Claude `/forge-review`, Codex `$forge-review`, Codex `/skill forge-review`, GitHub Copilot `/forge-review` prompt files, or future-compatible `/forge-review`.
 

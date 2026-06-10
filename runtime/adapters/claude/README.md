@@ -23,7 +23,7 @@ Claude slash commands live under `commands/` when materialized. They wrap shared
 - `/forge-ai-readiness` -> `.forge/skills/forge-ai-readiness/SKILL.md`
 - `/forge-verify-context` -> `.forge/skills/forge-verify-context/SKILL.md`
 
-Compatibility wrappers such as `/forge-implement`, `/forge-test`, `/forge-incident`, and `/forge-refactor` must route into the final lifecycle and must not define core modes.
+Compatibility wrappers such as `/forge-test`, `/forge-incident`, and `/forge-refactor` must route into the final lifecycle and must not define core modes.
 
 Slash commands must not duplicate repository cognition, lifecycle rules, governance policy, runtime semantics, or artifact semantics.
 

@@ -327,7 +327,7 @@ forge-ai-readiness
 forge-verify-context
 ```
 
-Compatibility scenario skills may exist for older prompts: `forge-test`, `forge-incident`, `forge-refactor`, and `forge-implement`. They must route into the final lifecycle and must not define core modes.
+Compatibility scenario skills may exist for older prompts: `forge-test`, `forge-incident`, and `forge-refactor`. They must route into the final lifecycle and must not define core modes.
 
 Tool syntax examples:
 - Claude: `/forge-review`, `/forge-plan`, `/forge-ai-readiness`
