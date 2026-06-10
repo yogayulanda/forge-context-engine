@@ -153,7 +153,7 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
     if "codex" in selected_tools or "opencode" in selected_tools:
         paths.append("AGENTS.md")
     if "opencode" in selected_tools:
-        paths.append("skills/")
+        paths.append(".opencode/skills/")
         paths.append(".opencode/opencode.json")
     if "claude" in selected_tools:
         paths.extend(("CLAUDE.md", ".claude/commands/"))

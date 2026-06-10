@@ -16,7 +16,7 @@ Use Forge execute mode for the approved ECP.
 forge-review
 ```
 
-When `forge init --tools opencode` or `forge update --tools opencode` runs, Forge installs shared skills into the repository under `skills/forge-*/SKILL.md` so OpenCode can discover them as repo-local skills.
+When `forge init --tools opencode` or `forge update --tools opencode` runs, Forge installs shared skills into the repository under `.opencode/skills/forge-*/SKILL.md` so OpenCode can discover them as repo-local skills.
 
 The expected path is:
 
@@ -26,7 +26,7 @@ OpenCode request -> AGENTS.md or repo-local skill -> .forge/context mode -> scop
 
 ## What The Adapter Does
 
-The shared `AGENTS.md` wrapper and repo-local `skills/` directory map user wording to shared skills:
+The shared `AGENTS.md` wrapper and repo-local `.opencode/skills/` directory map user wording to shared skills:
 
 | Mode wording | Shared skill |
 |---|---|

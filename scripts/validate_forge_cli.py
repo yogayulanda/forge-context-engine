@@ -237,10 +237,10 @@ def case_tools_opencode(target: Path) -> None:
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
     assert_exists(target / ".opencode" / "opencode.json")
-    assert_exists(target / "skills" / "forge-plan" / "SKILL.md")
-    assert_exists(target / "skills" / "forge-review" / "SKILL.md")
+    assert_exists(target / ".opencode" / "skills" / "forge-plan" / "SKILL.md")
+    assert_exists(target / ".opencode" / "skills" / "forge-review" / "SKILL.md")
     manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
-    assert_contains(manifest, "  - skills/")
+    assert_contains(manifest, "  - .opencode/skills/")
     assert_contains(manifest, "  - .opencode/opencode.json")
     assert_contains(manifest, 'selected_tools:\n  - opencode')
     assert_not_exists(target / "CLAUDE.md")
@@ -291,7 +291,7 @@ def case_tools_all(target: Path) -> None:
     assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
     assert_exists(target / ".github" / "prompts" / "forge-plan.prompt.md")
-    assert_exists(target / "skills" / "forge-plan" / "SKILL.md")
+    assert_exists(target / ".opencode" / "skills" / "forge-plan" / "SKILL.md")
 
 
 def case_dry_run_init(target: Path) -> None:

@@ -28,9 +28,10 @@ FORGE_LOCAL_GITIGNORE = ".forge/temp/\n.forge/cache/\n"
 CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 COPILOT_PROMPTS_PREFIX = ".github/prompts/"
-OPENCODE_SKILLS_PREFIX = "skills/"
+TEMPLATE_SKILLS_PREFIX = "skills/"
+OPENCODE_SKILLS_PREFIX = ".opencode/skills/"
 OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
-OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, OPENCODE_SKILLS_PREFIX)
+OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, TEMPLATE_SKILLS_PREFIX)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -695,7 +696,13 @@ def _build_init_files(
     if "codex" in selected_tools or "opencode" in selected_tools:
         files["AGENTS.md"] = read_template("base", "AGENTS.md")
     if "opencode" in selected_tools:
-        files.update({rel: content for rel, content in template_files.items() if rel.startswith(OPENCODE_SKILLS_PREFIX)})
+        files.update(
+            {
+                _map_opencode_skill_path(rel): _render_opencode_skill(rel, content)
+                for rel, content in template_files.items()
+                if rel.startswith(TEMPLATE_SKILLS_PREFIX)
+            }
+        )
         files[OPENCODE_CONFIG_PATH] = _render_opencode_config()
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
@@ -998,11 +1005,45 @@ def _render_opencode_config() -> str:
     return (
         "{\n"
         '  "$schema": "https://opencode.ai/config.json",\n'
-        '  "skills": {\n'
-        '    "paths": ["./skills"]\n'
+        '  "permission": {\n'
+        '    "skill": {\n'
+        '      "forge-*": "allow"\n'
+        "    }\n"
         "  }\n"
         "}\n"
     )
+
+
+def _map_opencode_skill_path(relative_path: str) -> str:
+    return relative_path.replace(TEMPLATE_SKILLS_PREFIX, OPENCODE_SKILLS_PREFIX, 1)
+
+
+def _render_opencode_skill(relative_path: str, content: str) -> str:
+    if content.startswith("---\n"):
+        return content
+
+    parts = relative_path.split("/")
+    if len(parts) < 3:
+        return content
+
+    skill_name = parts[1]
+    description = _skill_description(content, skill_name)
+    return (
+        "---\n"
+        f"name: {skill_name}\n"
+        f"description: {description}\n"
+        "compatibility: opencode\n"
+        "---\n\n"
+        f"{content.lstrip()}"
+    )
+
+
+def _skill_description(content: str, skill_name: str) -> str:
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            return stripped.rstrip(".")
+    return f"Use the {skill_name} Forge skill"
 
 
 def _yaml_list(items: tuple[str, ...]) -> str:
