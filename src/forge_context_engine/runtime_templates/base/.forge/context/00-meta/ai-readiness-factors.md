@@ -25,17 +25,17 @@ Rules:
 
 ## Families
 
-| Family | Focus Area | IDs |
-|---|---|---|
-| Context fitness | Context Coverage and Freshness | `FAR-CTX-*` |
-| Entrypoint and docs | AI Entrypoint Readiness | `FAR-DOC-*` |
-| Discoverability | Repository Discoverability | `FAR-DISC-*` |
-| Code cognitive load | Code Quality | `FAR-CODE-*` |
-| Interface clarity | Contract and Interface Clarity | `FAR-IFACE-*` |
-| Architecture boundaries | Architecture and Boundary Clarity | `FAR-ARCH-*` |
-| Validation readiness | Test and Validation Readiness | `FAR-TEST-*` |
-| Indexing hygiene | Generated Noise and Indexing Hygiene | `FAR-NOISE-*` |
-| Safety and decisions | Change-Safety / Governance / Human-Decision | `FAR-SAFE-*` |
+| Family | Focus Area | Plain area name (for At a Glance) | IDs |
+|---|---|---|---|
+| Context fitness | Context Coverage and Freshness | Project context (.forge) | `FAR-CTX-*` |
+| Entrypoint and docs | AI Entrypoint Readiness | README & guides | `FAR-DOC-*` |
+| Discoverability | Repository Discoverability | Folder layout & naming | `FAR-DISC-*` |
+| Code cognitive load | Code Quality | Code readability | `FAR-CODE-*` |
+| Interface clarity | Contract and Interface Clarity | APIs & contracts | `FAR-IFACE-*` |
+| Architecture boundaries | Architecture and Boundary Clarity | Architecture clarity | `FAR-ARCH-*` |
+| Validation readiness | Test and Validation Readiness | Tests & validation | `FAR-TEST-*` |
+| Indexing hygiene | Generated Noise and Indexing Hygiene | Repo cleanliness | `FAR-NOISE-*` |
+| Safety and decisions | Change-Safety / Governance / Human-Decision | Safety & ownership | `FAR-SAFE-*` |
 
 ## Factor Bands
 
@@ -76,7 +76,7 @@ Rules:
 
 ## Readiness Bands → Verdict
 
-A band is the dominant pattern across evaluated factors, weighted toward Context, Architecture, and Interface. Bands do not require numeric scoring.
+A band is the dominant pattern across evaluated factors, weighted toward Context, Architecture, and Interface. Bands do not require numeric scoring; the derived Readiness Score below is an optional summary of these same band judgments, not a separate measurement.
 
 | Band | Verdict | When |
 |---|---|---|
@@ -85,6 +85,67 @@ A band is the dominant pattern across evaluated factors, weighted toward Context
 | Limited | `context_limited` | Multiple warning/red in Context/Code/Architecture materially reduce AI reliability. |
 | Conditional | `confirmation_required` | Important conclusions hinge on unresolved decisions (`FAR-IFACE-01`, `FAR-ARCH-*`, `FAR-SAFE-03`). |
 | Blocked | `blocked` | Evidence too thin to trust the audit, or readiness too low to recommend AI changes. |
+
+## Readiness Score (derived)
+
+The score is a derived summary of the same band judgments — not a new measurement and not a scanner output. The qualitative band stays authoritative; the score never overrides it.
+
+### Per-factor value
+| Band | Value |
+|---|---|
+| Green | 1.0 |
+| Warning | 0.5 |
+| Red | 0.0 |
+| not-evaluated | excluded from the denominator |
+
+### Family weights
+Weighted toward Context, Architecture, and Interface, matching the band emphasis.
+
+| Tier | Weight | Families |
+|---|---|---|
+| High | 3 | `FAR-CTX`, `FAR-ARCH`, `FAR-IFACE` |
+| Medium | 2 | `FAR-CODE`, `FAR-TEST`, `FAR-SAFE` |
+| Low | 1 | `FAR-DOC`, `FAR-DISC`, `FAR-NOISE` |
+
+### Aggregate
+For each evaluated family, take the mean of its evaluated factor values. `Score = Σ(family_mean × weight) / Σ(weight) × 100`, over evaluated families only. Round to a whole number.
+
+### Critical gate
+If any Critical finding is present, cap the score at 40 regardless of the weighted average. A Critical blocker must never hide behind a high average.
+
+### Score → band (provisional, calibration-pending)
+| Score | Indicative band |
+|---|---|
+| ≥ 85 | Optimized |
+| 70–84 | Ready |
+| 45–69 | Limited |
+| < 45, or any Critical | Conditional / Blocked |
+
+These cut-points are provisional and must be calibrated against human-labeled repositories before being treated as authoritative. When the derived band and the qualitative band disagree, the qualitative band wins and the gap is recorded as a calibration note.
+
+### Coverage
+Always render the score with coverage, e.g. `37/100 (coverage 23/26 factors)`. A high score over thin evidence must stay visible.
+
+### Trend comparability
+Saved reports record `readiness_score`, `readiness_coverage`, per-family scores, `scoring_method`, and `engine_version` in front-matter. Compare two reports only when `scoring_method` and `engine_version` match; bands are AI judgments, so cross-version deltas are non-comparable and must be flagged rather than shown as a delta.
+
+## Plain-Language Labels (for the human-facing report)
+
+The `At a Glance` block must read in plain English. Map machine values to plain words; keep the enums (`verdict`, band name, `FAR-*` IDs) and any decimals/weights in the detail sections only.
+
+Verdict → plain headline sentence:
+
+| Verdict | Plain headline |
+|---|---|
+| `autonomous_ready` | READY — AI can do bounded multi-file work, with review |
+| `assist_ready` | PARTLY READY — AI can help with small, reviewed changes; not large hands-off work yet |
+| `context_limited` | LIMITED — add context/docs before trusting AI on non-trivial work |
+| `confirmation_required` | ON HOLD — answer the decisions below before AI proceeds |
+| `blocked` | NOT READY — too little evidence to rely on AI here |
+
+Per-area band → plain word: Green → `good`, Warning → `fair`, Red → `weak`.
+
+Family → plain area name: use the **Plain area name** column in the `## Families` table above (never the `FAR-*` codes in the At a Glance block).
 
 ## Finding ID Rule
 

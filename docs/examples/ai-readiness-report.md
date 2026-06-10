@@ -8,25 +8,58 @@ Expected compact output shape:
 ```md
 # AI Readiness Report
 
+> What this answers: can AI safely help with code in this repo right now,
+> and what should you fix first? Read the box below — everything after it
+> is supporting detail.
+
+## At a Glance
+
+══════════════════════════════════════════════════════
+  Overall readiness:   58 / 100
+  PARTLY READY — AI can help with small, reviewed changes.
+  Not safe yet for large, hands-off changes.
+  (we checked 21 of 26 things; the rest lacked evidence)
+══════════════════════════════════════════════════════
+
+What needs your decision  (1)
+  • Who owns the retry policy for the shared boundary?
+    Until you answer, AI can't safely change that area.
+    → 3 options and our pick are under "Questions For Human" below.
+
+Where it stands, by area  (weakest first)
+  Safety & ownership        ▓▓░░░  weak   ← start here
+  Architecture clarity      ▓▓▓░░  fair
+  Project context (.forge)  ▓▓▓░░  fair
+  Tests & validation        ▓▓▓░░  fair
+  Folder layout & naming    ▓▓▓▓░  good
+  README & guides           ▓▓▓▓▓  good   ← strongest
+
+Fix these first (biggest payoff)
+  1. Write down who owns the shared contracts
+  2. Flesh out the architecture / system notes
+  3. Add notes on how to test the risky paths
+
 ## Executive Summary
+
+The precise record behind the box above:
 
 - Verdict: `assist_ready`
 - Readiness Band: `Ready`
+- Readiness Score: `58/100 (coverage 21/26 factors)` — `scoring_method: weighted-v1`
 - Status: `needs_confirmation`
-- Evidence Coverage: partial but sufficient for a bounded readiness audit
-- Summary: The repository is navigable enough for scoped AI assistance, but durable context, contract ownership, and validation confidence are not yet strong enough for larger multi-file AI changes.
+- Summary: The repository is navigable enough for scoped AI assistance, but contract ownership, durable context, and validation confidence are not yet strong enough for larger multi-file AI changes.
 
 ## Readiness Profile
 
-| Factor Family | Status | Confidence | Key Reason |
+| Factor Family | Band | Confidence | Key Reason |
 |---|---|---|---|
-| Entrypoint and docs (`FAR-DOC-*`) | pass | high | Thin wrappers and scoped mode loading are present |
-| Context fitness (`FAR-CTX-*`) | warning | medium | Core context exists, but system-specific cards are thin |
-| Discoverability (`FAR-DISC-*`) | warning | medium | Entry paths are visible, but public interfaces are under-documented |
-| Code cognitive load (`FAR-CODE-*`) | pass | medium | Modules are small and consistently named; no oversized units observed |
+| Safety and decisions (`FAR-SAFE-*`) | red | high | Contract ownership and domain defaults are unresolved |
 | Architecture boundaries (`FAR-ARCH-*`) | warning | medium | Layering is implied but boundary rules are undocumented |
-| Validation readiness (`FAR-TEST-*`) | warning | medium | Narrow validation exists, but critical flows lack explicit safety notes |
-| Safety and decisions (`FAR-SAFE-*`) | fail | high | Contract ownership and domain defaults are unresolved |
+| Context fitness (`FAR-CTX-*`) | warning | medium | Core context exists, but system-specific cards are thin |
+| Validation readiness (`FAR-TEST-*`) | warning | medium | Narrow validation exists, but critical flows lack safety notes |
+| Discoverability (`FAR-DISC-*`) | warning | medium | Entry paths are visible, but public interfaces are under-documented |
+| Code cognitive load (`FAR-CODE-*`) | pass | medium | Modules are small and consistently named |
+| Entrypoint and docs (`FAR-DOC-*`) | pass | high | Thin wrappers and scoped mode loading are present |
 
 ## Key Strengths
 
@@ -70,13 +103,13 @@ Expected compact output shape:
 ## Questions For Human
 
 1. `AR-Q1`
-   - Decision Needed: Which repository owns retry policy for this shared boundary?
+   - Decision Needed: Which repository owns retry policy for the shared boundary used by `<service>`?
    - Why This Is Unresolved: code references retry behavior, but no explicit owner or durable context decision is present.
    - Options:
-     - `Option A (Recommended)` Treat retry policy as externally owned until contract authority is documented.
-     - `Option B` Treat this repo as retry-policy owner and document the boundary in `.forge/context`.
-     - `Option C` Mark retry behavior as shared ownership and document the split explicitly.
-   - Recommended Option: `Option A`
+     - `Option 1` Treat retry policy as externally owned until contract authority is documented. *(lowest risk)*
+     - `Option 2` Treat this repo as retry-policy owner and document the boundary in `.forge/context`.
+     - `Option 3` Mark retry behavior as shared ownership and document the split explicitly.
+   - Recommended Option: `Option 1`
    - Why Recommended: lowest-risk default and least likely to invent ownership.
    - Impact If Unanswered: verdict remains `confirmation_required` for contract-boundary conclusions.
 
