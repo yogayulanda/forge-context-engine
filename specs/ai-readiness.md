@@ -7,7 +7,7 @@
 | Date | 2026-06-09 |
 | Status | `decision` |
 | Scope | Read-only repository audit for AI readiness, context fitness, ambiguity detection, and remediation guidance |
-| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/context/modes/ai-readiness.md`, `runtime/.forge/context/00-meta/ai-readiness-factors.md`, `runtime/skills/forge-ai-readiness/SKILL.md` |
+| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/context/modes/ai-readiness.md`, `runtime/.forge/context/00-meta/ai-readiness-factors.md`, `runtime/.forge/skills/forge-ai-readiness/SKILL.md` |
 
 ## 0. Purpose
 

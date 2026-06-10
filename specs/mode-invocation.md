@@ -7,7 +7,7 @@
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
-| Dependency | `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `runtime/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
+| Dependency | `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `runtime/.forge/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
 
 ---
 

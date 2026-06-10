@@ -129,10 +129,10 @@ Commands must not:
 
 ### 1.5 Skill Structure
 
-Shared skills live under:
+Canonical shared skills in generated target repositories live under:
 
 ```text
-runtime/skills/<skill>/SKILL.md
+.forge/skills/<skill>/SKILL.md
 ```
 
 Required skill sections:
@@ -377,7 +377,7 @@ Forge separates three concerns:
 | Concern | Description |
 |---|---|
 | Forge core | Repository cognition, lifecycle modes, governance semantics, artifact lifecycle, runtime semantics |
-| Shared skill layer | Reusable tool-neutral workflow entrypoints under `runtime/skills/` |
+| Shared skill layer | Reusable tool-neutral workflow entrypoints under `.forge/skills/` in target repos |
 | Adapter layer | Tool-specific entry files, command text, loading hints, compatibility wrappers |
 | Execution surface | Claude slash commands, Codex `AGENTS.md`, GitHub Copilot prompt files, Cursor rules, future assistant invocation surfaces |
 
@@ -429,7 +429,7 @@ Optional target-repository output when Copilot is selected:
 .github/copilot-instructions.md
 ```
 
-Engine/package folders such as `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, and `runtime/skills/` must not be copied into every target repository by default.
+Engine/package folders such as `docs/`, `specs/`, `validation-cases/`, and `runtime/adapters/` must not be copied into every target repository by default.
 
 ### 5.5 Future Tools
 

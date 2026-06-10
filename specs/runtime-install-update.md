@@ -380,7 +380,7 @@ Dry-run behavior:
 Forge install/update must not:
 - copy target source code into Forge
 - modify target source code as part of init/update
-- copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, or `runtime/skills/` into target repositories
+- copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, or `runtime/adapters/` into target repositories
 - add lifecycle modes
 - add runtime agents, orchestration, CI/CD, DAGs, schedulers, memory systems, or autonomous execution
 - move lifecycle ownership into adapters or tool entrypoints
