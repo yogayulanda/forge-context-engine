@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 from importlib.resources import files
-from importlib.resources.abc import Traversable
+from typing import Protocol
+
+
+class Traversable(Protocol):
+    def iterdir(self): ...
+    def is_dir(self) -> bool: ...
+    @property
+    def name(self) -> str: ...
+    def read_text(self, encoding: str = "utf-8") -> str: ...
 
 
 def template_root() -> Traversable:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import re
 from typing import Any
@@ -145,6 +145,8 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
     paths = list(MANAGED_PATHS_BASELINE)
     if "codex" in selected_tools or "opencode" in selected_tools:
         paths.append("AGENTS.md")
+    if "opencode" in selected_tools:
+        paths.append("skills/")
     if "claude" in selected_tools:
         paths.extend(("CLAUDE.md", ".claude/commands/"))
     if "copilot" in selected_tools:
@@ -175,7 +177,7 @@ def build_manifest(
 def utc_now_iso() -> str:
     """Return a stable UTC timestamp for manifest writing."""
 
-    return datetime.now(tz=UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return datetime.now(tz=timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def manifest_to_document(manifest: ForgeInstallManifest) -> dict[str, Any]:

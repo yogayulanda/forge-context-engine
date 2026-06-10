@@ -1,6 +1,6 @@
 # OpenCode Adapter
 
-OpenCode enters Forge through `AGENTS.md` and shared Forge skills.
+OpenCode enters Forge through `AGENTS.md` and repo-local shared Forge skills.
 
 OpenCode's official `/init` flow creates `AGENTS.md` in the repository root, so Forge should reuse that surface instead of introducing a separate root wrapper.
 
@@ -16,15 +16,17 @@ Use Forge execute mode for the approved ECP.
 forge-review
 ```
 
+When `forge init --tools opencode` or `forge update --tools opencode` runs, Forge installs shared skills into the repository under `skills/forge-*/SKILL.md` so OpenCode can discover them as repo-local skills.
+
 The expected path is:
 
 ```text
-OpenCode request -> AGENTS.md -> shared skill -> .forge/context mode -> scoped repository evidence
+OpenCode request -> AGENTS.md or repo-local skill -> .forge/context mode -> scoped repository evidence
 ```
 
 ## What The Adapter Does
 
-The shared `AGENTS.md` wrapper maps user wording to shared skills:
+The shared `AGENTS.md` wrapper and repo-local `skills/` directory map user wording to shared skills:
 
 | Mode wording | Shared skill |
 |---|---|
@@ -39,7 +41,7 @@ The shared `AGENTS.md` wrapper maps user wording to shared skills:
 
 Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route validation, incident, or refactor requests through the core lifecycle.
 
-OpenCode remains skills-first. There is no separate OpenCode command-wrapper layer unless a future OpenCode runtime explicitly requires one.
+OpenCode remains skills-first. Forge installs repo-local skills for OpenCode instead of introducing a second root wrapper or duplicating lifecycle semantics into tool-specific command files.
 
 ## Expected Usage Style
 

@@ -28,7 +28,8 @@ FORGE_LOCAL_GITIGNORE = ".forge/temp/\n.forge/cache/\n"
 CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 COPILOT_PROMPTS_PREFIX = ".github/prompts/"
-OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX)
+OPENCODE_SKILLS_PREFIX = "skills/"
+OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, OPENCODE_SKILLS_PREFIX)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -637,6 +638,8 @@ def _build_init_files(
 
     if "codex" in selected_tools or "opencode" in selected_tools:
         files["AGENTS.md"] = read_template("base", "AGENTS.md")
+    if "opencode" in selected_tools:
+        files.update({rel: content for rel, content in template_files.items() if rel.startswith(OPENCODE_SKILLS_PREFIX)})
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
         files.update({rel: content for rel, content in template_files.items() if rel.startswith(CLAUDE_COMMANDS_PREFIX)})
@@ -964,6 +967,8 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return True
     if rel_path == "AGENTS.md":
         return "codex" in selected_tools or "opencode" in selected_tools
+    if rel_path.startswith(OPENCODE_SKILLS_PREFIX):
+        return "opencode" in selected_tools
     if rel_path == "CLAUDE.md":
         return "claude" in selected_tools
     if rel_path.startswith(CLAUDE_COMMANDS_PREFIX):

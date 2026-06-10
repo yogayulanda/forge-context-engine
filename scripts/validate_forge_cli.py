@@ -49,6 +49,7 @@ def main() -> int:
             run_case("workspace init", lambda: case_workspace_init(scratch / "workspace"))
             run_case("workspace init contract", lambda: case_workspace_init_contract(scratch / "workspace-contract"))
             run_case("tools codex", lambda: case_tools_codex(scratch / "tools-codex"))
+            run_case("tools opencode", lambda: case_tools_opencode(scratch / "tools-opencode"))
             run_case("tools codex,claude", lambda: case_tools_codex_claude(scratch / "tools-default"))
             run_case("tools space separated", lambda: case_tools_space_separated(scratch / "tools-space"))
             run_case("tools repeatable flag", lambda: case_tools_repeatable_flag(scratch / "tools-repeat"))
@@ -206,6 +207,20 @@ def case_tools_codex(target: Path) -> None:
     assert_exists(target / "AGENTS.md")
     assert_not_exists(target / "CLAUDE.md")
     assert_not_exists(target / ".github")
+    assert_not_exists(target / "skills")
+
+
+def case_tools_opencode(target: Path) -> None:
+    result = run_cli(["init", "--yes", "--tools", "opencode", "--target", str(target)])
+    assert_ok(result)
+    assert_exists(target / "AGENTS.md")
+    assert_exists(target / "skills" / "forge-plan" / "SKILL.md")
+    assert_exists(target / "skills" / "forge-review" / "SKILL.md")
+    manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
+    assert_contains(manifest, "  - skills/")
+    assert_contains(manifest, 'selected_tools:\n  - opencode')
+    assert_not_exists(target / "CLAUDE.md")
+    assert_not_exists(target / ".github")
 
 
 def case_tools_codex_claude(target: Path) -> None:
@@ -252,6 +267,7 @@ def case_tools_all(target: Path) -> None:
     assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
     assert_exists(target / ".github" / "prompts" / "forge-plan.prompt.md")
+    assert_exists(target / "skills" / "forge-plan" / "SKILL.md")
 
 
 def case_dry_run_init(target: Path) -> None:
