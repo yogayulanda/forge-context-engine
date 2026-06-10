@@ -1,7 +1,7 @@
 # /forge-ask
 
 Use shared skill:
-`runtime/skills/forge-ask/SKILL.md`
+`.forge/skills/forge-ask/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge ask mode.
 

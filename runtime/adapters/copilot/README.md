@@ -2,7 +2,7 @@
 
 GitHub Copilot uses repository prompt files as a Forge UX layer.
 
-This adapter is a thin invocation bridge. The installable repository wrapper lives at `runtime/.github/copilot-instructions.md`, while Copilot prompts remain under `runtime/adapters/copilot/prompts/`. Shared skills under `runtime/skills/*/SKILL.md` load the relevant `.forge/context` mode and scoped repository evidence.
+This adapter is a thin invocation bridge. The installable repository wrapper lives at `runtime/.github/copilot-instructions.md`, while Copilot prompts remain under `runtime/adapters/copilot/prompts/`. Shared skills under `.forge/skills/*/SKILL.md` in target repositories load the relevant `.forge/context` mode and scoped repository evidence.
 
 Copilot support is opt-in. Default target-repo output should not create `.github/` files unless the repository explicitly selects Copilot.
 

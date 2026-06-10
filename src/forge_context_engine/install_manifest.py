@@ -23,6 +23,7 @@ MANAGED_PATHS_BASELINE = (
     ".forge/adapter.md",
     ".forge/forge.config.yaml",
     ".forge/forge-install.yaml",
+    ".forge/skills/",
     ".forge/context/modes/",
     ".forge/context/00-meta/ai-readiness-factors.md",
     ".forge/context/00-meta/conventions-evidence.md",

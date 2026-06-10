@@ -1,7 +1,7 @@
 # /forge-init
 
 Use shared skill:
-`runtime/skills/forge-init/SKILL.md`
+`.forge/skills/forge-init/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge init mode.
 

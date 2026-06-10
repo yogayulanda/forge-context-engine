@@ -1,7 +1,7 @@
 # /forge-implementation
 
 Use shared skill:
-`runtime/skills/forge-implementation/SKILL.md`
+`.forge/skills/forge-implementation/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge implementation mode.
 

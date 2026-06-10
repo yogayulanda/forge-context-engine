@@ -29,6 +29,7 @@ CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 COPILOT_PROMPTS_PREFIX = ".github/prompts/"
 TEMPLATE_SKILLS_PREFIX = "skills/"
+CANONICAL_SKILLS_PREFIX = ".forge/skills/"
 OPENCODE_SKILLS_PREFIX = ".opencode/skills/"
 OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
 OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, TEMPLATE_SKILLS_PREFIX)
@@ -685,6 +686,13 @@ def _build_init_files(
         if rel not in {"AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md", ".forge/forge.config.yaml"}
         and not rel.startswith(OPTIONAL_TEMPLATE_PREFIXES)
     }
+    files.update(
+        {
+            _map_canonical_skill_path(rel): content
+            for rel, content in template_files.items()
+            if rel.startswith(TEMPLATE_SKILLS_PREFIX)
+        }
+    )
 
     files[".forge/forge.config.yaml"] = _render_forge_config(
         profile=profile,
@@ -1009,9 +1017,16 @@ def _render_opencode_config() -> str:
         '    "skill": {\n'
         '      "forge-*": "allow"\n'
         "    }\n"
+        "  },\n"
+        '  "skills": {\n'
+        '    "paths": ["./.opencode/skills"]\n'
         "  }\n"
         "}\n"
     )
+
+
+def _map_canonical_skill_path(relative_path: str) -> str:
+    return relative_path.replace(TEMPLATE_SKILLS_PREFIX, CANONICAL_SKILLS_PREFIX, 1)
 
 
 def _map_opencode_skill_path(relative_path: str) -> str:
@@ -1099,6 +1114,8 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return "copilot" in selected_tools
     if rel_path in {".forge/adapter.md", ".forge/forge.config.yaml"}:
         return True
+    if rel_path.startswith(CANONICAL_SKILLS_PREFIX):
+        return True
     if rel_path == ".forge/workspace.yaml":
         return profile == PROFILE_WORKSPACE
     if rel_path in REPO_META_SEEDED_FILES:
@@ -1158,15 +1175,14 @@ def _preserve_non_selected_entrypoints(
     selected_tools: tuple[str, ...],
     report: OperationReport,
 ) -> None:
-    selected_paths = {
+    tool_paths = {
         "codex": "AGENTS.md",
         "opencode": "AGENTS.md",
         "claude": "CLAUDE.md",
         "copilot": COPILOT_TEMPLATE_PATH,
     }
-    for tool, rel_path in selected_paths.items():
-        if tool in selected_tools:
-            continue
+    active_paths = {tool_paths[tool] for tool in selected_tools if tool in tool_paths}
+    for rel_path in {path for path in tool_paths.values() if path not in active_paths}:
         if (target_root / rel_path).exists():
             report.add("skipped", rel_path, DETAIL_PRESERVED_NON_SELECTED)
 

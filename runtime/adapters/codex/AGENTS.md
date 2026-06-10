@@ -1,6 +1,6 @@
 # Codex Forge Adapter
 
-Codex is skills-first for Forge usage. `AGENTS.md` is the repository-native entrypoint, and Forge requests should resolve to shared skills under `runtime/skills/*/SKILL.md`.
+Codex is skills-first for Forge usage. `AGENTS.md` is the repository-native entrypoint, and Forge requests should resolve to shared skills under `.forge/skills/*/SKILL.md` in target repositories.
 
 Core examples:
 - "Use Forge init mode to initialize context."
@@ -26,7 +26,7 @@ Normal read-only UX:
 
 ## Loading Contract
 
-1. Resolve the requested Forge mode to `runtime/skills/<skill>/SKILL.md`.
+1. Resolve the requested Forge mode to `.forge/skills/<skill>/SKILL.md`.
 2. Follow the skill's load section.
 3. Read `.forge/forge.config.yaml` first.
 4. Apply `run.interaction` and related final run config fields.

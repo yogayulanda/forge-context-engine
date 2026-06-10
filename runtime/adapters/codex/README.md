@@ -1,6 +1,6 @@
 # Codex Adapter
 
-Codex uses the shared `AGENTS.md` repository-native Forge entrypoint. Codex is skills-first for Forge usage: prompts and command-like invocations resolve to shared skills under `runtime/skills/*/SKILL.md`.
+Codex uses the shared `AGENTS.md` repository-native Forge entrypoint. Codex is skills-first for Forge usage: prompts and command-like invocations resolve to shared skills under `.forge/skills/*/SKILL.md` in target repositories.
 
 The adapter is a thin instruction bridge, not a second Forge runtime and not a Codex-specific command-wrapper layer. `AGENTS.md` may also be used by other AGENTS-compatible tools such as OpenCode, but Codex invocation notes remain adapter-specific here.
 
@@ -8,7 +8,7 @@ The adapter is a thin instruction bridge, not a second Forge runtime and not a C
 
 - Point Codex to `.forge/forge.config.yaml`.
 - Apply `run.interaction` and related final run config fields.
-- Point Codex to shared skills under `runtime/skills/`.
+- Point Codex to shared skills under `.forge/skills/`.
 - Let each shared skill invoke `.forge/context/modes/<mode>.md`.
 - Load only relevant scoped repository context.
 - Keep commands and natural language requests as thin operational prompts.

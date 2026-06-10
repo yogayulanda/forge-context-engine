@@ -36,7 +36,7 @@ The same adapter command must behave differently across repositories only becaus
 
 ## Skill Bridge
 
-Shared skills live under `runtime/skills/<skill>/SKILL.md`.
+Generated target repositories keep shared skills under `.forge/skills/<skill>/SKILL.md`.
 
 Adapters should reference those files instead of copying reusable workflow logic. The intended flow is:
 

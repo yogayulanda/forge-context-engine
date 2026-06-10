@@ -89,7 +89,7 @@ Manual setup remains available when you want to copy runtime files directly.
    .forge/
    ```
 
-   Add `.github/copilot-instructions.md` only when GitHub Copilot is explicitly selected. Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, or `runtime/skills/` into every target repository.
+   Add `.github/copilot-instructions.md` only when GitHub Copilot is explicitly selected. Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, or `runtime/adapters/` into every target repository.
 
 2. Open `<target-repo>/.forge/forge.config.yaml`.
 

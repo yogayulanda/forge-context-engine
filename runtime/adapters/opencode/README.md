@@ -2,13 +2,13 @@
 
 OpenCode uses the shared `AGENTS.md` repository-native Forge entrypoint. OpenCode's own `/init` flow creates `AGENTS.md`, so Forge should treat that surface as the thin OpenCode bridge rather than introducing a second root wrapper.
 
-The adapter is a thin invocation bridge. Forge requests should resolve to shared skills under `runtime/skills/*/SKILL.md`, which then load the relevant `.forge/context` mode and scoped repository evidence.
+The adapter is a thin invocation bridge. Forge requests should resolve to shared skills under `.forge/skills/*/SKILL.md` in target repositories, which then load the relevant `.forge/context` mode and scoped repository evidence.
 
 ## Responsibility
 
 - Point OpenCode to `.forge/forge.config.yaml`.
 - Apply `run.interaction` and related final run config fields.
-- Point OpenCode to shared skills under `runtime/skills/`.
+- Point OpenCode to shared skills under `.forge/skills/`.
 - Let each shared skill invoke `.forge/context/modes/<mode>.md`.
 - Load only relevant scoped repository context.
 - Keep prompts and command-like requests as thin operational prompts.

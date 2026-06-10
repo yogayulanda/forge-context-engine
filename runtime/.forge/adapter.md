@@ -130,4 +130,4 @@ Optional when GitHub Copilot is selected:
 .github/copilot-instructions.md
 ```
 
-Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, `runtime/adapters/`, or `runtime/skills/` into every target repository.
+Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, or `runtime/adapters/` into every target repository.

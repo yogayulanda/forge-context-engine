@@ -1,7 +1,7 @@
 # /forge-review
 
 Use shared skill:
-`runtime/skills/forge-review/SKILL.md`
+`.forge/skills/forge-review/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge review mode.
 

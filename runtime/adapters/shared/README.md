@@ -15,7 +15,7 @@ Shared adapter content applies to every tool-specific adapter.
 
 ## Shared Skills
 
-Shared Forge skills live under `runtime/skills/`.
+Generated target repositories keep shared Forge skills under `.forge/skills/`.
 
 They are reusable invocation layers, not cognition sources, adapters, runtime systems, or orchestration units.
 

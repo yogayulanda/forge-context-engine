@@ -5,7 +5,7 @@ Cursor compatibility uses thin rules or prompts that point to Forge.
 ## Responsibility
 
 - Point Cursor to `.forge/forge.config.yaml`.
-- Point Cursor rules or prompts to shared skills under `runtime/skills/`.
+- Point Cursor rules or prompts to shared skills under `.forge/skills/`.
 - Let each shared skill invoke `.forge/context/modes/<mode>.md`.
 - Keep Cursor rules portable and non-authoritative.
 

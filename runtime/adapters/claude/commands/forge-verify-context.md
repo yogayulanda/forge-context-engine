@@ -1,7 +1,7 @@
 # /forge-verify-context
 
 Use shared skill:
-`runtime/skills/forge-verify-context/SKILL.md`
+`.forge/skills/forge-verify-context/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge verify-context mode.
 

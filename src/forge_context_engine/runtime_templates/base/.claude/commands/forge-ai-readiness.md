@@ -1,7 +1,7 @@
 # /forge-ai-readiness
 
 Use shared skill:
-`runtime/skills/forge-ai-readiness/SKILL.md`
+`.forge/skills/forge-ai-readiness/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge ai-readiness mode.
 

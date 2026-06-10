@@ -1,7 +1,7 @@
 # /forge-plan
 
 Use shared skill:
-`runtime/skills/forge-plan/SKILL.md`
+`.forge/skills/forge-plan/SKILL.md`
 
 This is a Claude slash-command wrapper for Forge plan mode.
 

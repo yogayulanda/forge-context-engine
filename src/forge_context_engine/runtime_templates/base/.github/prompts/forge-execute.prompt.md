@@ -1,7 +1,7 @@
 # /forge-execute
 
 Use shared skill:
-`runtime/skills/forge-execute/SKILL.md`
+`.forge/skills/forge-execute/SKILL.md`
 
 This is a GitHub Copilot prompt wrapper for Forge execute mode.
 

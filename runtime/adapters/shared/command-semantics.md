@@ -12,7 +12,7 @@ tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -
 
 Responsibilities:
 - `.forge/context` is the cognition source of truth.
-- `runtime/skills/*/SKILL.md` is reusable Forge workflow behavior.
+- `.forge/skills/*/SKILL.md` is reusable Forge workflow behavior in target repositories.
 - `runtime/adapters/*` is the tool-specific bridge.
 - `CLAUDE.md` and `AGENTS.md` are entrypoints.
 - GitHub Copilot prompt files are UX wrappers, not cognition sources.
@@ -22,7 +22,7 @@ Responsibilities:
 ```text
 # <tool command>
 
-Invoke shared skill: runtime/skills/<skill>/SKILL.md
+Invoke shared skill: .forge/skills/<skill>/SKILL.md
 
 The shared skill owns Purpose, Load, Invocation, Focus, Output, and Do NOT.
 ```

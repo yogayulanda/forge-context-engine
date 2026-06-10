@@ -4,7 +4,7 @@
 Legacy compatibility alias for `forge-implementation`.
 
 ## Load
-Use `runtime/skills/forge-implementation/SKILL.md` and `.forge/context/modes/implementation.md`.
+Use `.forge/skills/forge-implementation/SKILL.md` and `.forge/context/modes/implementation.md`.
 
 ## Invocation
 Accept only for older prompts that ask for `forge-implement`. Treat it as `forge-implementation`.
