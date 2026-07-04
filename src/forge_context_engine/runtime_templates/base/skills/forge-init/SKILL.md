@@ -4,7 +4,7 @@
 Create confirmed repository context and Forge config through bounded initialization.
 
 ## Load
-Read `.forge/forge.config.yaml` if present. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md` and `.forge/context/00-meta/context-manifest.md` when present, then read `.forge/context/modes/init.md`.
+Read `.forge/forge.config.yaml` if present. Apply `run.interaction` and related final run config fields. Load `.forge/runtime/meta/conventions.md` and `.forge/runtime/meta/context-manifest.md` when present, then read `.forge/runtime/modes/init.md`.
 
 ## Invocation
 Use when creating or refreshing the initial Forge repository context/config from repository evidence.

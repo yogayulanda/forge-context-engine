@@ -87,16 +87,20 @@ def _build_service_context_seed(facts: RepoFacts) -> RepoContextSeed:
     files = {
         ".forge/context/00-index.md": _render_index(facts),
         ".forge/context/01-service-overview.md": _render_service_overview(facts),
-        ".forge/context/02-service-architecture.md": _render_service_architecture(facts),
-        ".forge/context/03-domain-boundary.md": _render_domain_boundary(facts),
-        ".forge/context/04-api-contracts.md": _render_service_api_contracts(facts),
-        ".forge/context/05-data-model-and-database.md": _render_service_data_model(facts),
-        ".forge/context/06-business-rules.md": _render_service_business_rules(facts),
-        ".forge/context/07-integration-dependencies.md": _render_service_integrations(facts),
-        ".forge/context/08-error-handling.md": _render_service_error_handling(facts),
-        ".forge/context/09-observability.md": _render_service_observability(facts),
-        ".forge/context/10-testing-strategy.md": _render_service_testing(facts),
-        ".forge/context/11-runtime-and-deployment.md": _render_service_runtime_deployment(facts),
+        ".forge/context/02-architecture.md": _render_service_architecture(facts),
+        ".forge/context/03-domain-boundaries.md": _render_domain_boundaries(facts),
+        ".forge/context/04-interfaces-and-contracts.md": _render_service_interfaces_and_contracts(facts),
+        ".forge/context/05-data-and-persistence.md": _render_service_data_and_persistence(facts),
+        ".forge/context/06-business-rules-and-flows.md": _render_service_business_rules_and_flows(facts),
+        ".forge/context/07-integrations-and-dependencies.md": _render_service_integrations_and_dependencies(facts),
+        ".forge/context/08-security-and-access.md": _render_service_security_and_access(facts),
+        ".forge/context/09-errors-and-resilience.md": _render_service_errors_and_resilience(facts),
+        ".forge/context/10-observability-and-support.md": _render_service_observability_and_support(facts),
+        ".forge/context/11-testing-and-quality.md": _render_service_testing_and_quality(facts),
+        ".forge/context/12-runtime-deployment-and-config.md": _render_service_runtime_deployment_and_config(facts),
+        ".forge/context/13-operations-and-runbook.md": _render_service_operations_and_runbook(facts),
+        ".forge/context/14-decisions-assumptions-and-constraints.md": _render_service_decisions_assumptions_and_constraints(facts),
+        ".forge/context/98-glossary.md": _render_glossary(facts, profile_scope="service"),
         ".forge/context/99-open-questions.md": _render_open_questions(facts, profile_scope="service"),
     }
     return RepoContextSeed(files=files)
@@ -104,18 +108,22 @@ def _build_service_context_seed(facts: RepoFacts) -> RepoContextSeed:
 
 def _build_workspace_context_seed(facts: RepoFacts) -> RepoContextSeed:
     files = {
-        ".forge/context/00-workspace-index.md": _render_workspace_index(facts),
+        ".forge/context/00-index.md": _render_index(facts),
         ".forge/context/01-platform-overview.md": _render_platform_overview(facts),
         ".forge/context/02-system-map.md": _render_workspace_system_map(facts),
         ".forge/context/03-service-catalog.md": _render_workspace_service_catalog(facts),
         ".forge/context/04-domain-boundaries.md": _render_workspace_domain_boundaries(facts),
         ".forge/context/05-cross-service-flows.md": _render_workspace_cross_service_flows(facts),
-        ".forge/context/06-api-and-event-contracts.md": _render_workspace_api_event_contracts(facts),
-        ".forge/context/07-data-ownership.md": _render_workspace_data_ownership(facts),
+        ".forge/context/06-interfaces-and-contracts.md": _render_workspace_interfaces_and_contracts(facts),
+        ".forge/context/07-data-ownership-and-consistency.md": _render_workspace_data_ownership_and_consistency(facts),
         ".forge/context/08-security-and-access.md": _render_workspace_security_access(facts),
-        ".forge/context/09-observability-and-operations.md": _render_workspace_observability_operations(facts),
-        ".forge/context/10-deployment-topology.md": _render_workspace_deployment_topology(facts),
-        ".forge/context/11-release-and-feature-flags.md": _render_workspace_release_feature_flags(facts),
+        ".forge/context/09-observability-and-support.md": _render_workspace_observability_and_support(facts),
+        ".forge/context/10-testing-and-quality.md": _render_workspace_testing_and_quality(facts),
+        ".forge/context/11-runtime-deployment-and-config.md": _render_workspace_runtime_deployment_and_config(facts),
+        ".forge/context/12-release-and-feature-flags.md": _render_workspace_release_and_feature_flags(facts),
+        ".forge/context/13-operations-and-runbook.md": _render_workspace_operations_and_runbook(facts),
+        ".forge/context/14-decisions-assumptions-and-constraints.md": _render_workspace_decisions_assumptions_and_constraints(facts),
+        ".forge/context/98-glossary.md": _render_glossary(facts, profile_scope="workspace"),
         ".forge/context/99-open-questions.md": _render_open_questions(facts, profile_scope="workspace"),
     }
     return RepoContextSeed(files=files)
@@ -542,471 +550,696 @@ def _read_git_head(target_root: Path) -> str:
 
 
 def _render_index(facts: RepoFacts) -> str:
-    return _render_profile_card(
-        facts,
-        card_id="service.index",
-        title="Service Context Index",
-        file_type="core",
-        profile_scope="service",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[
-            ("Purpose", ["- Use this profile to ground implementation, testing, refactoring, review, and bug-fix work for one service or application."]),
-            ("Current Summary", [f"- {facts.summary}", f"- Current structure suggests a **{facts.architecture_style}**."]),
-            (
-                "File Guide",
-                [
-                    "- `01-service-overview.md` for product and repository scope.",
-                    "- `02-service-architecture.md` for structure and runtime shape.",
-                    "- `04-api-contracts.md`, `05-data-model-and-database.md`, and `07-integration-dependencies.md` for boundary evidence.",
-                    "- `99-open-questions.md` for unresolved or weakly evidenced details.",
-                ],
-            ),
-        ],
-    )
+    if facts.profile == "workspace":
+        feature_paths = [
+            "- `01-platform-overview.md`",
+            "- `03-service-catalog.md`",
+            "- `06-interfaces-and-contracts.md`",
+            "- `07-data-ownership-and-consistency.md`",
+            "- `05-cross-service-flows.md`",
+            "- `10-testing-and-quality.md`",
+            "- `99-open-questions.md`",
+        ]
+        api_paths = [
+            "- `06-interfaces-and-contracts.md`",
+            "- `05-cross-service-flows.md`",
+            "- `08-security-and-access.md`",
+            "- `09-observability-and-support.md`",
+            "- `99-open-questions.md`",
+        ]
+        incident_paths = [
+            "- `05-cross-service-flows.md`",
+            "- `09-observability-and-support.md`",
+            "- `11-runtime-deployment-and-config.md`",
+            "- `13-operations-and-runbook.md`",
+            "- `99-open-questions.md`",
+        ]
+        refactor_paths = [
+            "- `02-system-map.md`",
+            "- `04-domain-boundaries.md`",
+            "- `10-testing-and-quality.md`",
+            "- `14-decisions-assumptions-and-constraints.md`",
+            "- `99-open-questions.md`",
+        ]
+        data_paths = [
+            "- `07-data-ownership-and-consistency.md`",
+            "- `05-cross-service-flows.md`",
+            "- `08-security-and-access.md`",
+            "- `10-testing-and-quality.md`",
+            "- `99-open-questions.md`",
+        ]
+        security_paths = [
+            "- `08-security-and-access.md`",
+            "- `06-interfaces-and-contracts.md`",
+            "- `07-data-ownership-and-consistency.md`",
+            "- `09-observability-and-support.md`",
+            "- `99-open-questions.md`",
+        ]
+    else:
+        feature_paths = [
+            "- `01-service-overview.md`",
+            "- `03-domain-boundaries.md`",
+            "- `04-interfaces-and-contracts.md`",
+            "- `05-data-and-persistence.md`",
+            "- `06-business-rules-and-flows.md`",
+            "- `11-testing-and-quality.md`",
+            "- `99-open-questions.md`",
+        ]
+        api_paths = [
+            "- `04-interfaces-and-contracts.md`",
+            "- `07-integrations-and-dependencies.md`",
+            "- `08-security-and-access.md`",
+            "- `09-errors-and-resilience.md`",
+            "- `99-open-questions.md`",
+        ]
+        incident_paths = [
+            "- `07-integrations-and-dependencies.md`",
+            "- `09-errors-and-resilience.md`",
+            "- `10-observability-and-support.md`",
+            "- `13-operations-and-runbook.md`",
+            "- `99-open-questions.md`",
+        ]
+        refactor_paths = [
+            "- `02-architecture.md`",
+            "- `03-domain-boundaries.md`",
+            "- `11-testing-and-quality.md`",
+            "- `14-decisions-assumptions-and-constraints.md`",
+            "- `99-open-questions.md`",
+        ]
+        data_paths = [
+            "- `05-data-and-persistence.md`",
+            "- `06-business-rules-and-flows.md`",
+            "- `08-security-and-access.md`",
+            "- `11-testing-and-quality.md`",
+            "- `99-open-questions.md`",
+        ]
+        security_paths = [
+            "- `08-security-and-access.md`",
+            "- `04-interfaces-and-contracts.md`",
+            "- `05-data-and-persistence.md`",
+            "- `09-errors-and-resilience.md`",
+            "- `99-open-questions.md`",
+        ]
 
-
-def _render_workspace_index(facts: RepoFacts) -> str:
-    return _render_profile_card(
-        facts,
-        card_id="workspace.index",
-        title="Workspace Context Index",
-        file_type="core",
-        profile_scope="workspace",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[
-            ("Purpose", ["- Use this profile for cross-service planning, impact analysis, and platform-level coordination reasoning."]),
-            ("Current Summary", [f"- {facts.summary}", "- Workspace context stays lightweight and does not replace service-local context."]),
-            (
-                "File Guide",
-                [
-                    "- `02-system-map.md` and `03-service-catalog.md` capture directly evidenced workspace structure.",
-                    "- `05-cross-service-flows.md` and `06-api-and-event-contracts.md` should only contain direct cross-service evidence.",
-                    "- `99-open-questions.md` holds missing ownership, contract, data, and rollout details.",
-                ],
-            ),
-        ],
-    )
+    lines = [
+        "# Context Index",
+        "",
+        "## Repository Profile",
+        f"- Profile: {facts.profile}",
+        "- Context profile version: 2",
+        "",
+        "## How to Use This Context",
+        "- Start here, then read only the files relevant to the task.",
+        "- Treat `99-open-questions.md` as the anti-hallucination stop list.",
+        "",
+        "## Read Paths",
+        "",
+        "### Feature Implementation",
+        "Read:",
+        *feature_paths,
+        "",
+        "### API or Integration Change",
+        "Read:",
+        *api_paths,
+        "",
+        "### Production Incident",
+        "Read:",
+        *incident_paths,
+        "",
+        "### Refactor",
+        "Read:",
+        *refactor_paths,
+        "",
+        "### Data Model Change",
+        "Read:",
+        *data_paths,
+        "",
+        "### Security-Sensitive Change",
+        "Read:",
+        *security_paths,
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def _render_service_overview(facts: RepoFacts) -> str:
-    lines = [f"- {facts.summary}", f"- Repository name: `{facts.repo_name}`."]
-    if facts.stack and facts.stack != ("unknown",):
-        lines.append(f"- Implementation stack evidence: {', '.join(f'`{item}`' for item in facts.stack)}.")
-    if facts.readme_evidence:
-        lines.append("- README or manifest text provides the current best available product/service summary.")
-    return _render_profile_card(
-        facts,
-        card_id="service.overview",
+    return _render_active_context_file(
         title="Service Overview",
-        file_type="core",
-        profile_scope="service",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Observed Scope", lines)],
+        when_to_read=["- Read before feature work that changes service purpose, scope, or owned capability."],
+        do_not_use=[
+            "- Detailed module structure: `02-architecture.md`.",
+            "- Interface details: `04-interfaces-and-contracts.md`.",
+        ],
+        source_of_truth="- Service purpose, responsibilities, callers, owned capabilities, and non-goals.",
+        current_context=[
+            f"- Summary: {facts.summary}",
+            f"- Repository: `{facts.repo_name}`",
+        ],
+        confirmed_facts=[
+            _bullet_if(facts.stack != ("unknown",), f"Stack evidence: {', '.join(f'`{item}`' for item in facts.stack)}."),
+            _bullet_if(bool(facts.readme_evidence), "README or top-level docs provide at least one purpose summary line."),
+        ],
+        assumptions=[
+            "- Caller expectations and explicit non-goals still need confirmation." if not facts.readme_evidence else None,
+        ],
+        related_files=["- `02-architecture.md`", "- `03-domain-boundaries.md`", "- `14-decisions-assumptions-and-constraints.md`"],
     )
 
 
 def _render_service_architecture(facts: RepoFacts) -> str:
-    lines = [f"- Current structure suggests a **{facts.architecture_style}**."]
-    if facts.key_paths:
-        lines.append(f"- High-signal paths: {', '.join(f'`{path}/`' for path in facts.key_paths)}.")
-    if facts.package_managers:
-        lines.append(f"- Package/build surface: {', '.join(facts.package_managers)}.")
-    return _render_profile_card(
-        facts,
-        card_id="service.architecture",
-        title="Service Architecture",
-        file_type="core",
-        profile_scope="service",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Observed Architecture", lines or [f"- {NO_DIRECT_EVIDENCE}"])],
+    return _render_active_context_file(
+        title="Architecture",
+        when_to_read=["- Read before refactors, module moves, or component-level design changes."],
+        do_not_use=[
+            "- Domain ownership rules: `03-domain-boundaries.md`.",
+            "- Deployment details: `12-runtime-deployment-and-config.md`.",
+        ],
+        source_of_truth="- Architecture style, major components, module boundaries, processing model, and design principles.",
+        current_context=[f"- Current structure suggests a **{facts.architecture_style}**."],
+        confirmed_facts=[
+            _paths_bullet("High-signal paths", facts.key_paths, suffix="/"),
+            _bullet_if(bool(facts.package_managers), f"Build/package surface: {', '.join(facts.package_managers)}."),
+        ],
+        assumptions=["- Component boundaries and design principles need confirmation from maintainers or ADRs."],
+        related_files=["- `03-domain-boundaries.md`", "- `12-runtime-deployment-and-config.md`", "- `14-decisions-assumptions-and-constraints.md`"],
     )
 
 
-def _render_domain_boundary(facts: RepoFacts) -> str:
-    lines = ["- This repository is currently treated as one primary implementation unit for service-scoped work."]
-    if facts.docs_present:
-        lines.append("- Repository docs are present and may contain stronger domain boundary definitions than this bounded init scan could confirm.")
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for explicit domain ownership or excluded scope.")
-    return _render_profile_card(
-        facts,
-        card_id="service.domain-boundary",
-        title="Domain Boundary",
-        file_type="core",
-        profile_scope="service",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Boundary Notes", lines)],
+def _render_domain_boundaries(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Domain Boundaries",
+        when_to_read=["- Read before changes that affect ownership, external contracts, or service scope."],
+        do_not_use=[
+            "- Business rule flow details: `06-business-rules-and-flows.md`.",
+            "- Data store specifics: `05-data-and-persistence.md`.",
+        ],
+        source_of_truth="- Owned domain, not-owned domain, upstream/downstream boundaries, and data ownership boundary.",
+        current_context=["- This repo is currently treated as one primary implementation unit for service-scoped work."],
+        confirmed_facts=[
+            _bullet_if(facts.docs_present, "Repository docs exist and may define domain ownership more explicitly."),
+        ],
+        assumptions=["- Explicit owned and not-owned domain boundaries still need confirmation."],
+        related_files=["- `01-service-overview.md`", "- `04-interfaces-and-contracts.md`", "- `05-data-and-persistence.md`"],
     )
 
 
-def _render_service_api_contracts(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="service.api-contracts",
-        title="API Contracts",
-        profile_scope="service",
-        paths=facts.api_paths,
-        present_intro="- Candidate API or contract files were detected in the bounded init scan.",
-        missing_question="Confirm whether this service exposes HTTP, RPC, CLI, or event contracts and where their authoritative definitions live.",
+def _render_service_interfaces_and_contracts(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Interfaces and Contracts",
+        when_to_read=["- Read before API, event, request/response, or compatibility changes."],
+        do_not_use=[
+            "- Dependency inventory: `07-integrations-and-dependencies.md`.",
+            "- Auth and access policy: `08-security-and-access.md`.",
+        ],
+        source_of_truth="- REST, gRPC, events, message contracts, and compatibility rules.",
+        current_context=[_paths_bullet("Candidate contract paths", facts.api_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.api_paths), "Contract-like files were detected in the bounded scan.")],
+        assumptions=["- Confirm authoritative contract definitions before changing public behavior."],
+        related_files=["- `03-domain-boundaries.md`", "- `07-integrations-and-dependencies.md`", "- `99-open-questions.md`"],
     )
 
 
-def _render_service_data_model(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="service.data-model",
-        title="Data Model and Database",
-        profile_scope="service",
-        paths=facts.database_paths,
-        present_intro="- Candidate database or schema assets were detected in the bounded init scan.",
-        missing_question="Confirm whether this service owns persistent data, migrations, or schema contracts and where they are defined.",
+def _render_service_data_and_persistence(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Data and Persistence",
+        when_to_read=["- Read before schema, migration, persistence, or consistency changes."],
+        do_not_use=[
+            "- Domain flow logic: `06-business-rules-and-flows.md`.",
+            "- Runtime configuration: `12-runtime-deployment-and-config.md`.",
+        ],
+        source_of_truth="- Databases, tables/collections, main fields, data lifecycle, consistency rules, and migrations.",
+        current_context=[_paths_bullet("Candidate persistence paths", facts.database_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.database_paths), "Schema or migration-related files were detected in the bounded scan.")],
+        assumptions=["- Confirm data ownership, retention, and migration policy before mutation work."],
+        related_files=["- `03-domain-boundaries.md`", "- `06-business-rules-and-flows.md`", "- `08-security-and-access.md`"],
     )
 
 
-def _render_service_business_rules(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="service.business-rules",
-        title="Business Rules",
-        profile_scope="service",
-        paths=facts.business_rule_paths,
-        present_intro="- Candidate business-rule or domain-policy files were detected in the bounded init scan.",
-        missing_question="Confirm the service's durable business rules, validation rules, and domain invariants.",
+def _render_service_business_rules_and_flows(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Business Rules and Flows",
+        when_to_read=["- Read before changing validation, state transitions, limits, or user-visible flow behavior."],
+        do_not_use=[
+            "- Interface wire format details: `04-interfaces-and-contracts.md`.",
+            "- Incident response steps: `13-operations-and-runbook.md`.",
+        ],
+        source_of_truth="- Business flows, validation rules, state transitions, limits, exceptions, and edge cases.",
+        current_context=[_paths_bullet("Candidate business-rule paths", facts.business_rule_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.business_rule_paths), "Domain-rule-like files were detected in the bounded scan.")],
+        assumptions=["- Durable business invariants still need confirmation from code owners or tests."],
+        related_files=["- `04-interfaces-and-contracts.md`", "- `05-data-and-persistence.md`", "- `11-testing-and-quality.md`"],
     )
 
 
-def _render_service_integrations(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="service.integration-dependencies",
-        title="Integration Dependencies",
-        profile_scope="service",
-        paths=facts.integration_paths,
-        present_intro="- Candidate integration-related paths were detected in the bounded init scan.",
-        missing_question="Confirm external providers, internal dependencies, and the contracts this service relies on.",
+def _render_service_integrations_and_dependencies(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Integrations and Dependencies",
+        when_to_read=["- Read before external dependency changes, provider swaps, or downstream behavior changes."],
+        do_not_use=[
+            "- Error handling ownership: `09-errors-and-resilience.md`.",
+            "- Security controls: `08-security-and-access.md`.",
+        ],
+        source_of_truth="- Internal services, external partners, dependency contracts, timeout expectations, retry expectations, and dependency risks.",
+        current_context=[_paths_bullet("Candidate integration paths", facts.integration_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.integration_paths), "Integration-related files were detected in the bounded scan.")],
+        assumptions=["- Timeout, retry, and ownership expectations still need confirmation per dependency."],
+        related_files=["- `04-interfaces-and-contracts.md`", "- `08-security-and-access.md`", "- `09-errors-and-resilience.md`"],
     )
 
 
-def _render_service_error_handling(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="service.error-handling",
-        title="Error Handling",
-        profile_scope="service",
-        paths=facts.error_paths,
-        present_intro="- Candidate retry, middleware, or error-related paths were detected in the bounded init scan.",
-        missing_question="Confirm service-level error handling, retries, timeout policy, and failure classification.",
+def _render_service_security_and_access(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Security and Access",
+        when_to_read=["- Read before auth, authorization, secret, token, or sensitive-data changes."],
+        do_not_use=[
+            "- General dependency inventory: `07-integrations-and-dependencies.md`.",
+            "- Incident procedure detail: `13-operations-and-runbook.md`.",
+        ],
+        source_of_truth="- Auth, authorization, roles, secrets, certificates, sensitive data, and access boundaries.",
+        current_context=[_paths_bullet("Candidate security paths", facts.security_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.security_paths), "Auth or security-related files were detected in the bounded scan.")],
+        assumptions=["- Sensitive data classes, token claims, and permission boundaries still need confirmation."],
+        related_files=["- `04-interfaces-and-contracts.md`", "- `05-data-and-persistence.md`", "- `09-errors-and-resilience.md`"],
     )
 
 
-def _render_service_observability(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="service.observability",
-        title="Observability",
-        profile_scope="service",
-        paths=facts.observability_paths,
-        present_intro="- Candidate observability-related paths were detected in the bounded init scan.",
-        missing_question="Confirm logs, metrics, traces, alerts, and operational dashboards for this service.",
+def _render_service_errors_and_resilience(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Errors and Resilience",
+        when_to_read=["- Read before retry, timeout, idempotency, or fallback behavior changes."],
+        do_not_use=[
+            "- Support dashboards: `10-observability-and-support.md`.",
+            "- Dependency list ownership: `07-integrations-and-dependencies.md`.",
+        ],
+        source_of_truth="- Error code strategy, retries, timeout handling, idempotency, fallback behavior, finality, and recovery rules.",
+        current_context=[_paths_bullet("Candidate resilience paths", facts.error_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.error_paths), "Retry or error-related files were detected in the bounded scan.")],
+        assumptions=["- Error taxonomy and recovery guarantees still need confirmation."],
+        related_files=["- `07-integrations-and-dependencies.md`", "- `08-security-and-access.md`", "- `10-observability-and-support.md`"],
     )
 
 
-def _render_service_testing(facts: RepoFacts) -> str:
-    lines: list[str] = []
-    if facts.tests_present:
-        lines.append("- Automated test assets are present in the repository.")
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for automated test assets.")
-    if facts.ci_present:
-        lines.append("- CI workflow files are present and likely define at least part of the validation surface.")
-    if facts.formatter_present:
-        lines.append("- Repository-local formatting or editor configuration is present and should be preserved during changes.")
-    return _render_profile_card(
-        facts,
-        card_id="service.testing-strategy",
-        title="Testing Strategy",
-        file_type="core",
-        profile_scope="service",
-        evidence_paths=_compose_paths(list(facts.key_paths), _base_evidence_paths(facts)),
-        body_sections=[("Observed Validation Surface", lines)],
+def _render_service_observability_and_support(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Observability and Support",
+        when_to_read=["- Read before changing logs, metrics, traces, alerts, or support diagnostics."],
+        do_not_use=[
+            "- Recovery playbooks: `13-operations-and-runbook.md`.",
+            "- Runtime topology: `12-runtime-deployment-and-config.md`.",
+        ],
+        source_of_truth="- Logs, metrics, traces, dashboards, alerts, and support investigation steps.",
+        current_context=[_paths_bullet("Candidate observability paths", facts.observability_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.observability_paths), "Observability-related files were detected in the bounded scan.")],
+        assumptions=["- Dashboard ownership, alert thresholds, and support workflow still need confirmation."],
+        related_files=["- `09-errors-and-resilience.md`", "- `12-runtime-deployment-and-config.md`", "- `13-operations-and-runbook.md`"],
     )
 
 
-def _render_service_runtime_deployment(facts: RepoFacts) -> str:
-    lines: list[str] = []
-    if facts.runtimes:
-        lines.append(f"- Runtime versions evidenced in manifests: {', '.join(f'`{item}`' for item in facts.runtimes)}.")
-    if facts.deployment_present:
-        lines.append("- Deployment-related files are present in the repository surface.")
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for deployment topology or runtime packaging details.")
-    return _render_profile_card(
-        facts,
-        card_id="service.runtime-deployment",
-        title="Runtime and Deployment",
-        file_type="core",
-        profile_scope="service",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Observed Runtime Surface", lines or [f"- {NO_DIRECT_EVIDENCE}"])],
+def _render_service_testing_and_quality(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Testing and Quality",
+        when_to_read=["- Read before changing validation strategy, adding risk, or refactoring behavior."],
+        do_not_use=[
+            "- Runtime deployment mechanics: `12-runtime-deployment-and-config.md`.",
+            "- Business rules authority: `06-business-rules-and-flows.md`.",
+        ],
+        source_of_truth="- Unit tests, integration tests, contract tests, regression tests, test data, and quality gates.",
+        current_context=[
+            _bullet_if(facts.tests_present, "Automated test assets are present in the repo.") or f"- {NO_DIRECT_EVIDENCE}",
+            _bullet_if(facts.ci_present, "CI workflow files are present."),
+            _bullet_if(facts.formatter_present, "Repository-local formatting or editor config is present."),
+        ],
+        confirmed_facts=[],
+        assumptions=["- Quality gates and required regression coverage still need confirmation."],
+        related_files=["- `02-architecture.md`", "- `06-business-rules-and-flows.md`", "- `14-decisions-assumptions-and-constraints.md`"],
+    )
+
+
+def _render_service_runtime_deployment_and_config(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Runtime Deployment and Config",
+        when_to_read=["- Read before env var, config, runtime, deployment, CI/CD, or rollback changes."],
+        do_not_use=[
+            "- Operational triage steps: `13-operations-and-runbook.md`.",
+            "- Constraint rationale: `14-decisions-assumptions-and-constraints.md`.",
+        ],
+        source_of_truth="- Runtime, environment variables, config files, deployment topology, CI/CD, and rollback constraints.",
+        current_context=[
+            _bullet_if(bool(facts.runtimes), f"Runtime evidence: {', '.join(f'`{item}`' for item in facts.runtimes)}.") or "- Runtime version not directly evidenced.",
+            _bullet_if(facts.deployment_present, "Deployment-related files are present in the repository surface."),
+        ],
+        confirmed_facts=[],
+        assumptions=["- Environment-specific topology and rollback rules still need confirmation."],
+        related_files=["- `02-architecture.md`", "- `10-observability-and-support.md`", "- `13-operations-and-runbook.md`"],
+    )
+
+
+def _render_service_operations_and_runbook(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Operations and Runbook",
+        when_to_read=["- Read during incidents, manual recovery, reconciliation, or operational support work."],
+        do_not_use=[
+            "- Error-handling design authority: `09-errors-and-resilience.md`.",
+            "- Deployment topology details: `12-runtime-deployment-and-config.md`.",
+        ],
+        source_of_truth="- Operational tasks, incident triage, manual checks, reconciliation, recovery, and escalation.",
+        current_context=[
+            _bullet_if(bool(facts.observability_paths) or facts.deployment_present, "Operational evidence exists but concrete runbooks still need curation."),
+        ],
+        confirmed_facts=[],
+        assumptions=["- Manual recovery and escalation procedures still need confirmation."],
+        related_files=["- `09-errors-and-resilience.md`", "- `10-observability-and-support.md`", "- `12-runtime-deployment-and-config.md`"],
+    )
+
+
+def _render_service_decisions_assumptions_and_constraints(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Decisions Assumptions and Constraints",
+        when_to_read=["- Read before major design shifts, high-risk changes, or when evidence is weak."],
+        do_not_use=[
+            "- Unvalidated unknowns: `99-open-questions.md`.",
+            "- Term definitions: `98-glossary.md`.",
+        ],
+        source_of_truth="- Accepted decisions, ADR summaries, assumptions, confirmed facts, inferred knowledge, and technical/business/operational constraints.",
+        current_context=[
+            "- This file is the canonical home for cross-cutting decisions, assumptions, and constraints that should not be duplicated elsewhere.",
+        ],
+        confirmed_facts=[
+            _bullet_if(facts.docs_present, "Repository docs are present and may contain ADRs or constraint evidence."),
+            _bullet_if(facts.deployment_present, "Deployment files imply some runtime constraints."),
+        ],
+        assumptions=["- Canonical ADR summaries and decision owners still need confirmation."],
+        related_files=["- `02-architecture.md`", "- `12-runtime-deployment-and-config.md`", "- `99-open-questions.md`"],
     )
 
 
 def _render_platform_overview(facts: RepoFacts) -> str:
-    lines = [f"- {facts.summary}", "- Current workspace profile is intended for coordination context, not deep service internals."]
-    if facts.stack and facts.stack != ("unknown",):
-        lines.append(f"- Mixed implementation stack evidence in this repo currently includes: {', '.join(f'`{item}`' for item in facts.stack)}.")
-    return _render_profile_card(
-        facts,
-        card_id="workspace.platform-overview",
+    return _render_active_context_file(
         title="Platform Overview",
-        file_type="core",
-        profile_scope="workspace",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Observed Scope", lines)],
+        when_to_read=["- Read before cross-service planning, coordination, or platform-scope work."],
+        do_not_use=[
+            "- Service inventory detail: `03-service-catalog.md`.",
+            "- Contract detail: `06-interfaces-and-contracts.md`.",
+        ],
+        source_of_truth="- Platform purpose, major capabilities, scope, and non-goals.",
+        current_context=[f"- Summary: {facts.summary}"],
+        confirmed_facts=[
+            _bullet_if(bool(facts.workspace_service_paths), f"Candidate service roots: {', '.join(f'`{path}/`' for path in facts.workspace_service_paths)}."),
+        ],
+        assumptions=["- Platform non-goals and explicit service ownership still need confirmation."],
+        related_files=["- `02-system-map.md`", "- `03-service-catalog.md`", "- `14-decisions-assumptions-and-constraints.md`"],
     )
 
 
 def _render_workspace_system_map(facts: RepoFacts) -> str:
-    lines = [f"- Current structure suggests a **{facts.architecture_style}**."]
-    if facts.workspace_service_paths:
-        lines.append("- Candidate service or package roots detected:")
-        lines.extend(f"- `{path}/`" for path in facts.workspace_service_paths)
-    elif facts.key_paths:
-        lines.append(f"- High-signal top-level paths: {', '.join(f'`{path}/`' for path in facts.key_paths)}.")
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for workspace service layout.")
-    return _render_profile_card(
-        facts,
-        card_id="workspace.system-map",
+    return _render_active_context_file(
         title="System Map",
-        file_type="core",
-        profile_scope="workspace",
-        evidence_paths=_compose_paths(list(facts.workspace_service_paths), _base_evidence_paths(facts)),
-        body_sections=[("Observed Layout", lines)],
+        when_to_read=["- Read before work that spans multiple services or repo areas."],
+        do_not_use=[
+            "- Detailed service ownership: `03-service-catalog.md`.",
+            "- Flow sequencing: `05-cross-service-flows.md`.",
+        ],
+        source_of_truth="- System landscape, major components, and service relationships.",
+        current_context=[f"- Current structure suggests a **{facts.architecture_style}**."],
+        confirmed_facts=[_paths_bullet("Candidate workspace roots", facts.workspace_service_paths, suffix="/")],
+        assumptions=["- Service-to-service relationship semantics still need confirmation."],
+        related_files=["- `03-service-catalog.md`", "- `04-domain-boundaries.md`", "- `05-cross-service-flows.md`"],
     )
 
 
 def _render_workspace_service_catalog(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="workspace.service-catalog",
+    return _render_active_context_file(
         title="Service Catalog",
-        profile_scope="workspace",
-        paths=facts.workspace_service_paths,
-        present_intro="- Candidate service or package roots were detected in common workspace directories.",
-        missing_question="Confirm which directories represent independently owned services, applications, or platform components.",
+        when_to_read=["- Read before assigning changes, tracing impact, or coordinating owners across services."],
+        do_not_use=[
+            "- Cross-service flow sequencing: `05-cross-service-flows.md`.",
+            "- Data ownership rules: `07-data-ownership-and-consistency.md`.",
+        ],
+        source_of_truth="- Services, owners, responsibilities, criticality, and repo paths.",
+        current_context=[_paths_bullet("Candidate service paths", facts.workspace_service_paths, suffix="/")],
+        confirmed_facts=[_bullet_if(bool(facts.workspace_service_paths), "Common workspace service directories were detected.")],
+        assumptions=["- Service ownership, criticality, and support contacts still need confirmation."],
+        related_files=["- `02-system-map.md`", "- `04-domain-boundaries.md`", "- `13-operations-and-runbook.md`"],
     )
 
 
 def _render_workspace_domain_boundaries(facts: RepoFacts) -> str:
-    lines = ["- Workspace boundary definitions should stay at coordination level and defer deep implementation facts to each service repository."]
-    if facts.docs_present:
-        lines.append("- Repository docs are present and may define domain ownership more clearly than the bounded init scan could confirm.")
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for explicit cross-service domain ownership.")
-    return _render_profile_card(
-        facts,
-        card_id="workspace.domain-boundaries",
+    return _render_active_context_file(
         title="Domain Boundaries",
-        file_type="core",
-        profile_scope="workspace",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Boundary Notes", lines)],
+        when_to_read=["- Read before changing cross-service ownership or shifting bounded responsibilities."],
+        do_not_use=[
+            "- Per-service internals.",
+            "- Contract wire formats: `06-interfaces-and-contracts.md`.",
+        ],
+        source_of_truth="- Domain ownership across services, not-owned areas, and conflict boundaries.",
+        current_context=["- Workspace context should stay at coordination level and avoid service-local implementation detail."],
+        confirmed_facts=[_bullet_if(facts.docs_present, "Repository docs exist and may describe ownership boundaries.")],
+        assumptions=["- Explicit ownership conflicts and unresolved domains still need confirmation."],
+        related_files=["- `02-system-map.md`", "- `03-service-catalog.md`", "- `07-data-ownership-and-consistency.md`"],
     )
 
 
 def _render_workspace_cross_service_flows(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="workspace.cross-service-flows",
+    return _render_active_context_file(
         title="Cross-Service Flows",
-        profile_scope="workspace",
-        paths=facts.integration_paths,
-        present_intro="- Candidate integration-related paths were detected, but they still require service-level confirmation before treating them as authoritative cross-service flows.",
-        missing_question="Confirm which workflows actually cross service boundaries and where the authoritative sequence or ownership docs live.",
+        when_to_read=["- Read before workflow changes that cross service, queue, or orchestration boundaries."],
+        do_not_use=[
+            "- Service-local business rules.",
+            "- Detailed dependency inventory: `06-interfaces-and-contracts.md`.",
+        ],
+        source_of_truth="- End-to-end flows, orchestration, async/sync boundaries, and transaction boundaries.",
+        current_context=[_paths_bullet("Candidate flow or integration paths", facts.integration_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.integration_paths), "Integration-like paths were detected in the bounded scan.")],
+        assumptions=["- Authoritative end-to-end sequence docs still need confirmation."],
+        related_files=["- `02-system-map.md`", "- `06-interfaces-and-contracts.md`", "- `07-data-ownership-and-consistency.md`"],
     )
 
 
-def _render_workspace_api_event_contracts(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="workspace.api-event-contracts",
-        title="API and Event Contracts",
-        profile_scope="workspace",
-        paths=facts.api_paths,
-        present_intro="- Candidate contract-related files were detected in the bounded init scan.",
-        missing_question="Confirm which APIs or events are shared across services and which repo owns each contract.",
+def _render_workspace_interfaces_and_contracts(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Interfaces and Contracts",
+        when_to_read=["- Read before changing cross-service APIs, events, or compatibility rules."],
+        do_not_use=[
+            "- Data ownership rules: `07-data-ownership-and-consistency.md`.",
+            "- Security boundary policy: `08-security-and-access.md`.",
+        ],
+        source_of_truth="- Cross-service APIs, events, contracts, and compatibility rules.",
+        current_context=[_paths_bullet("Candidate contract paths", facts.api_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.api_paths), "Contract-like files were detected in the bounded scan.")],
+        assumptions=["- Contract owners and compatibility guarantees still need confirmation."],
+        related_files=["- `03-service-catalog.md`", "- `05-cross-service-flows.md`", "- `08-security-and-access.md`"],
     )
 
 
-def _render_workspace_data_ownership(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="workspace.data-ownership",
-        title="Data Ownership",
-        profile_scope="workspace",
-        paths=facts.database_paths,
-        present_intro="- Candidate database or schema assets were detected, but ownership boundaries still require human confirmation.",
-        missing_question="Confirm which service owns each persistent dataset, schema, and migration stream.",
+def _render_workspace_data_ownership_and_consistency(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Data Ownership and Consistency",
+        when_to_read=["- Read before changing shared data, replication, consistency, or CDC behavior."],
+        do_not_use=[
+            "- Runtime topology detail: `11-runtime-deployment-and-config.md`.",
+            "- Glossary terms: `98-glossary.md`.",
+        ],
+        source_of_truth="- Data owners, read/write ownership, replication, consistency, and read-model boundaries.",
+        current_context=[_paths_bullet("Candidate data paths", facts.database_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.database_paths), "Schema or database-like files were detected in the bounded scan.")],
+        assumptions=["- Canonical data owners and consistency guarantees still need confirmation."],
+        related_files=["- `04-domain-boundaries.md`", "- `05-cross-service-flows.md`", "- `08-security-and-access.md`"],
     )
 
 
 def _render_workspace_security_access(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="workspace.security-access",
+    return _render_active_context_file(
         title="Security and Access",
-        profile_scope="workspace",
-        paths=facts.security_paths,
-        present_intro="- Candidate auth or security-related files were detected in the bounded init scan.",
-        missing_question="Confirm cross-service authentication, authorization, and access-control boundaries.",
+        when_to_read=["- Read before changing platform auth, permissions, service-to-service trust, or secret handling."],
+        do_not_use=[
+            "- Detailed incident steps: `13-operations-and-runbook.md`.",
+            "- Contract compatibility: `06-interfaces-and-contracts.md`.",
+        ],
+        source_of_truth="- Platform auth, roles, service-to-service auth, secrets, PII, and permission boundaries.",
+        current_context=[_paths_bullet("Candidate security paths", facts.security_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.security_paths), "Security-related files were detected in the bounded scan.")],
+        assumptions=["- Platform-wide permission boundaries still need confirmation."],
+        related_files=["- `06-interfaces-and-contracts.md`", "- `07-data-ownership-and-consistency.md`", "- `13-operations-and-runbook.md`"],
     )
 
 
-def _render_workspace_observability_operations(facts: RepoFacts) -> str:
-    lines: list[str] = []
-    if facts.observability_paths:
-        lines.append("- Candidate observability-related paths were detected in the bounded init scan.")
-        lines.extend(f"- `{path}`" for path in facts.observability_paths)
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for shared observability or operational coordination assets.")
-    if facts.ci_present:
-        lines.append("- CI workflow files are present and may carry operational clues, but they do not by themselves define runtime ownership.")
-    return _render_profile_card(
-        facts,
-        card_id="workspace.observability-operations",
-        title="Observability and Operations",
-        file_type="core",
-        profile_scope="workspace",
-        evidence_paths=_compose_paths(list(facts.observability_paths), _base_evidence_paths(facts)),
-        body_sections=[("Observed Operational Surface", lines)],
+def _render_workspace_observability_and_support(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Observability and Support",
+        when_to_read=["- Read before changing shared logging, dashboards, traces, alerts, or support routing."],
+        do_not_use=[
+            "- Runtime rollout mechanics: `11-runtime-deployment-and-config.md`.",
+            "- Release policy: `12-release-and-feature-flags.md`.",
+        ],
+        source_of_truth="- Platform logs, dashboards, tracing, alerting, and support ownership.",
+        current_context=[_paths_bullet("Candidate observability paths", facts.observability_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.observability_paths), "Observability-related files were detected in the bounded scan.")],
+        assumptions=["- Shared dashboard ownership and support escalation boundaries still need confirmation."],
+        related_files=["- `10-testing-and-quality.md`", "- `11-runtime-deployment-and-config.md`", "- `13-operations-and-runbook.md`"],
     )
 
 
-def _render_workspace_deployment_topology(facts: RepoFacts) -> str:
-    lines: list[str] = []
-    if facts.deployment_present:
-        lines.append("- Deployment-related files are present in the repository surface.")
-    else:
-        lines.append(f"- {NO_DIRECT_EVIDENCE} for deployment topology.")
-    if facts.runtimes:
-        lines.append(f"- Runtime version evidence present: {', '.join(f'`{item}`' for item in facts.runtimes)}.")
-    return _render_profile_card(
-        facts,
-        card_id="workspace.deployment-topology",
-        title="Deployment Topology",
-        file_type="core",
-        profile_scope="workspace",
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[("Observed Deployment Surface", lines)],
+def _render_workspace_testing_and_quality(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Testing and Quality",
+        when_to_read=["- Read before cross-service releases, compatibility changes, or risky refactors."],
+        do_not_use=[
+            "- Service-local test implementation detail.",
+            "- Release policy: `12-release-and-feature-flags.md`.",
+        ],
+        source_of_truth="- Cross-service testing, contract testing, regression, and release validation.",
+        current_context=[
+            _bullet_if(facts.tests_present, "Automated test assets are present in the repo.") or f"- {NO_DIRECT_EVIDENCE}",
+            _bullet_if(facts.ci_present, "CI workflow files are present."),
+        ],
+        confirmed_facts=[],
+        assumptions=["- Cross-service validation gates and release signoff rules still need confirmation."],
+        related_files=["- `06-interfaces-and-contracts.md`", "- `09-observability-and-support.md`", "- `12-release-and-feature-flags.md`"],
     )
 
 
-def _render_workspace_release_feature_flags(facts: RepoFacts) -> str:
-    return _render_path_scoped_card(
-        facts,
-        card_id="workspace.release-feature-flags",
+def _render_workspace_runtime_deployment_and_config(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Runtime Deployment and Config",
+        when_to_read=["- Read before environment, deployment, config, or rollback changes across services."],
+        do_not_use=[
+            "- Release coordination detail: `12-release-and-feature-flags.md`.",
+            "- Manual operational recovery: `13-operations-and-runbook.md`.",
+        ],
+        source_of_truth="- Environment topology, deployment, config, CI/CD, and rollback boundaries.",
+        current_context=[
+            _bullet_if(facts.deployment_present, "Deployment-related files are present."),
+            _bullet_if(bool(facts.runtimes), f"Runtime evidence: {', '.join(f'`{item}`' for item in facts.runtimes)}."),
+        ],
+        confirmed_facts=[],
+        assumptions=["- Environment topology and rollback ownership still need confirmation."],
+        related_files=["- `02-system-map.md`", "- `09-observability-and-support.md`", "- `12-release-and-feature-flags.md`"],
+    )
+
+
+def _render_workspace_release_and_feature_flags(facts: RepoFacts) -> str:
+    return _render_active_context_file(
         title="Release and Feature Flags",
-        profile_scope="workspace",
-        paths=facts.release_paths,
-        present_intro="- Candidate release or feature-flag related files were detected in the bounded init scan.",
-        missing_question="Confirm release coordination, feature flag ownership, and rollout control points across services.",
+        when_to_read=["- Read before rollout, feature flag, kill switch, or rollback policy changes."],
+        do_not_use=[
+            "- Runtime topology detail: `11-runtime-deployment-and-config.md`.",
+            "- Support triage detail: `13-operations-and-runbook.md`.",
+        ],
+        source_of_truth="- Release process, rollout, feature flags, kill switch behavior, and rollback expectations.",
+        current_context=[_paths_bullet("Candidate release paths", facts.release_paths)],
+        confirmed_facts=[_bullet_if(bool(facts.release_paths), "Release or feature-flag related files were detected in the bounded scan.")],
+        assumptions=["- Canonical rollout controls and owners still need confirmation."],
+        related_files=["- `10-testing-and-quality.md`", "- `11-runtime-deployment-and-config.md`", "- `13-operations-and-runbook.md`"],
+    )
+
+
+def _render_workspace_operations_and_runbook(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Operations and Runbook",
+        when_to_read=["- Read during incidents, coordination failures, reconciliation, or manual recovery work."],
+        do_not_use=[
+            "- Contract authority: `06-interfaces-and-contracts.md`.",
+            "- Decision rationale: `14-decisions-assumptions-and-constraints.md`.",
+        ],
+        source_of_truth="- Operational playbooks, incident response, reconciliation, and escalation.",
+        current_context=["- Workspace runbooks should coordinate service owners rather than duplicate service-local runbooks."],
+        confirmed_facts=[_bullet_if(facts.ci_present or bool(facts.observability_paths), "Operational signals exist in the repo surface.")],
+        assumptions=["- Escalation paths and coordination ownership still need confirmation."],
+        related_files=["- `03-service-catalog.md`", "- `09-observability-and-support.md`", "- `12-release-and-feature-flags.md`"],
+    )
+
+
+def _render_workspace_decisions_assumptions_and_constraints(facts: RepoFacts) -> str:
+    return _render_active_context_file(
+        title="Decisions Assumptions and Constraints",
+        when_to_read=["- Read before major platform changes or when cross-service evidence is incomplete."],
+        do_not_use=[
+            "- Unknown follow-ups: `99-open-questions.md`.",
+            "- Term definitions: `98-glossary.md`.",
+        ],
+        source_of_truth="- Platform decisions, assumptions, confirmed facts, inferred knowledge, and constraints.",
+        current_context=["- This file is the canonical home for cross-cutting platform decisions and constraints."],
+        confirmed_facts=[_bullet_if(facts.docs_present, "Repository docs may contain platform decisions or ADR-like evidence.")],
+        assumptions=["- Accepted platform decisions and durable constraints still need confirmation."],
+        related_files=["- `02-system-map.md`", "- `11-runtime-deployment-and-config.md`", "- `99-open-questions.md`"],
+    )
+
+
+def _render_glossary(facts: RepoFacts, *, profile_scope: str) -> str:
+    terms = [facts.repo_name]
+    terms.extend(facts.stack)
+    terms.extend(path.split("/")[0] for path in facts.workspace_service_paths[:3])
+    canonical_terms = [term for term in dict.fromkeys(term for term in terms if term and term != "unknown")]
+    return _render_active_context_file(
+        title="Glossary",
+        when_to_read=["- Read when a term, acronym, internal service name, or partner label is unclear."],
+        do_not_use=["- Unknown questions: `99-open-questions.md`.", "- Architecture or policy detail."],
+        source_of_truth="- Domain terms, acronyms, internal service names, and external partner terms.",
+        current_context=[f"- Scope: {profile_scope} glossary for repo-local or platform terms."],
+        confirmed_facts=[
+            "- Add stable definitions here; do not duplicate explanations in active context files.",
+            *[f"- Candidate term: `{term}`." for term in canonical_terms[:6]],
+        ],
+        assumptions=["- Some domain terms still need confirmation from maintainers."],
+        related_files=["- `00-index.md`", "- `14-decisions-assumptions-and-constraints.md`", "- `99-open-questions.md`"],
     )
 
 
 def _render_open_questions(facts: RepoFacts, *, profile_scope: str) -> str:
-    table = [
-        "| ID | Open Question | Priority | Status |",
-        "|---|---|---|---|",
-    ]
-    for index, item in enumerate(facts.unknowns, start=1):
-        table.append(f"| Q-{index:03d} | {item} | important | open |")
-    return _render_profile_card(
-        facts,
-        card_id=f"{profile_scope}.open-questions",
+    question_lines = [f"- Q-{index:03d}: {item}" for index, item in enumerate(facts.unknowns, start=1)]
+    return _render_active_context_file(
         title="Open Questions",
-        file_type="knowledge",
-        profile_scope=profile_scope,
-        evidence_paths=_base_evidence_paths(facts),
-        body_sections=[
-            ("Unresolved Items", ["- Missing or weakly evidenced details are tracked here instead of being guessed in profile files."]),
-            ("Question Ledger", table),
-        ],
+        when_to_read=["- Read whenever task-critical information is missing, weakly evidenced, or risky to infer."],
+        do_not_use=["- Confirmed facts.", "- Stable term definitions: `98-glossary.md`."],
+        source_of_truth="- Unknowns, risky assumptions, missing documentation, and follow-up items.",
+        current_context=["- Unknowns belong here instead of being guessed elsewhere.", *question_lines],
+        confirmed_facts=["- Move resolved items into the canonical active file that owns the fact."],
+        assumptions=[f"- Open questions below reflect bounded-init uncertainty for the {profile_scope} profile."],
+        related_files=["- `00-index.md`", "- `98-glossary.md`", "- `14-decisions-assumptions-and-constraints.md`"],
     )
 
 
-def _render_path_scoped_card(
-    facts: RepoFacts,
+def _render_active_context_file(
     *,
-    card_id: str,
     title: str,
-    profile_scope: str,
-    paths: tuple[str, ...],
-    present_intro: str,
-    missing_question: str,
+    when_to_read: list[str],
+    do_not_use: list[str],
+    source_of_truth: str,
+    current_context: list[str | None],
+    confirmed_facts: list[str | None],
+    assumptions: list[str | None],
+    related_files: list[str],
 ) -> str:
-    if paths:
-        body_lines = [present_intro]
-        body_lines.extend(f"- `{path}`" for path in paths)
-    else:
-        body_lines = [f"- {NO_DIRECT_EVIDENCE}"]
-    body_lines.append("- If this area matters for active work, verify it against source paths or record clarification in `99-open-questions.md`.")
-    return _render_profile_card(
-        facts,
-        card_id=card_id,
-        title=title,
-        file_type="core",
-        profile_scope=profile_scope,
-        evidence_paths=list(paths),
-        body_sections=[("Observed Evidence", body_lines), ("Follow-Up", [f"- {missing_question}"])],
+    lines = [f"# {title}"]
+    sections = (
+        ("When to Read", _clean_lines(when_to_read)),
+        ("Do Not Use This For", _clean_lines(do_not_use)),
+        ("Source of Truth", _clean_lines([source_of_truth])),
+        ("Current Context", _clean_lines(current_context)),
+        ("Confirmed Facts", _clean_lines(confirmed_facts)),
+        ("Assumptions", _clean_lines(assumptions)),
+        ("Related Files", _clean_lines(related_files)),
     )
+    for heading, body in sections:
+        lines.extend(["", f"## {heading}"])
+        lines.extend(body or ["- None yet."])
+    return "\n".join(lines) + "\n"
 
 
-def _render_profile_card(
-    facts: RepoFacts,
-    *,
-    card_id: str,
-    title: str,
-    file_type: str,
-    profile_scope: str,
-    evidence_paths: list[str],
-    body_sections: list[tuple[str, list[str]]],
-) -> str:
-    status = "inferred" if evidence_paths else "unknown"
-    confidence = "medium" if evidence_paths else "low"
-    front_matter = [
-        "---",
-        f"id: {card_id}",
-        f'title: "{title}"',
-        f"type: {file_type}",
-        f"status: {status}",
-        f"confidence: {confidence}",
-        "source: ai",
-        "owner: unresolved",
-        f"updated: {facts.today}",
-    ]
-    if evidence_paths:
-        front_matter.append("source_paths:")
-        for path in evidence_paths:
-            front_matter.append(f"  - {path}")
-    else:
-        front_matter.append("source_paths: []")
-    front_matter.extend(
-        [
-            f"source_commit: {facts.source_commit}",
-            f"last_verified: {facts.today}",
-            f"profile_scope: {profile_scope}",
-            "generated_from: forge-init",
-            "---",
-        ]
-    )
+def _clean_lines(lines: list[str | None]) -> list[str]:
+    return [line for line in lines if line]
 
-    body = [f"# {title}"]
-    for section, lines in body_sections:
-        body.append("")
-        body.append(f"## {section}")
-        body.extend(lines or [f"- {NO_DIRECT_EVIDENCE}"])
-    return "\n".join(front_matter + [""] + body) + "\n"
+
+def _paths_bullet(label: str, paths: tuple[str, ...], *, suffix: str = "") -> str:
+    if not paths:
+        return f"- {NO_DIRECT_EVIDENCE}"
+    rendered = ", ".join(f"`{path}{suffix}`" for path in paths[:8])
+    return f"- {label}: {rendered}."
+
+
+def _bullet_if(condition: bool, text: str) -> str | None:
+    if not condition:
+        return None
+    return f"- {text}"
 
 
 def _base_evidence_paths(facts: RepoFacts) -> list[str]:

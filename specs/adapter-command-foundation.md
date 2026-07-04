@@ -7,7 +7,7 @@
 | Date | 2026-05-28 |
 | Status | `decision` |
 | Scope | Shared skills, adapter architecture, command semantics, and tool compatibility boundaries |
-| Dependency | `specs/mode-invocation.md`, `specs/runtime-migration.md`, `specs/framework-lifecycle.md`, `runtime/.forge/context/00-meta/conventions.md` |
+| Dependency | `specs/mode-invocation.md`, `specs/runtime-migration.md`, `specs/framework-lifecycle.md`, `runtime/.forge/runtime/meta/conventions.md` |
 
 ---
 
@@ -84,10 +84,10 @@ Ownership:
 Adapter loading must follow the Forge invocation protocol:
 
 1. Read `.forge/forge.config.yaml`.
-2. Resolve the requested mode and read the requested mode file from `.forge/context/modes/<mode>.md` or the relevant compatibility/scenario file.
-3. Follow `.forge/context/00-meta/conventions.md` when task behavior, reporting shape, evidence handling, risk, validation, or language rules need it.
+2. Resolve the requested mode and read the requested mode file from `.forge/runtime/modes/<mode>.md` or the relevant compatibility/scenario file.
+3. Follow `.forge/runtime/meta/conventions.md` when task behavior, reporting shape, evidence handling, risk, validation, or language rules need it.
 4. Load scoped convention files only when relevant.
-5. Use `.forge/context/00-meta/context-manifest.md` only as a routing index when needed.
+5. Use `.forge/runtime/meta/context-manifest.md` only as a routing index when needed.
 6. Load only the mode delta and smallest relevant repository/context evidence needed for the task.
 7. Preserve evidence, inference, proposed-default, assumption, and unknown boundaries.
 
@@ -168,7 +168,7 @@ Root adapters should reference, not restate:
 - Governance and approval behavior.
 - Mode-specific execution and reporting behavior.
 
-If a root adapter needs a large rule list to be correct, that rule belongs in `.forge/adapter.md`, `.forge/context/00-meta/conventions.md`, a mode file, or a spec instead.
+If a root adapter needs a large rule list to be correct, that rule belongs in `.forge/adapter.md`, `.forge/runtime/meta/conventions.md`, a mode file, or a spec instead.
 
 ---
 
@@ -235,7 +235,7 @@ Adapters and skills must not:
 - Become alternate runtime layers.
 - Create parallel cognition systems.
 - Duplicate governance, lifecycle, artifact, or runtime semantics.
-- Copy large sections of `.forge/context/00-meta/conventions.md`.
+- Copy large sections of `.forge/runtime/meta/conventions.md`.
 - Add hidden approval, scheduling, retry, execution, or chaining behavior.
 - Treat tool-specific files as higher authority than `.forge/context`.
 
@@ -286,7 +286,7 @@ Canonical skill structure:
 
 Skills must:
 - Name exactly one primary Forge mode unless the user explicitly asks for a handoff.
-- Load mode deltas through `.forge/context/modes/<mode>.md`.
+- Load mode deltas through `.forge/runtime/modes/<mode>.md`.
 - Keep repository intelligence in `.forge/context`.
 - Use direct repository evidence when task scope requires validation.
 - Preserve unknowns instead of guessing.
@@ -456,7 +456,7 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 - Shared conventions live in `adapters/shared`.
 - Command files use lowercase kebab-case when materialized as files.
 - Command names use `forge:<mode>` and optional suffixes.
-- Mode names must match `.forge/context/modes/*.md`.
+- Mode names must match `.forge/runtime/modes/*.md`.
 
 ### 6.2 Folder Semantics
 
@@ -541,7 +541,7 @@ Any skill, adapter, or command foundation change must validate:
 - Skill files contain no repository intelligence.
 - Tool-specific files contain no repository intelligence.
 - Root adapters remain thin: bootstrap, invocation mapping, concise hints, and references only.
-- Heavy operational semantics remain in `.forge/context/00-meta/conventions.md`, mode files, and specs.
+- Heavy operational semantics remain in `.forge/runtime/meta/conventions.md`, mode files, and specs.
 
 Validation outcome for this foundation:
 

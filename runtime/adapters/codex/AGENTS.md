@@ -30,9 +30,9 @@ Normal read-only UX:
 2. Follow the skill's load section.
 3. Read `.forge/forge.config.yaml` first.
 4. Apply `run.interaction` and related final run config fields.
-5. Load `.forge/context/00-meta/conventions.md`.
-6. Use `.forge/context/00-meta/context-manifest.md` as an index, not as repository cognition.
-7. Load `.forge/context/modes/<mode>.md`.
+5. Load `.forge/runtime/meta/conventions.md`.
+6. Use `.forge/runtime/meta/context-manifest.md` as an index, not as repository cognition.
+7. Load `.forge/runtime/modes/<mode>.md`.
 8. Load only relevant scoped repository context.
 
 Do not broad-load `.forge/context`.

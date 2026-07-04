@@ -7,7 +7,7 @@
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Framework-level protocol for invoking Forge modes |
-| Dependency | `runtime/.forge/context/00-meta/conventions.md`, `runtime/.forge/context/modes/*.md`, `runtime/.forge/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
+| Dependency | `runtime/.forge/runtime/meta/conventions.md`, `runtime/.forge/runtime/modes/*.md`, `runtime/.forge/skills/*/SKILL.md`, `specs/context-validation.md`, `specs/artifact-lifecycle.md`, `specs/adapter-command-foundation.md` |
 
 ---
 
@@ -65,7 +65,7 @@ Canonical lifecycle:
 2. `.forge/forge.config.yaml` read first.
 3. `run.interaction`, output/write/failure behavior, and policy confirmation boundaries detected.
 4. `run.interaction` applied as the controlling behavior.
-5. Mode file read from `.forge/context/modes/<mode>.md`.
+5. Mode file read from `.forge/runtime/modes/<mode>.md`.
 6. `include`, `on_demand`, `exclude`, `token_budget`, and `notes` parsed.
 7. Scoped context loaded according to the mode delta.
 8. Task executed according to mode behavior and run interaction behavior. For `plan`, human approval is required before `implementation` proceeds. For `implementation`, human approval of the ECP is required before `execute` proceeds.
@@ -485,7 +485,7 @@ Raw secrets must not be copied into `.forge/context`, inferred knowledge, unknow
 
 ## 6. Per-Mode Operational Expectations
 
-See `docs/workflow.md` for the canonical workflow narrative, approval gate UX, and post-review fix loop. See `specs/artifact-lifecycle.md` for artifact status vocabulary. See `runtime/.forge/context/00-meta/conventions-validation.md` for validation status semantics and output section structure.
+See `docs/workflow.md` for the canonical workflow narrative, approval gate UX, and post-review fix loop. See `specs/artifact-lifecycle.md` for artifact status vocabulary. See `runtime/.forge/runtime/meta/conventions-validation.md` for validation status semantics and output section structure.
 
 ### Mode Summary
 
@@ -601,7 +601,7 @@ Normal runtime output should not include large internal loading dumps. Maintaine
 
 ## 10. Forbidden Behaviors
 
-The following are invalid mode invocation behaviors. See `runtime/.forge/context/00-meta/conventions-validation.md` for validation-specific forbidden patterns. See `conventions-risk.md` for governance and secret forbidden patterns.
+The following are invalid mode invocation behaviors. See `runtime/.forge/runtime/meta/conventions-validation.md` for validation-specific forbidden patterns. See `conventions-risk.md` for governance and secret forbidden patterns.
 
 **Config and interaction:**
 - Ignoring the requested mode file or invoking without reading `.forge/forge.config.yaml` first.
@@ -667,7 +667,7 @@ The following are invalid mode invocation behaviors. See `runtime/.forge/context
 
 ## 11. Validation Expectations
 
-Mode invocation validation checks that runtime behavior follows this protocol. See `validation-cases/` for regression benchmarks. See `specs/artifact-lifecycle.md` for artifact status validation. See `docs/workflow.md` for workflow validation cases. See `runtime/.forge/context/00-meta/conventions-validation.md` for detailed validation status and section expectations.
+Mode invocation validation checks that runtime behavior follows this protocol. See `validation-cases/` for regression benchmarks. See `specs/artifact-lifecycle.md` for artifact status validation. See `docs/workflow.md` for workflow validation cases. See `runtime/.forge/runtime/meta/conventions-validation.md` for detailed validation status and section expectations.
 
 **Config and bootstrap:**
 - `.forge/forge.config.yaml` read before the requested mode file.

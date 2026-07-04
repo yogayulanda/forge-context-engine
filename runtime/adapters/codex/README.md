@@ -9,7 +9,7 @@ The adapter is a thin instruction bridge, not a second Forge runtime and not a C
 - Point Codex to `.forge/forge.config.yaml`.
 - Apply `run.interaction` and related final run config fields.
 - Point Codex to shared skills under `.forge/skills/`.
-- Let each shared skill invoke `.forge/context/modes/<mode>.md`.
+- Let each shared skill invoke `.forge/runtime/modes/<mode>.md`.
 - Load only relevant scoped repository context.
 - Keep commands and natural language requests as thin operational prompts.
 - Do not duplicate lifecycle semantics, governance rules, mode behavior, or repo-specific cognition.

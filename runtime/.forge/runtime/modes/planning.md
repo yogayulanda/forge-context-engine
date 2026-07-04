@@ -19,7 +19,7 @@ This file exists only as compatibility or historical guidance for older adapters
 Load and apply:
 
 ```text
-.forge/context/modes/plan.md
+.forge/runtime/modes/plan.md
 ```
 
 Route to `plan.md` and use only active `plan` status values.

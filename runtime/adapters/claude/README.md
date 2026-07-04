@@ -7,7 +7,7 @@ Claude uses `CLAUDE.md` as the root Forge adapter.
 - Point Claude to `.forge/forge.config.yaml`.
 - Apply `run.interaction` and related final run config fields.
 - Point Claude slash commands to shared skills under `.forge/skills/`.
-- Let each shared skill invoke `.forge/context/modes/<mode>.md`.
+- Let each shared skill invoke `.forge/runtime/modes/<mode>.md`.
 - Keep slash commands thin if materialized.
 
 ## Slash Commands

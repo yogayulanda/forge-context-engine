@@ -128,16 +128,16 @@ Service profile expectations:
 Fresh service init seeds these user-owned v2 files under `.forge/context/`:
 - `00-index.md`
 - `01-service-overview.md`
-- `02-service-architecture.md`
-- `03-domain-boundary.md`
-- `04-api-contracts.md`
-- `05-data-model-and-database.md`
-- `06-business-rules.md`
-- `07-integration-dependencies.md`
-- `08-error-handling.md`
-- `09-observability.md`
-- `10-testing-strategy.md`
-- `11-runtime-and-deployment.md`
+- `02-architecture.md`
+- `03-domain-boundaries.md`
+- `04-interfaces-and-contracts.md`
+- `05-data-and-persistence.md`
+- `06-business-rules-and-flows.md`
+- `07-integrations-and-dependencies.md`
+- `08-security-and-access.md`
+- `09-errors-and-resilience.md`
+- `10-observability-and-support.md`
+- `11-runtime-deployment-and-config.md`
 - `99-open-questions.md`
 
 Tool defaults:
@@ -197,18 +197,18 @@ Rules:
 - workspace repositories do not imply global state or background coordination
 
 Fresh workspace init seeds these user-owned v2 files under `.forge/context/`:
-- `00-workspace-index.md`
+- `00-index.md`
 - `01-platform-overview.md`
 - `02-system-map.md`
 - `03-service-catalog.md`
 - `04-domain-boundaries.md`
 - `05-cross-service-flows.md`
-- `06-api-and-event-contracts.md`
-- `07-data-ownership.md`
+- `06-interfaces-and-contracts.md`
+- `07-data-ownership-and-consistency.md`
 - `08-security-and-access.md`
-- `09-observability-and-operations.md`
-- `10-deployment-topology.md`
-- `11-release-and-feature-flags.md`
+- `09-observability-and-support.md`
+- `10-testing-and-quality.md`
+- `12-release-and-feature-flags.md`
 - `99-open-questions.md`
 
 ---
@@ -241,12 +241,12 @@ managed_paths:
   - .forge/adapter.md
   - .forge/forge.config.yaml
   - .forge/forge-install.yaml
-  - .forge/context/00-meta/
-  - .forge/context/modes/
+  - .forge/runtime/meta/
+  - .forge/runtime/modes/
 user_owned_paths:
   - .forge/context/00-index.md
   - .forge/context/01-service-overview.md
-  - .forge/context/00-workspace-index.md
+  - .forge/context/00-index.md
   - .forge/context/01-platform-overview.md
   - .forge/context/99-open-questions.md
   - .forge/context/01-core/
@@ -264,8 +264,8 @@ local_only_paths:
 managed_file_hashes:
   .forge/adapter.md: "<sha256>"
   .forge/forge.config.yaml: "<sha256>"
-  .forge/context/00-meta/conventions.md: "<sha256>"
-  .forge/context/modes/ask.md: "<sha256>"
+  .forge/runtime/meta/conventions.md: "<sha256>"
+  .forge/runtime/modes/ask.md: "<sha256>"
 ```
 
 The manifest exists to:
@@ -291,8 +291,8 @@ Managed paths may be updated by `forge update` when safe:
 - `.forge/adapter.md`
 - `.forge/forge.config.yaml`
 - `.forge/forge-install.yaml`
-- runtime-owned `.forge/context/00-meta/*`
-- runtime-owned `.forge/context/modes/*`
+- runtime-owned `.forge/runtime/meta/*`
+- runtime-owned `.forge/runtime/modes/*`
 
 ### 5.2 User-Owned Paths
 
@@ -453,7 +453,7 @@ Validation for the CLI install/update layer should cover:
 - manifest-less adoption dry-run writes nothing
 - manifest-less adoption with `--yes` writes `.forge/forge-install.yaml`
 - packaged runtime templates contain no `__pycache__` or `*.pyc`
-- packaged runtime templates include `.forge/context/00-meta/*` and `.forge/context/modes/*`
+- packaged runtime templates include `.forge/runtime/meta/*` and `.forge/runtime/modes/*`
 - manifest schema documentation completeness
 - ownership model completeness
 - Copilot opt-in behavior

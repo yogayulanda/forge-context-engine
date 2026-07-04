@@ -160,22 +160,29 @@ class ContextProfileTests(unittest.TestCase):
             self.assertEqual(status, 0)
 
             expected_files = {
-                ".forge/context/00-index.md",
-                ".forge/context/01-service-overview.md",
-                ".forge/context/02-service-architecture.md",
-                ".forge/context/03-domain-boundary.md",
-                ".forge/context/04-api-contracts.md",
-                ".forge/context/05-data-model-and-database.md",
-                ".forge/context/06-business-rules.md",
-                ".forge/context/07-integration-dependencies.md",
-                ".forge/context/08-error-handling.md",
-                ".forge/context/09-observability.md",
-                ".forge/context/10-testing-strategy.md",
-                ".forge/context/11-runtime-and-deployment.md",
-                ".forge/context/99-open-questions.md",
+                *SERVICE_V2_CONTEXT_FILES,
+                ".forge/runtime/meta/conventions.md",
+                ".forge/runtime/meta/context-manifest.md",
+                ".forge/runtime/modes/ask.md",
+                ".forge/runtime/modes/plan.md",
             }
             for rel_path in expected_files:
                 self.assertTrue((target / rel_path).exists(), rel_path)
+
+            forbidden_paths = {
+                ".forge/context/layers",
+                ".forge/context/01-core",
+                ".forge/context/knowledge",
+                ".forge/context/systems",
+                ".forge/context/generated",
+                ".forge/context/repo-map",
+                ".forge/context/decisions",
+                ".forge/context/unknowns",
+                ".forge/context/00-meta",
+                ".forge/context/modes",
+            }
+            for rel_path in forbidden_paths:
+                self.assertFalse((target / rel_path).exists(), rel_path)
 
             legacy_seed_files = {
                 ".forge/context/01-core/product.md",
@@ -192,6 +199,12 @@ class ContextProfileTests(unittest.TestCase):
 
             manifest = load_manifest(target / ".forge" / "forge-install.yaml")
             self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_CURRENT)
+            self.assertIn(".forge/context/00-index.md", manifest.user_owned_paths)
+            self.assertIn(".forge/context/01-service-overview.md", manifest.user_owned_paths)
+            self.assertIn(".forge/context-patches/", manifest.user_owned_paths)
+            self.assertIn(".forge/generated/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/runtime/meta/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/01-core/", manifest.user_owned_paths)
 
     def test_fresh_workspace_init_creates_v2_workspace_context(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -212,23 +225,30 @@ class ContextProfileTests(unittest.TestCase):
             self.assertEqual(status, 0)
 
             expected_files = {
-                ".forge/context/00-workspace-index.md",
-                ".forge/context/01-platform-overview.md",
-                ".forge/context/02-system-map.md",
-                ".forge/context/03-service-catalog.md",
-                ".forge/context/04-domain-boundaries.md",
-                ".forge/context/05-cross-service-flows.md",
-                ".forge/context/06-api-and-event-contracts.md",
-                ".forge/context/07-data-ownership.md",
-                ".forge/context/08-security-and-access.md",
-                ".forge/context/09-observability-and-operations.md",
-                ".forge/context/10-deployment-topology.md",
-                ".forge/context/11-release-and-feature-flags.md",
-                ".forge/context/99-open-questions.md",
+                *WORKSPACE_V2_CONTEXT_FILES,
+                ".forge/runtime/meta/conventions.md",
+                ".forge/runtime/meta/context-manifest.md",
+                ".forge/runtime/modes/ask.md",
                 ".forge/workspace.yaml",
             }
             for rel_path in expected_files:
                 self.assertTrue((target / rel_path).exists(), rel_path)
+
+            forbidden_paths = {
+                ".forge/context/layers",
+                ".forge/context/01-core",
+                ".forge/context/knowledge",
+                ".forge/context/systems",
+                ".forge/context/generated",
+                ".forge/context/repo-map",
+                ".forge/context/decisions",
+                ".forge/context/unknowns",
+                ".forge/context/00-meta",
+                ".forge/context/modes",
+                ".forge/context/01-service-overview.md",
+            }
+            for rel_path in forbidden_paths:
+                self.assertFalse((target / rel_path).exists(), rel_path)
 
             legacy_seed_files = {
                 ".forge/context/01-core/product.md",
@@ -602,6 +622,66 @@ class ContextProfileTests(unittest.TestCase):
             self.assertEqual(status, 0)
             manifest = load_manifest(target / ".forge/forge-install.yaml")
             self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_CURRENT)
+            self.assertIn(".forge/context/01-service-overview.md", manifest.user_owned_paths)
+            self.assertIn(".forge/context/99-open-questions.md", manifest.user_owned_paths)
+            self.assertIn(".forge/context-patches/", manifest.user_owned_paths)
+            self.assertIn(".forge/generated/", manifest.user_owned_paths)
+            self.assertIn(".forge/context-archive/legacy-v1/", manifest.user_owned_paths)
+            self.assertIn(".forge/context/00-index.md", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/01-core/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/layers/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/repo-map/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/systems/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/knowledge/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/decisions/", manifest.user_owned_paths)
+            self.assertNotIn(".forge/context/unknowns/", manifest.user_owned_paths)
+
+    def test_update_dry_run_after_migration_reports_v2_user_owned_paths_not_active_legacy_dirs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nPost-migration update report.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+
+            with redirect_stdout(io.StringIO()):
+                migrate_status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(migrate_status, 0)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                update_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected context profile version: 2", rendered)
+            self.assertIn("Detected context layout: v2", rendered)
+            self.assertIn(".forge/context/01-service-overview.md", rendered)
+            self.assertIn(".forge/context/99-open-questions.md", rendered)
+            self.assertIn(".forge/context-patches/", rendered)
+            self.assertIn(".forge/generated/", rendered)
+            self.assertIn(".forge/context-archive/legacy-v1/", rendered)
+            self.assertNotIn(".forge/context/01-core/", rendered)
+            self.assertNotIn(".forge/context/layers/", rendered)
+            self.assertNotIn(".forge/context/repo-map/", rendered)
+            self.assertNotIn(".forge/context/systems/", rendered)
+            self.assertNotIn(".forge/context/knowledge/", rendered)
+            self.assertNotIn(".forge/context/decisions/", rendered)
+            self.assertNotIn(".forge/context/unknowns/", rendered)
 
     def test_migrate_context_on_v2_is_no_op(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -660,8 +740,8 @@ class ContextProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
             (target / ".forge/context").mkdir(parents=True)
-            (target / ".forge/context/modes").mkdir(parents=True)
-            (target / ".forge/context/modes/ask.md").write_text("# ask\n", encoding="utf-8")
+            (target / ".forge/runtime/modes").mkdir(parents=True)
+            (target / ".forge/runtime/modes/ask.md").write_text("# ask\n", encoding="utf-8")
             (target / ".forge/adapter.md").write_text("adapter\n", encoding="utf-8")
             (target / ".forge/forge.config.yaml").write_text("forge:\n  version: \"1\"\n", encoding="utf-8")
 
@@ -765,8 +845,8 @@ class ContextProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
             (target / ".forge/context").mkdir(parents=True)
-            (target / ".forge/context/modes").mkdir(parents=True)
-            (target / ".forge/context/modes/ask.md").write_text("# ask\n", encoding="utf-8")
+            (target / ".forge/runtime/modes").mkdir(parents=True)
+            (target / ".forge/runtime/modes/ask.md").write_text("# ask\n", encoding="utf-8")
             (target / ".forge/adapter.md").write_text("adapter\n", encoding="utf-8")
             (target / ".forge/forge.config.yaml").write_text("forge:\n  version: \"1\"\n", encoding="utf-8")
 
@@ -955,9 +1035,9 @@ class ContextProfileTests(unittest.TestCase):
                 )
             self.assertEqual(status, 0)
 
-            api_contracts = (target / ".forge/context/04-api-contracts.md").read_text(encoding="utf-8")
-            data_model = (target / ".forge/context/05-data-model-and-database.md").read_text(encoding="utf-8")
-            integrations = (target / ".forge/context/07-integration-dependencies.md").read_text(encoding="utf-8")
+            api_contracts = (target / ".forge/context/04-interfaces-and-contracts.md").read_text(encoding="utf-8")
+            data_model = (target / ".forge/context/05-data-and-persistence.md").read_text(encoding="utf-8")
+            integrations = (target / ".forge/context/07-integrations-and-dependencies.md").read_text(encoding="utf-8")
             open_questions = (target / ".forge/context/99-open-questions.md").read_text(encoding="utf-8")
 
             self.assertIn("No direct evidence found in bounded init scan.", api_contracts)
@@ -1028,6 +1108,21 @@ class ContextProfileTests(unittest.TestCase):
 
         self.assertIn("v2 service profile with numbered files", (repo_root / "README.md").read_text(encoding="utf-8"))
         self.assertIn("v2 numbered service context files", (repo_root / "docs/getting-started.md").read_text(encoding="utf-8"))
+
+    def test_active_runtime_assets_do_not_reference_old_runtime_paths(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        roots = [
+            repo_root / "runtime",
+            repo_root / "src/forge_context_engine/runtime_templates/base",
+        ]
+        forbidden = (".forge/context/00-meta", ".forge/context/modes")
+        for root in roots:
+            for path in root.rglob("*"):
+                if not path.is_file():
+                    continue
+                content = path.read_text(encoding="utf-8")
+                for token in forbidden:
+                    self.assertNotIn(token, content, f"stale runtime path {token} found in {path}")
 
 
 if __name__ == "__main__":

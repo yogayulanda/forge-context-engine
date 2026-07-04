@@ -348,7 +348,7 @@ For an OSS contributor:
 
 - `.forge/forge.config.yaml` exists.
 - `.forge/adapter.md` exists.
-- `.forge/context/modes/` contains the visible lifecycle modes.
+- `.forge/runtime/modes/` contains the visible lifecycle modes.
 - `CLAUDE.md` and/or `AGENTS.md` point to `.forge/adapter.md` and `.forge/context` instead of duplicating repo facts.
 - `.forge/temp/` and `.forge/cache/` are treated as local-only and are not pushed.
 - First `ask` request returns evidence, inferences, and unknowns.

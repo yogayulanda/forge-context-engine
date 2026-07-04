@@ -4,7 +4,7 @@
 Audit repository AI readiness, context fitness, ambiguity, and remediation priorities without editing code.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/ai-readiness.md`. Load `.forge/context/00-meta/ai-readiness-factors.md` on demand as the factor catalog and band→verdict map. Load only scoped context and repository evidence needed for the readiness audit.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/runtime/meta/conventions.md`, use `.forge/runtime/meta/context-manifest.md` only as a routing index, then read `.forge/runtime/modes/ai-readiness.md`. Load `.forge/runtime/meta/ai-readiness-factors.md` on demand as the factor catalog and band→verdict map. Load only scoped context and repository evidence needed for the readiness audit.
 
 ## Invocation
 Use when the user asks for an AI-readiness audit, wants context and repo gaps identified, wants ambiguity surfaced for human confirmation, or wants readiness reports and remediation guidance before trusting AI-assisted changes.

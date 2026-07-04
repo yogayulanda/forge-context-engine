@@ -147,7 +147,7 @@ Use this as:
 | F12 | Plan mode is layer-adaptive and does not force backend-specific sections when active layer evidence is non-backend or mixed | warning | manual |
 | F13 | Plan mode preserves evidence/inference/unknown separation and does not infer deployability, ownership, contracts, or runtime topology from imports alone | warning | manual |
 | F14 | Plan mode on-demand loading is scoped to the requested change and does not broadly load unrelated layers/systems by default | warning | manual |
-| F15 | Mode invocation reads `.forge/forge.config.yaml` before `.forge/context/modes/<mode>.md` | warning | manual |
+| F15 | Mode invocation reads `.forge/forge.config.yaml` before `.forge/runtime/modes/<mode>.md` | warning | manual |
 | F16 | Mode invocation keeps context-loading details concise in normal output and reports missing evidence that affects the task | warning | manual |
 | F17 | Mode invocation does not broad-load `.forge/context` by default when the mode delta is sufficient | warning | manual |
 | F18 | Init, ask, plan, implementation, execute, review, ai-readiness, and verify-context preserve distinct operational behavior instead of collapsing into generic reasoning | warning | manual |
@@ -336,7 +336,7 @@ Use this as:
 | J6 | Worker/job names cited match actual worker entrypoints | error | yes |
 | J7 | External integrations cited match actual client libraries / config | error | yes |
 | J8 | Validation rules listed in `constraints.md` match actual validators / sentinel checks in code | warning | partial |
-| J9 | Implicit constraints found in code (enums, validators, required fields, ID semantics, currency rules) are reflected in the active context summary files such as `11-runtime-and-deployment.md`, `06-business-rules.md`, `03-domain-boundary.md`, or legacy `constraints.md` / `systems/<name>/system.md` | warning | partial |
+| J9 | Implicit constraints found in code (enums, validators, required fields, ID semantics, currency rules) are reflected in the active context summary files such as `11-runtime-deployment-and-config.md`, `06-business-rules-and-flows.md`, `03-domain-boundaries.md`, or legacy `constraints.md` / `systems/<name>/system.md` | warning | partial |
 | J10 | **Required-field claims match service-layer empty-checks** — no field listed as service-required unless a corresponding empty-check exists in code *(v1.2)* | error | partial |
 | J11 | **DB constraints documented separately from service validation** — fields with `CHECK`/`NOT NULL` but no service empty-check are documented as DB-constrained, NOT service-required *(v1.2)* | error | partial |
 | J12 | **Repository fallback behavior documented** — fields where repository sets a default (e.g. `IsZero() → now`) are documented as repository-fallback, not service-required *(v1.2)* | warning | partial |

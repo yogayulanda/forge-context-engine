@@ -16,8 +16,8 @@ Managed paths include:
 - `.forge/adapter.md`
 - `.forge/forge.config.yaml`
 - `.forge/forge-install.yaml`
-- runtime-owned `.forge/context/00-meta/*`
-- runtime-owned `.forge/context/modes/*`
+- runtime-owned `.forge/runtime/meta/*`
+- runtime-owned `.forge/runtime/modes/*`
 
 User-owned paths include:
 - `.forge/context/01-core/`

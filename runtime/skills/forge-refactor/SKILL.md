@@ -4,7 +4,7 @@
 Scenario compatibility skill for behavior-preserving cleanup.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/refactor.md` as scenario guidance.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/runtime/meta/conventions.md`, use `.forge/runtime/meta/context-manifest.md` only as a routing index, then read `.forge/runtime/modes/refactor.md` as scenario guidance.
 
 ## Invocation
 Use only when the user asks for bounded refactor work or an older prompt invokes `forge-refactor`.

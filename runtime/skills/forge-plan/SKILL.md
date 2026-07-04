@@ -4,7 +4,7 @@
 Convert developer intent into a Forge Quick Plan or SDD.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Read `.forge/context/modes/plan.md`, then load `.forge/context/00-meta/conventions.md` and scoped convention files only when needed for output shape, evidence, validation, risk, or language rules. Use `.forge/context/00-meta/context-manifest.md` only as a routing index. Load only scoped context needed for the plan.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Read `.forge/runtime/modes/plan.md`, then load `.forge/runtime/meta/conventions.md` and scoped convention files only when needed for output shape, evidence, validation, risk, or language rules. Use `.forge/runtime/meta/context-manifest.md` only as a routing index. Load only scoped context needed for the plan.
 
 ## Invocation
 Use when the user asks for change planning, design direction, implementation strategy, SDD, or a reviewable plan before implementation.

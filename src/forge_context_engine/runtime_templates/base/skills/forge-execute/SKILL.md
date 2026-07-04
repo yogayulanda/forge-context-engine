@@ -4,7 +4,7 @@
 Apply an approved ECP into code within explicit boundaries.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction`, `run.write_behavior`, and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/execute.md`. Load the approved ECP and only scoped repository context needed for execution.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction`, `run.write_behavior`, and related final run config fields. Load `.forge/runtime/meta/conventions.md`, use `.forge/runtime/meta/context-manifest.md` only as a routing index, then read `.forge/runtime/modes/execute.md`. Load the approved ECP and only scoped repository context needed for execution.
 
 ## Invocation
 Use only when the human has explicitly approved an ECP. ECP readiness is not execution approval.

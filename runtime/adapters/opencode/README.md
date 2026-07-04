@@ -9,7 +9,7 @@ The adapter is a thin invocation bridge. Forge requests should resolve to shared
 - Point OpenCode to `.forge/forge.config.yaml`.
 - Apply `run.interaction` and related final run config fields.
 - Point OpenCode to shared skills under `.forge/skills/`.
-- Let each shared skill invoke `.forge/context/modes/<mode>.md`.
+- Let each shared skill invoke `.forge/runtime/modes/<mode>.md`.
 - Load only relevant scoped repository context.
 - Keep prompts and command-like requests as thin operational prompts.
 - Do not duplicate lifecycle semantics, governance rules, mode behavior, or repo-specific cognition.

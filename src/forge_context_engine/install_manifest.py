@@ -26,43 +26,56 @@ MANAGED_PATHS_BASELINE = (
     ".forge/forge.config.yaml",
     ".forge/forge-install.yaml",
     ".forge/skills/",
-    ".forge/context/modes/",
-    ".forge/context/00-meta/ai-readiness-factors.md",
-    ".forge/context/00-meta/conventions-evidence.md",
-    ".forge/context/00-meta/conventions-language.md",
-    ".forge/context/00-meta/conventions-risk.md",
-    ".forge/context/00-meta/conventions-validation.md",
-    ".forge/context/00-meta/conventions.md",
+    ".forge/runtime/meta/",
+    ".forge/runtime/modes/",
 )
 
-USER_OWNED_PATHS_BASELINE = (
-    ".forge/context/00-meta/context-manifest.md",
-    ".forge/context/00-meta/glossary.md",
+SERVICE_USER_OWNED_PATHS_V2 = (
     ".forge/context/00-index.md",
     ".forge/context/01-service-overview.md",
-    ".forge/context/02-service-architecture.md",
-    ".forge/context/03-domain-boundary.md",
-    ".forge/context/04-api-contracts.md",
-    ".forge/context/05-data-model-and-database.md",
-    ".forge/context/06-business-rules.md",
-    ".forge/context/07-integration-dependencies.md",
-    ".forge/context/08-error-handling.md",
-    ".forge/context/09-observability.md",
-    ".forge/context/10-testing-strategy.md",
-    ".forge/context/11-runtime-and-deployment.md",
-    ".forge/context/00-workspace-index.md",
+    ".forge/context/02-architecture.md",
+    ".forge/context/03-domain-boundaries.md",
+    ".forge/context/04-interfaces-and-contracts.md",
+    ".forge/context/05-data-and-persistence.md",
+    ".forge/context/06-business-rules-and-flows.md",
+    ".forge/context/07-integrations-and-dependencies.md",
+    ".forge/context/08-security-and-access.md",
+    ".forge/context/09-errors-and-resilience.md",
+    ".forge/context/10-observability-and-support.md",
+    ".forge/context/11-testing-and-quality.md",
+    ".forge/context/12-runtime-deployment-and-config.md",
+    ".forge/context/13-operations-and-runbook.md",
+    ".forge/context/14-decisions-assumptions-and-constraints.md",
+    ".forge/context/98-glossary.md",
+    ".forge/context/99-open-questions.md",
+)
+
+WORKSPACE_USER_OWNED_PATHS_V2 = (
+    ".forge/context/00-index.md",
     ".forge/context/01-platform-overview.md",
     ".forge/context/02-system-map.md",
     ".forge/context/03-service-catalog.md",
     ".forge/context/04-domain-boundaries.md",
     ".forge/context/05-cross-service-flows.md",
-    ".forge/context/06-api-and-event-contracts.md",
-    ".forge/context/07-data-ownership.md",
+    ".forge/context/06-interfaces-and-contracts.md",
+    ".forge/context/07-data-ownership-and-consistency.md",
     ".forge/context/08-security-and-access.md",
-    ".forge/context/09-observability-and-operations.md",
-    ".forge/context/10-deployment-topology.md",
-    ".forge/context/11-release-and-feature-flags.md",
+    ".forge/context/09-observability-and-support.md",
+    ".forge/context/10-testing-and-quality.md",
+    ".forge/context/11-runtime-deployment-and-config.md",
+    ".forge/context/12-release-and-feature-flags.md",
+    ".forge/context/13-operations-and-runbook.md",
+    ".forge/context/14-decisions-assumptions-and-constraints.md",
+    ".forge/context/98-glossary.md",
     ".forge/context/99-open-questions.md",
+)
+
+SHARED_USER_OWNED_PATHS_V2 = (
+    ".forge/context-patches/",
+    ".forge/generated/",
+)
+
+LEGACY_USER_OWNED_PATHS = (
     ".forge/context/01-core/",
     ".forge/context/layers/",
     ".forge/context/repo-map/",
@@ -70,8 +83,15 @@ USER_OWNED_PATHS_BASELINE = (
     ".forge/context/knowledge/",
     ".forge/context/decisions/",
     ".forge/context/unknowns/",
-    ".forge/context-patches/",
-    ".forge/generated/",
+)
+
+LEGACY_ARCHIVE_USER_OWNED_PATHS = (".forge/context-archive/legacy-v1/",)
+
+USER_OWNED_PATHS_BASELINE = (
+    *SERVICE_USER_OWNED_PATHS_V2,
+    *WORKSPACE_USER_OWNED_PATHS_V2,
+    *SHARED_USER_OWNED_PATHS_V2,
+    *LEGACY_USER_OWNED_PATHS,
 )
 
 LOCAL_ONLY_PATHS_BASELINE = (
@@ -97,6 +117,29 @@ class ForgeInstallManifest:
     user_owned_paths: tuple[str, ...] = field(default_factory=lambda: USER_OWNED_PATHS_BASELINE)
     local_only_paths: tuple[str, ...] = field(default_factory=lambda: LOCAL_ONLY_PATHS_BASELINE)
     managed_file_hashes: dict[str, str] = field(default_factory=dict)
+
+def build_user_owned_paths(
+    *,
+    profile: str,
+    context_profile_version: str,
+    include_legacy_archive: bool = False,
+) -> tuple[str, ...]:
+    """Build manifest user-owned paths for the active profile and context version."""
+
+    paths: list[str] = []
+    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT:
+        if profile == PROFILE_WORKSPACE:
+            paths.extend(WORKSPACE_USER_OWNED_PATHS_V2)
+        else:
+            paths.extend(SERVICE_USER_OWNED_PATHS_V2)
+        paths.extend(SHARED_USER_OWNED_PATHS_V2)
+    else:
+        paths.extend(LEGACY_USER_OWNED_PATHS)
+        paths.extend(SHARED_USER_OWNED_PATHS_V2)
+
+    if include_legacy_archive:
+        paths.extend(LEGACY_ARCHIVE_USER_OWNED_PATHS)
+    return tuple(paths)
 
 
 TOOL_ALIASES = {
@@ -209,6 +252,10 @@ def build_manifest(
         selected_tools=selected_tools,
         installed_at=installed_at or utc_now_iso(),
         managed_paths=build_managed_paths(profile, selected_tools),
+        user_owned_paths=build_user_owned_paths(
+            profile=profile,
+            context_profile_version=context_profile_version,
+        ),
         managed_file_hashes=dict(sorted(managed_file_hashes.items())),
     )
 
@@ -280,20 +327,32 @@ def load_manifest_text(text: str) -> ForgeInstallManifest:
     """Parse manifest YAML written by `dump_manifest`."""
 
     parsed = _parse_simple_yaml(text)
+    profile = str(parsed.get("profile", PROFILE_SERVICE))
+    context_profile_version = str(
+        parsed.get("context_profile_version", CONTEXT_PROFILE_VERSION_LEGACY)
+    )
     return ForgeInstallManifest(
         manifest_version=str(parsed.get("manifest_version", MANIFEST_VERSION)),
-        context_profile_version=str(
-            parsed.get("context_profile_version", CONTEXT_PROFILE_VERSION_LEGACY)
-        ),
+        context_profile_version=context_profile_version,
         forge_version=str(parsed.get("forge_version", __version__)),
-        profile=str(parsed.get("profile", PROFILE_SERVICE)),
+        profile=profile,
         selected_tools=tuple(parsed.get("selected_tools", list(DEFAULT_SELECTED_TOOLS))),
         installed_from=str(parsed.get("installed_from", INSTALLED_FROM)),
         installed_at=str(parsed.get("installed_at", "")),
         template_revision=str(parsed.get("template_revision", __version__)),
         source_revision=str(parsed.get("source_revision", __version__)),
         managed_paths=tuple(parsed.get("managed_paths", list(MANAGED_PATHS_BASELINE))),
-        user_owned_paths=tuple(parsed.get("user_owned_paths", list(USER_OWNED_PATHS_BASELINE))),
+        user_owned_paths=tuple(
+            parsed.get(
+                "user_owned_paths",
+                list(
+                    build_user_owned_paths(
+                        profile=profile,
+                        context_profile_version=context_profile_version,
+                    )
+                ),
+            )
+        ),
         local_only_paths=tuple(parsed.get("local_only_paths", list(LOCAL_ONLY_PATHS_BASELINE))),
         managed_file_hashes=dict(parsed.get("managed_file_hashes", {})),
     )

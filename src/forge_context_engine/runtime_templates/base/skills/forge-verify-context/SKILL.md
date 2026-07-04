@@ -4,7 +4,7 @@
 Verify `.forge/context` health, freshness, and consistency only.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/verify-context.md`. Load only affected context files and source paths needed for context verification.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/runtime/meta/conventions.md`, use `.forge/runtime/meta/context-manifest.md` only as a routing index, then read `.forge/runtime/modes/verify-context.md`. Load only affected context files and source paths needed for context verification.
 
 ## Invocation
 Use when the user asks to verify context freshness, check context drift, inspect context metadata, or determine whether a reviewable context patch is needed.

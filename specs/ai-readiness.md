@@ -7,7 +7,7 @@
 | Date | 2026-06-09 |
 | Status | `decision` |
 | Scope | Read-only repository audit for AI readiness, context fitness, ambiguity detection, and remediation guidance |
-| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/context/modes/ai-readiness.md`, `runtime/.forge/context/00-meta/ai-readiness-factors.md`, `runtime/.forge/skills/forge-ai-readiness/SKILL.md` |
+| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `docs/workflow.md`, `runtime/.forge/runtime/modes/ai-readiness.md`, `runtime/.forge/runtime/meta/ai-readiness-factors.md`, `runtime/.forge/skills/forge-ai-readiness/SKILL.md` |
 
 ## 0. Purpose
 
@@ -45,8 +45,8 @@ Forbidden:
 ## 2. Inputs
 
 - `.forge/forge.config.yaml`
-- `.forge/context/modes/ai-readiness.md`
-- `.forge/context/00-meta/conventions.md`
+- `.forge/runtime/modes/ai-readiness.md`
+- `.forge/runtime/meta/conventions.md`
 - Relevant `.forge/context` cards
 - Current repository evidence: docs, manifests, structure, representative source files, tests, validation entrypoints, and integration boundaries
 - Optional prior readiness report or context patch proposal when explicitly referenced
@@ -70,7 +70,7 @@ The mode should stay evidence-first and scoped. It should read only enough code 
 
 ### 3.1 Readiness Factor Catalog
 
-Each focus area resolves to stable factors defined in `runtime/.forge/context/00-meta/ai-readiness-factors.md`. That catalog is the single source of truth for factor IDs (`FAR-<FAMILY>-NN`), the qualitative green/warning/red bands, and the readiness-band → verdict mapping.
+Each focus area resolves to stable factors defined in `runtime/.forge/runtime/meta/ai-readiness-factors.md`. That catalog is the single source of truth for factor IDs (`FAR-<FAMILY>-NN`), the qualitative green/warning/red bands, and the readiness-band → verdict mapping.
 
 Rules:
 - Factor bands are evidence-anchored qualitative judgments, not tool scores. Forge runs no scanners; bands borrow thresholds only as calibration guidance.

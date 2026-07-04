@@ -22,16 +22,16 @@ Fresh service init now generates this v2 service context layout by default:
 .forge/context/
 ├── 00-index.md
 ├── 01-service-overview.md
-├── 02-service-architecture.md
-├── 03-domain-boundary.md
-├── 04-api-contracts.md
-├── 05-data-model-and-database.md
-├── 06-business-rules.md
-├── 07-integration-dependencies.md
-├── 08-error-handling.md
-├── 09-observability.md
-├── 10-testing-strategy.md
-├── 11-runtime-and-deployment.md
+├── 02-architecture.md
+├── 03-domain-boundaries.md
+├── 04-interfaces-and-contracts.md
+├── 05-data-and-persistence.md
+├── 06-business-rules-and-flows.md
+├── 07-integrations-and-dependencies.md
+├── 08-security-and-access.md
+├── 09-errors-and-resilience.md
+├── 10-observability-and-support.md
+├── 11-runtime-deployment-and-config.md
 └── 99-open-questions.md
 ```
 
@@ -39,18 +39,18 @@ Fresh workspace init now generates this v2 workspace context layout by default:
 
 ```text
 .forge/context/
-├── 00-workspace-index.md
+├── 00-index.md
 ├── 01-platform-overview.md
 ├── 02-system-map.md
 ├── 03-service-catalog.md
 ├── 04-domain-boundaries.md
 ├── 05-cross-service-flows.md
-├── 06-api-and-event-contracts.md
-├── 07-data-ownership.md
+├── 06-interfaces-and-contracts.md
+├── 07-data-ownership-and-consistency.md
 ├── 08-security-and-access.md
-├── 09-observability-and-operations.md
-├── 10-deployment-topology.md
-├── 11-release-and-feature-flags.md
+├── 09-observability-and-support.md
+├── 10-testing-and-quality.md
+├── 12-release-and-feature-flags.md
 └── 99-open-questions.md
 ```
 
@@ -221,7 +221,7 @@ Populate the active global context summary files with real content. For fresh CL
 
 ### Mode Schema Rules (Phase 1)
 
-Mode files under `runtime/.forge/context/modes/` are templates for initialized repos and MUST remain machine-resolvable context loading deltas.
+Mode files under `runtime/.forge/runtime/modes/` are templates for initialized repos and MUST remain machine-resolvable context loading deltas.
 
 Required Markdown sections after the title, in this order:
 
@@ -343,7 +343,7 @@ While reading code, harvest implicit rules and route them:
 
 | Source pattern | Destination |
 |---|---|
-| Global hard rule (compliance, platform-wide) | active global summary files such as `03-domain-boundary.md`, `06-business-rules.md`, `11-runtime-and-deployment.md`, or legacy `01-core/constraints.md` |
+| Global hard rule (compliance, platform-wide) | active global summary files such as `03-domain-boundaries.md`, `06-business-rules-and-flows.md`, `11-runtime-deployment-and-config.md`, or legacy `01-core/constraints.md` |
 | Single-unit rule | service-specific numbered profile files for fresh v2 repos, or `systems/<unit>/system.md` in legacy/manual flows |
 | Unclear meaning | `99-open-questions.md` for fresh v2 repos, or `knowledge/unknowns.md` in legacy-v1 flows |
 | Weak inference | active v2 profile files with `status: inferred`, or `knowledge/inferred.md` in legacy-v1 flows |

@@ -43,8 +43,8 @@ Runtime migration depends on a strict ownership boundary.
 Runtime-managed files may be refreshed from `forge-context-engine` runtime updates when schema-compatible.
 
 Examples:
-- `.forge/context/modes/*.md`
-- `.forge/context/00-meta/conventions.md`
+- `.forge/runtime/modes/*.md`
+- `.forge/runtime/meta/conventions.md`
 - `.forge/adapter.md`
 - `CLAUDE.md`
 - `AGENTS.md`

@@ -24,15 +24,15 @@ ENGINE_ONLY_MARKERS = (
     "runtime/skills",
 )
 REQUIRED_META_FILES = (
-    ".forge/context/00-meta/context-manifest.md",
-    ".forge/context/00-meta/conventions.md",
+    ".forge/runtime/meta/context-manifest.md",
+    ".forge/runtime/meta/conventions.md",
 )
 REQUIRED_MODE_FILES = (
-    ".forge/context/modes/ask.md",
-    ".forge/context/modes/plan.md",
-    ".forge/context/modes/execute.md",
-    ".forge/context/modes/review.md",
-    ".forge/context/modes/verify-context.md",
+    ".forge/runtime/modes/ask.md",
+    ".forge/runtime/modes/plan.md",
+    ".forge/runtime/modes/execute.md",
+    ".forge/runtime/modes/review.md",
+    ".forge/runtime/modes/verify-context.md",
 )
 
 
@@ -332,8 +332,8 @@ def case_update_preserves_repo_meta_seed(target: Path) -> None:
     assert_ok(result)
     assert_contains(glossary.read_text(encoding="utf-8"), "repo-term")
     assert_contains(manifest.read_text(encoding="utf-8"), "owner: squad.repo")
-    assert_not_contains(result.stdout, ".forge/context/00-meta/glossary.md - managed file modified locally")
-    assert_not_contains(result.stdout, ".forge/context/00-meta/context-manifest.md - managed file modified locally")
+    assert_not_contains(result.stdout, ".forge/runtime/meta/glossary.md - managed file modified locally")
+    assert_not_contains(result.stdout, ".forge/runtime/meta/context-manifest.md - managed file modified locally")
 
 
 def case_workspace_update_preserves_links(target: Path) -> None:
@@ -376,7 +376,7 @@ def case_update_conflict(target: Path) -> None:
     assert_contains(result.stdout, "Conflicts: 1")
     assert_contains(result.stdout, "Conflict resolution guidance:")
     assert_contains(result.stdout, "Reason: this Forge-managed file differs from the last recorded managed hash")
-    assert_contains(result.stdout, "git diff -- .forge/context/00-meta/conventions.md")
+    assert_contains(result.stdout, "git diff -- .forge/runtime/meta/conventions.md")
     assert_contains(result.stdout, "Update stopped with conflicts.")
 
 
@@ -446,8 +446,8 @@ def case_wrapper_adoption_avoids_duplicate_managed_block(target: Path) -> None:
         "# CLAUDE - Context Adapter\n\n"
         "Thin adapter for AI assistants.\n\n"
         "1. Read `.forge/forge.config.yaml`.\n"
-        "2. Read `.forge/context/00-meta/context-manifest.md`.\n"
-        "3. Read `.forge/context/00-meta/conventions.md`.\n"
+        "2. Read `.forge/runtime/meta/context-manifest.md`.\n"
+        "3. Read `.forge/runtime/meta/conventions.md`.\n"
         "4. Follow `.forge/context`.\n",
         encoding="utf-8",
     )
@@ -455,7 +455,7 @@ def case_wrapper_adoption_avoids_duplicate_managed_block(target: Path) -> None:
     assert_ok(result)
     final = claude.read_text(encoding="utf-8")
     assert_not_contains(final, "<!-- BEGIN FORGE MANAGED BLOCK -->")
-    assert_contains(final, ".forge/context/00-meta/context-manifest.md")
+    assert_contains(final, ".forge/runtime/meta/context-manifest.md")
     assert_contains(result.stdout, "existing Forge-like wrapper adopted")
 
 
@@ -533,8 +533,8 @@ def case_update_checks_context_contract_files(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
     result = run_cli(["update", "--dry-run", "--target", str(target)])
     assert_ok(result)
-    assert_contains(result.stdout, ".forge/context/00-meta/conventions.md")
-    assert_contains(result.stdout, ".forge/context/modes/ask.md")
+    assert_contains(result.stdout, ".forge/runtime/meta/conventions.md")
+    assert_contains(result.stdout, ".forge/runtime/modes/ask.md")
     plan = (target / ".forge" / "context" / "modes" / "plan.md").read_text(encoding="utf-8")
     implementation = (target / ".forge" / "context" / "modes" / "implementation.md").read_text(encoding="utf-8")
     review = (target / ".forge" / "context" / "modes" / "review.md").read_text(encoding="utf-8")
@@ -589,8 +589,8 @@ def case_newline_only_managed_drift_stays_unchanged(target: Path) -> None:
     managed.write_text(managed.read_text(encoding="utf-8").rstrip("\n"), encoding="utf-8")
     result = run_cli(["update", "--dry-run", "--target", str(target)])
     assert_ok(result)
-    assert_contains(result.stdout, ".forge/context/modes/verify-context.md - already current")
-    assert_not_contains(result.stdout, ".forge/context/modes/verify-context.md - managed file modified locally")
+    assert_contains(result.stdout, ".forge/runtime/modes/verify-context.md - already current")
+    assert_not_contains(result.stdout, ".forge/runtime/modes/verify-context.md - managed file modified locally")
 
 
 def case_ui_language_id(target: Path) -> None:

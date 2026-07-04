@@ -9,7 +9,7 @@ Plan mode produces a Quick Plan or SDD with an explicit reason and final status.
 
 Repository behavior and lifecycle semantics come from:
 - `.forge/context`
-- `.forge/context/modes/plan.md`
+- `.forge/runtime/modes/plan.md`
 - current repository evidence
 
 Use scoped repository loading only. Do not add repository cognition, orchestration, memory, or duplicated lifecycle semantics here.

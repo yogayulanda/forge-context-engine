@@ -65,4 +65,4 @@ They must not:
 - Add orchestration, schedulers, runtime executors, CI/CD, deploy behavior, memory systems, or autonomous chaining.
 - Become an alternate Forge workflow system.
 
-When behavior needs detail, load the matching shared skill and `.forge/context/modes/<mode>.md`.
+When behavior needs detail, load the matching shared skill and `.forge/runtime/modes/<mode>.md`.

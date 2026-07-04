@@ -14,7 +14,7 @@ Focus on:
 
 Repository behavior and lifecycle semantics come from:
 - `.forge/context`
-- `.forge/context/modes/execute.md`
+- `.forge/runtime/modes/execute.md`
 - current repository evidence
 
 Use scoped repository loading only.

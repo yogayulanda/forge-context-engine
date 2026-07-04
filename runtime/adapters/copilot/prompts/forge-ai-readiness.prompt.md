@@ -15,7 +15,7 @@ Focus on:
 
 Repository behavior and lifecycle semantics come from:
 - `.forge/context`
-- `.forge/context/modes/ai-readiness.md`
+- `.forge/runtime/modes/ai-readiness.md`
 - current repository evidence
 
 Use scoped repository loading only.

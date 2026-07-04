@@ -13,7 +13,7 @@ Focus on:
 
 Repository behavior and lifecycle semantics come from:
 - `.forge/context`
-- `.forge/context/modes/ask.md`
+- `.forge/runtime/modes/ask.md`
 - current repository evidence
 
 Use scoped repository loading only.

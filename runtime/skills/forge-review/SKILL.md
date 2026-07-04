@@ -4,7 +4,7 @@
 Inspect executed result against approved plan, ECP, validation evidence, risk policy, security expectations, and context impact.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Read `.forge/context/modes/review.md`, then load `.forge/context/00-meta/conventions.md` and scoped convention files only when needed for evidence, validation, risk, or language rules. Use `.forge/context/00-meta/context-manifest.md` only as a routing index. Load only scoped evidence needed to review the requested change.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Read `.forge/runtime/modes/review.md`, then load `.forge/runtime/meta/conventions.md` and scoped convention files only when needed for evidence, validation, risk, or language rules. Use `.forge/runtime/meta/context-manifest.md` only as a routing index. Load only scoped evidence needed to review the requested change.
 
 ## Invocation
 Use when the user asks for MR-style review, correctness/risk assessment, validation honesty, security review, boundary preservation, context impact, or reviewer focus.

@@ -15,8 +15,8 @@ Packaged target-runtime payload includes:
 - `.forge/adapter.md`
 - `.forge/forge.config.yaml`
 - `.forge/generated/.gitkeep`
-- `.forge/context/00-meta/*`
-- `.forge/context/modes/*`
+- `.forge/runtime/meta/*`
+- `.forge/runtime/modes/*`
 - `AGENTS.md`
 - `CLAUDE.md`
 - optional `.github/copilot-instructions.md`

@@ -4,7 +4,7 @@
 Answer repository-understanding questions using Forge ask mode.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/context/00-meta/conventions.md`, use `.forge/context/00-meta/context-manifest.md` only as a routing index, then read `.forge/context/modes/ask.md`. Load only scoped context needed for the question.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final run config fields. Load `.forge/runtime/meta/conventions.md`, use `.forge/runtime/meta/context-manifest.md` only as a routing index, then read `.forge/runtime/modes/ask.md`. Load only scoped context needed for the question.
 
 ## Invocation
 Use when the user asks to understand repository behavior, structure, evidence, assumptions, unknowns, or Forge context without planning or mutation.

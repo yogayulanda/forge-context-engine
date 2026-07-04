@@ -7,7 +7,7 @@
 | Date | 2026-06-05 |
 | Status | `decision` |
 | Scope | Minimal generated artifact continuity for lifecycle handoff |
-| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `runtime/.forge/context/00-meta/conventions.md` |
+| Dependency | `specs/mode-invocation.md`, `specs/context-validation.md`, `runtime/.forge/runtime/meta/conventions.md` |
 
 ---
 

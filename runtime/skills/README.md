@@ -42,9 +42,9 @@ Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge
 Each skill must:
 - Read `.forge/forge.config.yaml` first.
 - Apply `run.interaction`, `run.output`, `run.output_detail`, `run.write_behavior`, and `run.failure_behavior`.
-- Load `.forge/context/00-meta/conventions.md`.
-- Use `.forge/context/00-meta/context-manifest.md` only as a routing index.
-- Load the matching `.forge/context/modes/<mode>.md`.
+- Load `.forge/runtime/meta/conventions.md`.
+- Use `.forge/runtime/meta/context-manifest.md` only as a routing index.
+- Load the matching `.forge/runtime/modes/<mode>.md`.
 - Load only task-relevant scoped context.
 
 Skills must not broad-load `.forge/context` by default.

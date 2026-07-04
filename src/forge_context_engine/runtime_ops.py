@@ -13,10 +13,11 @@ from .install_manifest import (
     CONTEXT_PROFILE_VERSION_LEGACY,
     DEFAULT_SELECTED_TOOLS,
     ForgeInstallManifest,
+    LEGACY_ARCHIVE_USER_OWNED_PATHS,
     PROFILE_SERVICE,
     PROFILE_WORKSPACE,
-    USER_OWNED_PATHS_BASELINE,
     LOCAL_ONLY_PATHS_BASELINE,
+    build_user_owned_paths,
     build_manifest,
     dump_manifest,
     load_manifest,
@@ -43,6 +44,11 @@ LEGACY_CONTEXT_TEMPLATE_PREFIXES = (
     ".forge/context/01-core/",
     ".forge/context/knowledge/",
     ".forge/context/systems/",
+    ".forge/context/layers/",
+    ".forge/context/generated/",
+    ".forge/context/repo-map/",
+    ".forge/context/decisions/",
+    ".forge/context/unknowns/",
 )
 CONTEXT_LAYOUT_LEGACY_V1 = "legacy-v1"
 CONTEXT_LAYOUT_V2 = "v2"
@@ -64,31 +70,39 @@ LEGACY_CONTEXT_ARCHIVE_PATHS = (
 SERVICE_V2_CONTEXT_FILES = (
     ".forge/context/00-index.md",
     ".forge/context/01-service-overview.md",
-    ".forge/context/02-service-architecture.md",
-    ".forge/context/03-domain-boundary.md",
-    ".forge/context/04-api-contracts.md",
-    ".forge/context/05-data-model-and-database.md",
-    ".forge/context/06-business-rules.md",
-    ".forge/context/07-integration-dependencies.md",
-    ".forge/context/08-error-handling.md",
-    ".forge/context/09-observability.md",
-    ".forge/context/10-testing-strategy.md",
-    ".forge/context/11-runtime-and-deployment.md",
+    ".forge/context/02-architecture.md",
+    ".forge/context/03-domain-boundaries.md",
+    ".forge/context/04-interfaces-and-contracts.md",
+    ".forge/context/05-data-and-persistence.md",
+    ".forge/context/06-business-rules-and-flows.md",
+    ".forge/context/07-integrations-and-dependencies.md",
+    ".forge/context/08-security-and-access.md",
+    ".forge/context/09-errors-and-resilience.md",
+    ".forge/context/10-observability-and-support.md",
+    ".forge/context/11-testing-and-quality.md",
+    ".forge/context/12-runtime-deployment-and-config.md",
+    ".forge/context/13-operations-and-runbook.md",
+    ".forge/context/14-decisions-assumptions-and-constraints.md",
+    ".forge/context/98-glossary.md",
     ".forge/context/99-open-questions.md",
 )
 WORKSPACE_V2_CONTEXT_FILES = (
-    ".forge/context/00-workspace-index.md",
+    ".forge/context/00-index.md",
     ".forge/context/01-platform-overview.md",
     ".forge/context/02-system-map.md",
     ".forge/context/03-service-catalog.md",
     ".forge/context/04-domain-boundaries.md",
     ".forge/context/05-cross-service-flows.md",
-    ".forge/context/06-api-and-event-contracts.md",
-    ".forge/context/07-data-ownership.md",
+    ".forge/context/06-interfaces-and-contracts.md",
+    ".forge/context/07-data-ownership-and-consistency.md",
     ".forge/context/08-security-and-access.md",
-    ".forge/context/09-observability-and-operations.md",
-    ".forge/context/10-deployment-topology.md",
-    ".forge/context/11-release-and-feature-flags.md",
+    ".forge/context/09-observability-and-support.md",
+    ".forge/context/10-testing-and-quality.md",
+    ".forge/context/11-runtime-deployment-and-config.md",
+    ".forge/context/12-release-and-feature-flags.md",
+    ".forge/context/13-operations-and-runbook.md",
+    ".forge/context/14-decisions-assumptions-and-constraints.md",
+    ".forge/context/98-glossary.md",
     ".forge/context/99-open-questions.md",
 )
 MIGRATION_PROPOSAL_ROOT = ".forge/context-patches/migrations/v2-context-profile"
@@ -106,14 +120,18 @@ REGULAR_MANAGED_HASH_EXCLUDES = {
     "CLAUDE.md",
     COPILOT_TEMPLATE_PATH,
 }
-REPO_META_SEEDED_FILES = {
-    ".forge/context/00-meta/context-manifest.md",
-    ".forge/context/00-meta/glossary.md",
-}
 RUNTIME_MARKERS = (
     ".forge/adapter.md",
     ".forge/forge.config.yaml",
+    ".forge/runtime/modes/ask.md",
+)
+LEGACY_RUNTIME_MARKERS = (
     ".forge/context/modes/ask.md",
+    ".forge/context/00-meta/conventions.md",
+)
+DEPRECATED_RUNTIME_PATHS = (
+    ".forge/context/00-meta",
+    ".forge/context/modes",
 )
 UI_LANGUAGE_EN = "en"
 UI_LANGUAGE_ID = "id"
@@ -137,6 +155,7 @@ DETAIL_WORKSPACE_PRESERVED = "user-edited workspace file preserved"
 DETAIL_MIGRATION_V2_WRITE = "v2 context migration"
 DETAIL_MIGRATION_ARCHIVE = "legacy-v1 context archive"
 DETAIL_MIGRATION_MANIFEST = "context profile version migration"
+DETAIL_DEPRECATED_RUNTIME = "deprecated managed runtime path preserved"
 
 
 MESSAGES = {
@@ -480,7 +499,7 @@ def run_init(
     )
     conflicts = _apply_init_files(paths.target_root, desired_files, report, dry_run)
     _ensure_local_only_dirs(paths.target_root, report, dry_run)
-    _mark_preserved_baselines(report)
+    _mark_preserved_baselines(report, profile=profile)
 
     if conflicts:
         _print_report(
@@ -854,7 +873,7 @@ def _update_from_manifest(
     desired_files = {
         rel_path: content
         for rel_path, content in all_desired_files.items()
-        if _is_managed_file(rel_path, manifest.profile, selected_tools) and rel_path not in REPO_META_SEEDED_FILES
+        if _is_managed_file(rel_path, manifest.profile, selected_tools)
     }
 
     for rel_path, content in desired_files.items():
@@ -887,6 +906,7 @@ def _update_from_manifest(
         selected_tools=selected_tools,
         report=report,
     )
+    _report_deprecated_runtime_paths(target_root=target_root, report=report)
     _ensure_local_only_dirs(target_root, report, dry_run)
 
     updated_manifest = _manifest_for_target(
@@ -1129,13 +1149,25 @@ def _manifest_for_target(
         for path, content in desired_files.items()
         if _is_managed_file(path, profile, selected_tools) and path not in REGULAR_MANAGED_HASH_EXCLUDES
     }
-    return build_manifest(
+    manifest = build_manifest(
         profile=profile,
         context_profile_version=context_profile_version,
         selected_tools=selected_tools,
         managed_file_hashes=managed_hashes,
         installed_at=installed_at,
     )
+    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT and any(
+        (target_root / rel_path).exists() for rel_path in LEGACY_ARCHIVE_USER_OWNED_PATHS
+    ):
+        return replace(
+            manifest,
+            user_owned_paths=build_user_owned_paths(
+                profile=profile,
+                context_profile_version=context_profile_version,
+                include_legacy_archive=True,
+            ),
+        )
+    return manifest
 
 
 def _manifest_from_current_runtime(
@@ -1161,12 +1193,24 @@ def _manifest_from_current_runtime(
         path = target_root / rel_path
         if path.exists():
             managed_hashes[rel_path] = sha256_text(path.read_text(encoding="utf-8"))
-    return build_manifest(
+    manifest = build_manifest(
         profile=profile,
         context_profile_version=context_profile_version,
         selected_tools=selected_tools,
         managed_file_hashes=managed_hashes,
     )
+    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT and any(
+        (target_root / rel_path).exists() for rel_path in LEGACY_ARCHIVE_USER_OWNED_PATHS
+    ):
+        return replace(
+            manifest,
+            user_owned_paths=build_user_owned_paths(
+                profile=profile,
+                context_profile_version=context_profile_version,
+                include_legacy_archive=True,
+            ),
+        )
+    return manifest
 
 
 def _render_forge_config(
@@ -1318,7 +1362,7 @@ def _merge_selected_tools(current_tools: tuple[str, ...], requested_tools: tuple
 
 
 def _detect_runtime(target_root: Path) -> bool:
-    return any((target_root / marker).exists() for marker in RUNTIME_MARKERS)
+    return any((target_root / marker).exists() for marker in (*RUNTIME_MARKERS, *LEGACY_RUNTIME_MARKERS))
 
 
 def _detect_profile(target_root: Path) -> str:
@@ -1419,6 +1463,8 @@ def _build_migrated_manifest_text(
     profile: str,
     selected_tools: tuple[str, ...],
 ) -> tuple[str, str]:
+    include_legacy_archive = True
+
     if manifest is None:
         base_manifest = _manifest_from_current_runtime(
             target_root=target_root,
@@ -1426,10 +1472,26 @@ def _build_migrated_manifest_text(
             context_profile_version=CONTEXT_PROFILE_VERSION_LEGACY,
             selected_tools=selected_tools,
         )
-        migrated = replace(base_manifest, context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT)
+        migrated = replace(
+            base_manifest,
+            context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT,
+            user_owned_paths=build_user_owned_paths(
+                profile=profile,
+                context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT,
+                include_legacy_archive=include_legacy_archive,
+            ),
+        )
         return dump_manifest(migrated), "create"
 
-    migrated = replace(manifest, context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT)
+    migrated = replace(
+        manifest,
+        context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT,
+        user_owned_paths=build_user_owned_paths(
+            profile=manifest.profile,
+            context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT,
+            include_legacy_archive=include_legacy_archive,
+        ),
+    )
     if dump_manifest(migrated) == dump_manifest(manifest):
         return dump_manifest(migrated), "leave unchanged"
     return dump_manifest(migrated), "update"
@@ -1605,9 +1667,7 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return True
     if rel_path == ".forge/workspace.yaml":
         return profile == PROFILE_WORKSPACE
-    if rel_path in REPO_META_SEEDED_FILES:
-        return False
-    return rel_path.startswith(".forge/context/00-meta/") or rel_path.startswith(".forge/context/modes/")
+    return rel_path.startswith(".forge/runtime/meta/") or rel_path.startswith(".forge/runtime/modes/")
 
 
 def _looks_like_legacy_forge_config(content: str) -> bool:
@@ -1641,8 +1701,8 @@ def _next_legacy_config_backup_path(target_root: Path) -> Path:
 def _is_wrapper_like_entrypoint(content: str) -> bool:
     wrapper_markers = (
         ".forge/forge.config.yaml",
-        ".forge/context/00-meta/context-manifest.md",
-        ".forge/context/00-meta/conventions.md",
+        ".forge/runtime/meta/context-manifest.md",
+        ".forge/runtime/meta/conventions.md",
     )
     guidance_markers = (
         ".forge/adapter.md",
@@ -1673,9 +1733,17 @@ def _preserve_non_selected_entrypoints(
         if (target_root / rel_path).exists():
             report.add("skipped", rel_path, DETAIL_PRESERVED_NON_SELECTED)
 
+def _report_deprecated_runtime_paths(*, target_root: Path, report: OperationReport) -> None:
+    for rel_path in DEPRECATED_RUNTIME_PATHS:
+        if (target_root / rel_path).exists():
+            report.add("skipped", rel_path, DETAIL_DEPRECATED_RUNTIME)
 
-def _mark_preserved_baselines(report: OperationReport) -> None:
-    for path in USER_OWNED_PATHS_BASELINE:
+
+def _mark_preserved_baselines(report: OperationReport, *, profile: str) -> None:
+    for path in build_user_owned_paths(
+        profile=profile,
+        context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT,
+    ):
         report.mark_preserved("user", path)
     for path in LOCAL_ONLY_PATHS_BASELINE:
         report.mark_preserved("local", path)
