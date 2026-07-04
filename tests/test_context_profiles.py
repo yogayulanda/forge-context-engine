@@ -52,16 +52,28 @@ def _convert_repo_to_legacy_layout(target: Path, profile: str) -> str:
 
     legacy_product = target / ".forge/context/01-core/product.md"
     legacy_unknowns = target / ".forge/context/knowledge/unknowns.md"
+    legacy_layer = target / ".forge/context/layers/application.md"
     legacy_overview = target / ".forge/context/repo-map/overview.md"
     legacy_system = target / ".forge/context/systems/legacy/system.md"
+    legacy_generated = target / ".forge/context/generated/summary.md"
+    legacy_decision = target / ".forge/context/decisions/decision-001.md"
+    legacy_question = target / ".forge/context/unknowns/open-questions.md"
     legacy_product.parent.mkdir(parents=True, exist_ok=True)
     legacy_unknowns.parent.mkdir(parents=True, exist_ok=True)
+    legacy_layer.parent.mkdir(parents=True, exist_ok=True)
     legacy_overview.parent.mkdir(parents=True, exist_ok=True)
     legacy_system.parent.mkdir(parents=True, exist_ok=True)
+    legacy_generated.parent.mkdir(parents=True, exist_ok=True)
+    legacy_decision.parent.mkdir(parents=True, exist_ok=True)
+    legacy_question.parent.mkdir(parents=True, exist_ok=True)
     legacy_product.write_text("legacy product\n", encoding="utf-8")
     legacy_unknowns.write_text("legacy unknowns\n", encoding="utf-8")
+    legacy_layer.write_text("legacy layer\n", encoding="utf-8")
     legacy_overview.write_text("legacy repo map\n", encoding="utf-8")
     legacy_system.write_text("legacy system\n", encoding="utf-8")
+    legacy_generated.write_text("legacy generated\n", encoding="utf-8")
+    legacy_decision.write_text("legacy decision\n", encoding="utf-8")
+    legacy_question.write_text("legacy question\n", encoding="utf-8")
     return manifest_text
 
 
@@ -454,6 +466,17 @@ class ContextProfileTests(unittest.TestCase):
             self.assertIn("would migrate legacy-v1 context to numbered v2 files", rendered)
             self.assertIn("legacy-v1 context archive", rendered)
             self.assertIn("context profile version migration", rendered)
+            for rel_path in (
+                ".forge/context-archive/legacy-v1/01-core",
+                ".forge/context-archive/legacy-v1/knowledge",
+                ".forge/context-archive/legacy-v1/layers",
+                ".forge/context-archive/legacy-v1/repo-map",
+                ".forge/context-archive/legacy-v1/systems",
+                ".forge/context-archive/legacy-v1/generated",
+                ".forge/context-archive/legacy-v1/decisions",
+                ".forge/context-archive/legacy-v1/unknowns",
+            ):
+                self.assertIn(rel_path, rendered)
             self.assertIn("Files changed: none", rendered)
 
     def test_migrate_context_on_legacy_writes_v2_files_into_forge_context(self) -> None:
@@ -499,7 +522,16 @@ class ContextProfileTests(unittest.TestCase):
                 status = run_migrate_context(target=target, dry_run=False)
 
             self.assertEqual(status, 0)
-            for name in ("01-core", "knowledge", "repo-map", "systems"):
+            for name in (
+                "01-core",
+                "knowledge",
+                "layers",
+                "repo-map",
+                "systems",
+                "generated",
+                "decisions",
+                "unknowns",
+            ):
                 self.assertFalse((target / ".forge/context" / name).exists(), name)
                 self.assertTrue((target / LEGACY_CONTEXT_ARCHIVE_ROOT / name).exists(), name)
 
@@ -521,8 +553,12 @@ class ContextProfileTests(unittest.TestCase):
             legacy_files = [
                 target / ".forge/context/01-core/product.md",
                 target / ".forge/context/knowledge/unknowns.md",
+                target / ".forge/context/layers/application.md",
                 target / ".forge/context/repo-map/overview.md",
                 target / ".forge/context/systems/legacy/system.md",
+                target / ".forge/context/generated/summary.md",
+                target / ".forge/context/decisions/decision-001.md",
+                target / ".forge/context/unknowns/open-questions.md",
             ]
 
             with redirect_stdout(io.StringIO()):
@@ -532,8 +568,12 @@ class ContextProfileTests(unittest.TestCase):
             archived_files = [
                 target / LEGACY_CONTEXT_ARCHIVE_ROOT / "01-core/product.md",
                 target / LEGACY_CONTEXT_ARCHIVE_ROOT / "knowledge/unknowns.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "layers/application.md",
                 target / LEGACY_CONTEXT_ARCHIVE_ROOT / "repo-map/overview.md",
                 target / LEGACY_CONTEXT_ARCHIVE_ROOT / "systems/legacy/system.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "generated/summary.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "decisions/decision-001.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "unknowns/open-questions.md",
             ]
             for path in legacy_files:
                 self.assertFalse(path.exists(), str(path))

@@ -48,11 +48,18 @@ CONTEXT_LAYOUT_LEGACY_V1 = "legacy-v1"
 CONTEXT_LAYOUT_V2 = "v2"
 CONTEXT_LAYOUT_MIXED = "mixed"
 CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN = "empty-or-unknown"
-LEGACY_CONTEXT_PATHS = (
+LEGACY_CONTEXT_LAYOUT_PATHS = (
     ".forge/context/01-core",
     ".forge/context/knowledge",
     ".forge/context/repo-map",
     ".forge/context/systems",
+)
+LEGACY_CONTEXT_ARCHIVE_PATHS = (
+    *LEGACY_CONTEXT_LAYOUT_PATHS,
+    ".forge/context/layers",
+    ".forge/context/generated",
+    ".forge/context/decisions",
+    ".forge/context/unknowns",
 )
 SERVICE_V2_CONTEXT_FILES = (
     ".forge/context/00-index.md",
@@ -1325,7 +1332,7 @@ def _detect_context_layout(target_root: Path, profile: str) -> str:
     if not context_root.exists() or not context_root.is_dir():
         return CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN
 
-    has_legacy = any((target_root / rel_path).exists() for rel_path in LEGACY_CONTEXT_PATHS)
+    has_legacy = any((target_root / rel_path).exists() for rel_path in LEGACY_CONTEXT_LAYOUT_PATHS)
     expected_files = WORKSPACE_V2_CONTEXT_FILES if profile == PROFILE_WORKSPACE else SERVICE_V2_CONTEXT_FILES
     has_all_v2 = all((target_root / rel_path).exists() for rel_path in expected_files)
     has_any_v2 = any((target_root / rel_path).exists() for rel_path in expected_files)
@@ -1466,7 +1473,7 @@ def _plan_context_migration(
 
 def _legacy_archive_pairs(target_root: Path) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
-    for rel_path in LEGACY_CONTEXT_PATHS:
+    for rel_path in LEGACY_CONTEXT_ARCHIVE_PATHS:
         source = target_root / rel_path
         if source.exists():
             pairs.append((rel_path, f"{LEGACY_CONTEXT_ARCHIVE_ROOT}/{Path(rel_path).name}"))
