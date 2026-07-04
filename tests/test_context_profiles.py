@@ -22,6 +22,7 @@ from forge_context_engine.runtime_ops import (
     LEGACY_CONTEXT_ARCHIVE_ROOT,
     SERVICE_V2_CONTEXT_FILES,
     WORKSPACE_V2_CONTEXT_FILES,
+    _build_init_files,
     _detect_context_layout,
     run_migrate_context,
 )
@@ -75,6 +76,32 @@ def _convert_repo_to_legacy_layout(target: Path, profile: str) -> str:
     legacy_decision.write_text("legacy decision\n", encoding="utf-8")
     legacy_question.write_text("legacy question\n", encoding="utf-8")
     return manifest_text
+
+def _seed_deprecated_runtime_paths(
+    target: Path,
+    *,
+    profile: str = "service",
+    selected_tools: tuple[str, ...] = ("codex",),
+) -> set[str]:
+    desired_files = _build_init_files(
+        target_root=target,
+        profile=profile,
+        selected_tools=selected_tools,
+        ui_language="en",
+    )
+    seeded: set[str] = set()
+    for rel_path, content in desired_files.items():
+        if rel_path.startswith(".forge/runtime/meta/"):
+            deprecated_path = rel_path.replace(".forge/runtime/meta/", ".forge/context/00-meta/", 1)
+        elif rel_path.startswith(".forge/runtime/modes/"):
+            deprecated_path = rel_path.replace(".forge/runtime/modes/", ".forge/context/modes/", 1)
+        else:
+            continue
+        path = target / deprecated_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        seeded.add(deprecated_path)
+    return seeded
 
 
 class ContextProfileTests(unittest.TestCase):
@@ -682,6 +709,170 @@ class ContextProfileTests(unittest.TestCase):
             self.assertNotIn(".forge/context/knowledge/", rendered)
             self.assertNotIn(".forge/context/decisions/", rendered)
             self.assertNotIn(".forge/context/unknowns/", rendered)
+
+    def test_update_cleans_deprecated_runtime_paths_when_unchanged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime cleanup.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            seeded = _seed_deprecated_runtime_paths(target)
+            self.assertTrue(seeded)
+            self.assertTrue((target / ".forge/context/00-meta").exists())
+            self.assertTrue((target / ".forge/context/modes").exists())
+
+            with redirect_stdout(io.StringIO()):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertFalse((target / ".forge/context/00-meta").exists())
+            self.assertFalse((target / ".forge/context/modes").exists())
+
+    def test_update_preserves_user_edited_deprecated_runtime_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime preservation.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _seed_deprecated_runtime_paths(target)
+            edited = target / ".forge/context/modes/ask.md"
+            edited.write_text(edited.read_text(encoding="utf-8") + "\nuser edit\n", encoding="utf-8")
+            extra = target / ".forge/context/00-meta/custom.md"
+            extra.write_text("custom\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertTrue((target / ".forge/context/00-meta").exists())
+            self.assertTrue((target / ".forge/context/modes").exists())
+            self.assertEqual(edited.read_text(encoding="utf-8").splitlines()[-1], "user edit")
+            self.assertTrue(extra.exists())
+            rendered = output.getvalue()
+            self.assertIn("deprecated runtime path preserved; contains local edits or unknown files", rendered)
+            self.assertIn(".forge/context/modes/ask.md", rendered)
+            self.assertIn(".forge/context/00-meta/custom.md", rendered)
+
+    def test_update_dry_run_deprecated_runtime_cleanup_writes_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime dry-run.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _seed_deprecated_runtime_paths(target)
+            before = _snapshot_tree(target / ".forge/context")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertEqual(before, _snapshot_tree(target / ".forge/context"))
+            self.assertTrue((target / ".forge/context/00-meta").exists())
+            self.assertTrue((target / ".forge/context/modes").exists())
+            rendered = output.getvalue()
+            self.assertIn(".forge/context/00-meta - deprecated managed runtime path cleanup", rendered)
+            self.assertIn(".forge/context/modes - deprecated managed runtime path cleanup", rendered)
+
+    def test_v2_update_is_idempotent_after_deprecated_runtime_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime idempotence.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _seed_deprecated_runtime_paths(target)
+            with redirect_stdout(io.StringIO()):
+                first_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(first_status, 0)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                second_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(second_status, 0)
+            self.assertFalse((target / ".forge/context/00-meta").exists())
+            self.assertFalse((target / ".forge/context/modes").exists())
+            rendered = output.getvalue()
+            self.assertIn("Updated: 0", rendered)
+            self.assertNotIn(".forge/context/00-meta", rendered)
+            self.assertNotIn(".forge/context/modes", rendered)
+
+    def test_fresh_init_never_creates_deprecated_runtime_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nFresh init runtime paths.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertFalse((target / ".forge/context/00-meta").exists())
+            self.assertFalse((target / ".forge/context/modes").exists())
 
     def test_migrate_context_on_v2_is_no_op(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

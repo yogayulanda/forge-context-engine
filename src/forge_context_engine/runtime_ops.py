@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+import shutil
 
 from .context_builder import build_repo_context_seed
 from .fs_ops import normalize_text, resolve_target_paths, sha256_text, to_manifest_path
@@ -156,6 +157,8 @@ DETAIL_MIGRATION_V2_WRITE = "v2 context migration"
 DETAIL_MIGRATION_ARCHIVE = "legacy-v1 context archive"
 DETAIL_MIGRATION_MANIFEST = "context profile version migration"
 DETAIL_DEPRECATED_RUNTIME = "deprecated managed runtime path preserved"
+DETAIL_DEPRECATED_RUNTIME_CLEANUP = "deprecated managed runtime path cleanup"
+DETAIL_DEPRECATED_RUNTIME_LOCAL = "deprecated runtime path preserved; contains local edits or unknown files"
 
 
 MESSAGES = {
@@ -906,7 +909,19 @@ def _update_from_manifest(
         selected_tools=selected_tools,
         report=report,
     )
-    _report_deprecated_runtime_paths(target_root=target_root, report=report)
+    if manifest.context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT:
+        context_layout = _detect_context_layout(target_root, manifest.profile)
+        if context_layout == CONTEXT_LAYOUT_V2:
+            _cleanup_deprecated_runtime_paths(
+                target_root=target_root,
+                desired_files=all_desired_files,
+                report=report,
+                dry_run=dry_run,
+            )
+        else:
+            _report_deprecated_runtime_paths(target_root=target_root, report=report)
+    else:
+        _report_deprecated_runtime_paths(target_root=target_root, report=report)
     _ensure_local_only_dirs(target_root, report, dry_run)
 
     updated_manifest = _manifest_for_target(
@@ -1737,6 +1752,77 @@ def _report_deprecated_runtime_paths(*, target_root: Path, report: OperationRepo
     for rel_path in DEPRECATED_RUNTIME_PATHS:
         if (target_root / rel_path).exists():
             report.add("skipped", rel_path, DETAIL_DEPRECATED_RUNTIME)
+
+def _cleanup_deprecated_runtime_paths(
+    *,
+    target_root: Path,
+    desired_files: dict[str, str],
+    report: OperationReport,
+    dry_run: bool,
+) -> None:
+    expected_files = _deprecated_runtime_expected_files(desired_files)
+    for rel_path in DEPRECATED_RUNTIME_PATHS:
+        path = target_root / rel_path
+        if not path.exists():
+            continue
+
+        unexpected_files = _deprecated_runtime_unexpected_files(
+            target_root=target_root,
+            root=path,
+            expected_files=expected_files,
+        )
+        if unexpected_files:
+            report.add("skipped", rel_path, DETAIL_DEPRECATED_RUNTIME_LOCAL)
+            report.add_note(
+                "Deprecated runtime path "
+                f"{rel_path} was preserved because it contains user-edited or unknown files: "
+                f"{', '.join(unexpected_files)}. Move any files you still need out of "
+                f"{rel_path}, then remove the deprecated path once it is no longer needed."
+            )
+            continue
+
+        if dry_run:
+            report.add("updated", rel_path, DETAIL_DEPRECATED_RUNTIME_CLEANUP)
+            continue
+
+        shutil.rmtree(path)
+        report.add("updated", rel_path, DETAIL_DEPRECATED_RUNTIME_CLEANUP)
+
+def _deprecated_runtime_expected_files(desired_files: dict[str, str]) -> dict[str, str]:
+    expected: dict[str, str] = {}
+    for rel_path, content in desired_files.items():
+        deprecated_path = _map_deprecated_runtime_path(rel_path)
+        if deprecated_path is None:
+            continue
+        expected[deprecated_path] = content
+    return expected
+
+def _deprecated_runtime_unexpected_files(
+    *,
+    target_root: Path,
+    root: Path,
+    expected_files: dict[str, str],
+) -> list[str]:
+    unexpected: list[str] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        rel_path = to_manifest_path(target_root, path)
+        expected = expected_files.get(rel_path)
+        if expected is None:
+            unexpected.append(rel_path)
+            continue
+        existing = path.read_text(encoding="utf-8")
+        if normalize_text(existing) != normalize_text(expected):
+            unexpected.append(rel_path)
+    return unexpected
+
+def _map_deprecated_runtime_path(rel_path: str) -> str | None:
+    if rel_path.startswith(".forge/runtime/meta/"):
+        return rel_path.replace(".forge/runtime/meta/", ".forge/context/00-meta/", 1)
+    if rel_path.startswith(".forge/runtime/modes/"):
+        return rel_path.replace(".forge/runtime/modes/", ".forge/context/modes/", 1)
+    return None
 
 
 def _mark_preserved_baselines(report: OperationReport, *, profile: str) -> None:
