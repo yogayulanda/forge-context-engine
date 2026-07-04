@@ -115,6 +115,11 @@ forge init --workspace
 
 Use workspace repos as thin coordination layers for linked services. Keep repo-specific facts in each service repo's `.forge/context`, and load workspace context only for cross-repo planning.
 
+Fresh context layout defaults:
+- `forge init` seeds the v2 service profile with numbered files such as `00-index.md`, `01-service-overview.md`, and `99-open-questions.md`
+- `forge init --workspace` seeds the v2 workspace profile with numbered files such as `00-workspace-index.md`, `01-platform-overview.md`, and `99-open-questions.md`
+- legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid and are preserved during `forge update`
+
 Tool selection:
 
 ```bash
@@ -150,6 +155,7 @@ forge update --tools opencode
 - `forge update` is the normal adoption and refresh path for existing repos.
 - `forge update` refreshes Forge-managed files only.
 - user-owned context is preserved.
+- dry-run reports detected Forge profile, detected context layout, and that migration/cleanup is not automatic.
 - local-only files are preserved.
 - update is intended to be idempotent.
 - use `--yes` for non-interactive automation or scripted adoption.

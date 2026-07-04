@@ -13,6 +13,8 @@ updated: 2026-06-09
 
 Index and routing map for the entire context system. Not a knowledge source.
 
+Fresh CLI init now seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatible and may still appear in older repositories.
+
 ## File Meta
 
 | Attribute | Value |
@@ -40,7 +42,8 @@ Index and routing map for the entire context system. Not a knowledge source.
 
 - `00-meta/conventions.md`
 - `00-meta/glossary.md` *(if exists)*
-- relevant `01-core/*`
+- relevant generated profile files such as `01-service-overview.md`, `02-service-architecture.md`, or workspace equivalents
+- legacy `01-core/*` when present in older repos
 - `00-meta/context-manifest.md` only when routing help is needed
 - `00-meta/ai-readiness-factors.md` only during `ai-readiness` audits (factor catalog and band→verdict map)
 
@@ -80,7 +83,7 @@ Load based on task type. Do not load all for every task.
 - Every `id` unique.
 - `confirmed`/`inferred` must have `evidence`.
 - `source: human` files not written by AI.
-- `modes/*` files never list `00-meta/*` or `01-core/*` (delta only).
+- `modes/*` files never list `00-meta/*` or profile core files directly unless explicitly needed (delta only).
 - Lifecycle artifacts are non-authoritative generated continuity helpers; artifact links never imply workflow, DAG, orchestration, agent memory, or execution-trigger semantics.
 - `run.interaction` is the controlling interaction setting and automation-safe behavior never implies orchestration, agents, CI/CD, deploy, triggers, or executors.
 

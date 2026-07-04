@@ -9,6 +9,8 @@ from pathlib import Path
 from .context_builder import build_repo_context_seed
 from .fs_ops import normalize_text, resolve_target_paths, sha256_text, to_manifest_path
 from .install_manifest import (
+    CONTEXT_PROFILE_VERSION_CURRENT,
+    CONTEXT_PROFILE_VERSION_LEGACY,
     DEFAULT_SELECTED_TOOLS,
     ForgeInstallManifest,
     PROFILE_SERVICE,
@@ -33,6 +35,51 @@ CANONICAL_SKILLS_PREFIX = ".forge/skills/"
 OPENCODE_SKILLS_PREFIX = ".opencode/skills/"
 OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
 OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, TEMPLATE_SKILLS_PREFIX)
+LEGACY_CONTEXT_TEMPLATE_PREFIXES = (
+    ".forge/context/01-core/",
+    ".forge/context/knowledge/",
+    ".forge/context/systems/",
+)
+CONTEXT_LAYOUT_LEGACY_V1 = "legacy-v1"
+CONTEXT_LAYOUT_V2 = "v2"
+CONTEXT_LAYOUT_MIXED = "mixed"
+CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN = "empty-or-unknown"
+LEGACY_CONTEXT_PATHS = (
+    ".forge/context/01-core",
+    ".forge/context/knowledge",
+    ".forge/context/repo-map",
+    ".forge/context/systems",
+)
+SERVICE_V2_CONTEXT_FILES = (
+    ".forge/context/00-index.md",
+    ".forge/context/01-service-overview.md",
+    ".forge/context/02-service-architecture.md",
+    ".forge/context/03-domain-boundary.md",
+    ".forge/context/04-api-contracts.md",
+    ".forge/context/05-data-model-and-database.md",
+    ".forge/context/06-business-rules.md",
+    ".forge/context/07-integration-dependencies.md",
+    ".forge/context/08-error-handling.md",
+    ".forge/context/09-observability.md",
+    ".forge/context/10-testing-strategy.md",
+    ".forge/context/11-runtime-and-deployment.md",
+    ".forge/context/99-open-questions.md",
+)
+WORKSPACE_V2_CONTEXT_FILES = (
+    ".forge/context/00-workspace-index.md",
+    ".forge/context/01-platform-overview.md",
+    ".forge/context/02-system-map.md",
+    ".forge/context/03-service-catalog.md",
+    ".forge/context/04-domain-boundaries.md",
+    ".forge/context/05-cross-service-flows.md",
+    ".forge/context/06-api-and-event-contracts.md",
+    ".forge/context/07-data-ownership.md",
+    ".forge/context/08-security-and-access.md",
+    ".forge/context/09-observability-and-operations.md",
+    ".forge/context/10-deployment-topology.md",
+    ".forge/context/11-release-and-feature-flags.md",
+    ".forge/context/99-open-questions.md",
+)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -79,6 +126,11 @@ MESSAGES = {
         "dry_run_suffix": "dry-run",
         "target": "Target",
         "profile": "Profile",
+        "detected_profile": "Detected Forge profile",
+        "context_profile_version": "Detected context profile version",
+        "context_layout": "Detected context layout",
+        "context_migration": "Migration",
+        "user_owned_context": "User-owned context",
         "selected_tools": "Selected tools",
         "detected_tools": "Detected tools",
         "tool_selection_change": "Tool selection change",
@@ -138,6 +190,11 @@ MESSAGES = {
         "dry_run_suffix": "dry-run",
         "target": "Target",
         "profile": "Profile",
+        "detected_profile": "Detected Forge profile",
+        "context_profile_version": "Detected context profile version",
+        "context_layout": "Detected context layout",
+        "context_migration": "Migration",
+        "user_owned_context": "User-owned context",
         "selected_tools": "Selected tools",
         "detected_tools": "Detected tools",
         "tool_selection_change": "Perubahan tool",
@@ -392,6 +449,7 @@ def run_init(
     manifest = _manifest_for_target(
         target_root=paths.target_root,
         profile=profile,
+        context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT,
         selected_tools=selected_tools,
         desired_files=desired_files,
     )
@@ -432,6 +490,7 @@ def run_update(
 
     if manifest_path.exists():
         manifest = load_manifest(manifest_path)
+        context_layout = _detect_context_layout(paths.target_root, manifest.profile)
         effective_tools = _merge_selected_tools(manifest.selected_tools, selected_tools)
         if effective_tools != manifest.selected_tools:
             report.add_note(
@@ -458,6 +517,11 @@ def run_update(
                     profile=manifest.profile,
                     selected_tools=effective_tools,
                     mode="manifest",
+                    context_profile_version=_reported_context_profile_version(
+                        context_layout,
+                        manifest.context_profile_version,
+                    ),
+                    context_layout=context_layout,
                 )
                 print(_msg(locale, "update_conflicts"))
                 return 1
@@ -477,6 +541,11 @@ def run_update(
             profile=manifest.profile,
             selected_tools=effective_tools,
             mode="manifest",
+            context_profile_version=_reported_context_profile_version(
+                context_layout,
+                manifest.context_profile_version,
+            ),
+            context_layout=context_layout,
         )
         return 0 if not report.statuses("conflict") else 1
 
@@ -485,6 +554,8 @@ def run_update(
         return 1
 
     adopted_profile = _detect_profile(paths.target_root)
+    adopted_layout = _detect_context_layout(paths.target_root, adopted_profile)
+    adopted_context_profile_version = _detect_context_profile_version(paths.target_root)
     detected_tools = _detect_tools(paths.target_root)
     effective_tools = _merge_selected_tools(detected_tools, selected_tools)
     if selected_tools and selected_tools != detected_tools:
@@ -497,6 +568,7 @@ def run_update(
     manifest = _manifest_from_current_runtime(
         target_root=paths.target_root,
         profile=adopted_profile,
+        context_profile_version=adopted_context_profile_version,
         selected_tools=effective_tools,
     )
     if dry_run:
@@ -518,6 +590,8 @@ def run_update(
             selected_tools=effective_tools,
             mode="adoption",
             detected_tools=detected_tools,
+            context_profile_version=_display_context_profile_version(adopted_context_profile_version),
+            context_layout=adopted_layout,
         )
         return 0
 
@@ -554,6 +628,8 @@ def run_update(
             selected_tools=effective_tools,
             mode="adoption",
             detected_tools=detected_tools,
+            context_profile_version=_display_context_profile_version(adopted_context_profile_version),
+            context_layout=adopted_layout,
         )
         print(_msg(locale, "update_conflicts"))
         return 1
@@ -584,6 +660,8 @@ def run_update(
         selected_tools=effective_tools,
         mode="adoption",
         detected_tools=detected_tools,
+        context_profile_version=_display_context_profile_version(adopted_context_profile_version),
+        context_layout=adopted_layout,
     )
     if report.statuses("conflict"):
         print(_msg(locale, "update_conflicts"))
@@ -655,6 +733,7 @@ def _update_from_manifest(
     updated_manifest = _manifest_for_target(
         target_root=target_root,
         profile=manifest.profile,
+        context_profile_version=manifest.context_profile_version,
         selected_tools=selected_tools,
         desired_files=all_desired_files,
         installed_at=manifest.installed_at,
@@ -685,6 +764,7 @@ def _build_init_files(
         for rel, content in template_files.items()
         if rel not in {"AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md", ".forge/forge.config.yaml"}
         and not rel.startswith(OPTIONAL_TEMPLATE_PREFIXES)
+        and not rel.startswith(LEGACY_CONTEXT_TEMPLATE_PREFIXES)
     }
     files.update(
         {
@@ -863,7 +943,7 @@ def _apply_regular_file(
 
 
 def _ensure_local_only_dirs(target_root: Path, report: OperationReport, dry_run: bool) -> None:
-    for rel in (".forge/temp", ".forge/cache", ".forge/context-patches", ".forge/context/repo-map"):
+    for rel in (".forge/temp", ".forge/cache", ".forge/context-patches"):
         path = target_root / rel
         if path.exists():
             report.add("skipped", rel, "directory exists")
@@ -879,6 +959,7 @@ def _manifest_for_target(
     *,
     target_root: Path,
     profile: str,
+    context_profile_version: str,
     selected_tools: tuple[str, ...],
     desired_files: dict[str, str],
     installed_at: str | None = None,
@@ -891,6 +972,7 @@ def _manifest_for_target(
     }
     return build_manifest(
         profile=profile,
+        context_profile_version=context_profile_version,
         selected_tools=selected_tools,
         managed_file_hashes=managed_hashes,
         installed_at=installed_at,
@@ -901,6 +983,7 @@ def _manifest_from_current_runtime(
     *,
     target_root: Path,
     profile: str,
+    context_profile_version: str,
     selected_tools: tuple[str, ...],
 ) -> ForgeInstallManifest:
     ui_language = _read_ui_language(target_root)
@@ -921,6 +1004,7 @@ def _manifest_from_current_runtime(
             managed_hashes[rel_path] = sha256_text(path.read_text(encoding="utf-8"))
     return build_manifest(
         profile=profile,
+        context_profile_version=context_profile_version,
         selected_tools=selected_tools,
         managed_file_hashes=managed_hashes,
     )
@@ -1084,6 +1168,75 @@ def _detect_profile(target_root: Path) -> str:
     return PROFILE_SERVICE
 
 
+def _detect_context_layout(target_root: Path, profile: str) -> str:
+    context_root = target_root / ".forge/context"
+    if not context_root.exists() or not context_root.is_dir():
+        return CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN
+
+    has_legacy = any((target_root / rel_path).exists() for rel_path in LEGACY_CONTEXT_PATHS)
+    expected_files = WORKSPACE_V2_CONTEXT_FILES if profile == PROFILE_WORKSPACE else SERVICE_V2_CONTEXT_FILES
+    has_all_v2 = all((target_root / rel_path).exists() for rel_path in expected_files)
+    has_any_v2 = any((target_root / rel_path).exists() for rel_path in expected_files)
+
+    if has_legacy and has_any_v2:
+        return CONTEXT_LAYOUT_MIXED
+    if has_all_v2:
+        return CONTEXT_LAYOUT_V2
+    if has_legacy:
+        return CONTEXT_LAYOUT_LEGACY_V1
+    return CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN
+
+
+def _detect_context_profile_version(target_root: Path) -> str:
+    context_layout = _detect_context_layout(target_root, _detect_profile(target_root))
+    if context_layout in {CONTEXT_LAYOUT_V2, CONTEXT_LAYOUT_MIXED}:
+        return CONTEXT_PROFILE_VERSION_CURRENT
+    if context_layout == CONTEXT_LAYOUT_LEGACY_V1:
+        return CONTEXT_PROFILE_VERSION_LEGACY
+    return CONTEXT_PROFILE_VERSION_LEGACY
+
+
+def _display_context_profile_version(context_profile_version: str) -> str:
+    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT:
+        return CONTEXT_PROFILE_VERSION_CURRENT
+    if context_profile_version == CONTEXT_PROFILE_VERSION_LEGACY:
+        return CONTEXT_LAYOUT_LEGACY_V1
+    return "unknown"
+
+
+def _reported_context_profile_version(
+    context_layout: str,
+    manifest_context_profile_version: str | None = None,
+) -> str:
+    if manifest_context_profile_version is not None:
+        return _display_context_profile_version(manifest_context_profile_version)
+    if context_layout == CONTEXT_LAYOUT_V2:
+        return CONTEXT_PROFILE_VERSION_CURRENT
+    if context_layout in {CONTEXT_LAYOUT_LEGACY_V1, CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN}:
+        return CONTEXT_LAYOUT_LEGACY_V1
+    return "unknown"
+
+
+def _migration_note(context_layout: str) -> str:
+    if context_layout == CONTEXT_LAYOUT_LEGACY_V1:
+        return "not applied automatically; v2 context profiles are available"
+    if context_layout == CONTEXT_LAYOUT_V2:
+        return "not applied automatically"
+    if context_layout == CONTEXT_LAYOUT_MIXED:
+        return "not applied automatically; no cleanup performed for mixed layouts"
+    return "not applied automatically; context layout could not be safely classified"
+
+
+def _user_owned_context_note(context_layout: str) -> str:
+    if context_layout == CONTEXT_LAYOUT_V2:
+        return "preserved; numbered v2 context files remain user-owned"
+    if context_layout == CONTEXT_LAYOUT_LEGACY_V1:
+        return "preserved; legacy-v1 context remains user-owned"
+    if context_layout == CONTEXT_LAYOUT_MIXED:
+        return "preserved; legacy and v2 context both remain user-owned"
+    return "preserved"
+
+
 def _detect_tools(target_root: Path) -> tuple[str, ...]:
     selected: list[str] = []
     if (target_root / "AGENTS.md").exists():
@@ -1211,13 +1364,22 @@ def _print_report(
     selected_tools: tuple[str, ...],
     mode: str,
     detected_tools: tuple[str, ...] | None = None,
+    context_profile_version: str | None = None,
+    context_layout: str | None = None,
 ) -> None:
+    profile_label = _msg(locale, "detected_profile") if title == _msg(locale, "update_title") else _msg(locale, "profile")
     context = [
         (_msg(locale, "target"), str(target_root)),
-        (_msg(locale, "profile"), profile),
+        (profile_label, profile),
         (_msg(locale, "selected_tools"), ", ".join(selected_tools)),
         (_msg(locale, "mode"), _msg(locale, f"{mode}_mode")),
     ]
+    if context_profile_version is not None:
+        context.append((_msg(locale, "context_profile_version"), context_profile_version))
+    if context_layout is not None:
+        context.append((_msg(locale, "context_layout"), context_layout))
+        context.append((_msg(locale, "context_migration"), _migration_note(context_layout)))
+        context.append((_msg(locale, "user_owned_context"), _user_owned_context_note(context_layout)))
     if detected_tools is not None:
         context.append((_msg(locale, "detected_tools"), ", ".join(detected_tools)))
     report.print(locale=locale, title=title, context=context)

@@ -12,6 +12,56 @@
 > **v1.2 -> v1.3 changes:** Added machine-resolvable Markdown mode schema, numeric-only `token_budget`, and confidence calibration for AI-inferred brownfield context. No new zones, runtime folders, automation, or tooling.
 > **v1.3 -> v1.4 changes:** Aligns initialization handoff with thin adapters: Claude and universal agent adapters are copied as invocation surfaces only, while `.forge/context` remains the cognition source of truth. No lifecycle, orchestration, memory, runtime executor, deploy, or CI/CD behavior added.
 
+Implementation note for the current CLI: fresh `forge init` now seeds profile-aware v2 numbered context files for service/workspace repos. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid compatibility layouts and are preserved during `forge update`; no automatic migration is applied.
+
+## Current CLI Fresh Init Output
+
+Fresh service init now generates this v2 service context layout by default:
+
+```text
+.forge/context/
+├── 00-index.md
+├── 01-service-overview.md
+├── 02-service-architecture.md
+├── 03-domain-boundary.md
+├── 04-api-contracts.md
+├── 05-data-model-and-database.md
+├── 06-business-rules.md
+├── 07-integration-dependencies.md
+├── 08-error-handling.md
+├── 09-observability.md
+├── 10-testing-strategy.md
+├── 11-runtime-and-deployment.md
+└── 99-open-questions.md
+```
+
+Fresh workspace init now generates this v2 workspace context layout by default:
+
+```text
+.forge/context/
+├── 00-workspace-index.md
+├── 01-platform-overview.md
+├── 02-system-map.md
+├── 03-service-catalog.md
+├── 04-domain-boundaries.md
+├── 05-cross-service-flows.md
+├── 06-api-and-event-contracts.md
+├── 07-data-ownership.md
+├── 08-security-and-access.md
+├── 09-observability-and-operations.md
+├── 10-deployment-topology.md
+├── 11-release-and-feature-flags.md
+└── 99-open-questions.md
+```
+
+Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` structures should be treated only as:
+- legacy-v1 compatibility layout
+- preserved user-owned context
+- curated extension paths when humans intentionally maintain them
+- future migration candidates for an opt-in migration command
+
+The detailed phase flow below remains useful for manual curation and legacy-v1 compatibility work, but it is no longer the fresh-default CLI-generated layout contract.
+
 ---
 
 ## 0. Purpose
@@ -45,6 +95,8 @@ Before running init:
 ---
 
 ## 2. Initialization Phases
+
+For fresh CLI-generated v2 installs, these phases describe post-init curation and verification work rather than the exact default file skeleton written by `forge init`. Explicit `01-core/`, `knowledge/`, and `systems/` references below should be read as legacy-v1/manual-curation compatibility guidance unless a repository intentionally uses that layout.
 
 ```
 Phase 0:    Setup & Configuration
@@ -127,7 +179,7 @@ Each discovered artifact gets one classification:
 
 ### Output
 
-A discovery summary added to `knowledge/inferred.md` listing each legacy artifact and its classification. Used as input for Phases 1–3.
+A discovery summary added to the active context layout, typically `99-open-questions.md` or another reviewable v2 profile file for fresh installs, and `knowledge/inferred.md` for legacy-v1 compatibility flows. Used as input for downstream curation.
 
 ### Exit Criteria
 
@@ -143,7 +195,7 @@ A discovery summary added to `knowledge/inferred.md` listing each legacy artifac
 
 ### Goal
 
-Populate `01-core/{product, architecture, principles, constraints}.md` with real content.
+Populate the active global context summary files with real content. For fresh CLI-generated v2 repos, this means the numbered service/workspace profile files. For legacy-v1 compatibility flows, this means `01-core/{product, architecture, principles, constraints}.md`.
 
 ### Brownfield Flow
 
@@ -196,7 +248,7 @@ Rules:
 - `exclude` = context components never loaded by default.
 - `token_budget` = target scoped context budget for this mode; value MUST be a decimal integer only and is not a blind hard cap.
 - `notes` = concise human/AI guidance only.
-- Modes MUST NOT re-list `00-meta/*` and `01-core/*` unless explicitly needed.
+- Modes MUST NOT re-list `00-meta/*` and active global profile files unless explicitly needed.
 - Modes MUST NOT contain domain knowledge, large workflow playbooks, repository-specific implementation instructions, or duplicate `conventions.md`.
 - Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `ai-readiness`, and `verify-context`.
 - Ask owns lightweight repo understanding; plan must stay strategic; implementation must produce a human-reviewable ECP; execute owns approved repository modification behavior; review owns correctness/risk and validation-gap assessment; ai-readiness owns repository AI-readiness audit behavior; verify-context owns context health. Incident, refactor, and test-focused work are workflow scenarios, not core lifecycle modes.
@@ -281,7 +333,7 @@ When documenting field constraints, attribute each to the layer that enforces it
 | Handler / API | `internal/handler/*` validators, OpenAPI/proto annotations |
 | Database | `migrations/*` `NOT NULL`, `CHECK`, `UNIQUE`, FK |
 | Repository | `internal/repository/*` defaults, fallbacks (`IsZero() → now`) |
-| Business intent | ADRs, `01-core/product.md` |
+| Business intent | ADRs, active top-level overview file such as `01-service-overview.md`, `01-platform-overview.md`, or legacy `01-core/product.md` |
 
 A field can be DB-constrained but not service-required. Document both facts; do not collapse them.
 
@@ -291,10 +343,10 @@ While reading code, harvest implicit rules and route them:
 
 | Source pattern | Destination |
 |---|---|
-| Global hard rule (compliance, platform-wide) | `01-core/constraints.md` |
-| Single-unit rule | `systems/<unit>/system.md` |
-| Unclear meaning | `knowledge/unknowns.md` |
-| Weak inference | `knowledge/inferred.md` |
+| Global hard rule (compliance, platform-wide) | active global summary files such as `03-domain-boundary.md`, `06-business-rules.md`, `11-runtime-and-deployment.md`, or legacy `01-core/constraints.md` |
+| Single-unit rule | service-specific numbered profile files for fresh v2 repos, or `systems/<unit>/system.md` in legacy/manual flows |
+| Unclear meaning | `99-open-questions.md` for fresh v2 repos, or `knowledge/unknowns.md` in legacy-v1 flows |
+| Weak inference | active v2 profile files with `status: inferred`, or `knowledge/inferred.md` in legacy-v1 flows |
 | Secret or credential value | Do not store value; record redacted security finding only |
 
 ### Phantom ADR Guard *(v1.2)*
@@ -303,10 +355,10 @@ While reading code, harvest implicit rules and route them:
 
 ### Exit Criteria
 
-- `product.md` has at minimum: product summary, domain, users, scope boundaries.
-- `architecture.md` has at minimum: style, major components, key integrations.
-- `principles.md` and `constraints.md` populated or explicitly marked `status: unknown` with entries in `unknowns.md` explaining why.
-- All `01-core/` files have valid front-matter with correct `status`.
+- Active overview/context summary files capture at minimum: summary, boundaries, architecture shape, and unresolved gaps for the chosen layout.
+- Fresh v2 repos use the numbered service/workspace files; legacy-v1 repos may use `product.md`, `architecture.md`, `principles.md`, and `constraints.md`.
+- Missing details are routed to `99-open-questions.md` for fresh v2 repos, or `knowledge/unknowns.md` in legacy-v1 flows.
+- Active global context files have valid front-matter with correct `status`.
 - Evidence consistency sweep complete; mismatches corrected or logged.
 - Implicit constraints harvested and routed.
 - **Validation layer attribution present** for every constraint entry (which layer enforces it).
@@ -508,7 +560,7 @@ git commit -m "forge: context initialization complete"
 
 - All validation checks pass.
 - Clean git status (no untracked context files).
-- System ready for normal operation (AI can bootstrap using `CLAUDE.md` or `AGENTS.md` -> `.forge/adapter.md` -> `forge.config.yaml` -> `00-meta` -> `01-core` -> mode).
+- System ready for normal operation (AI can bootstrap using `CLAUDE.md` or `AGENTS.md` -> `.forge/adapter.md` -> `forge.config.yaml` -> `00-meta` -> active v2 profile files or legacy `01-core` -> mode).
 
 ---
 

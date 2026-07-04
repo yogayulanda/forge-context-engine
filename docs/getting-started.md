@@ -44,8 +44,11 @@ Current behavior:
 - `forge --version` works
 - `forge init` writes the service profile in the current directory by default
 - `forge init --workspace` writes the workspace profile in the current directory by default
+- fresh service init seeds v2 numbered service context files under `.forge/context/`
+- fresh workspace init seeds v2 numbered workspace context files under `.forge/context/`
 - `forge update` updates managed runtime files, supports `--tools`, supports dry-run preview, and supports manifest-less adoption preview
 - workspace profile is represented in `.forge/forge-install.yaml` as `profile: "workspace"`
+- new installs write `context_profile_version: "2"`; older manifests without that field are treated as legacy-v1
 - use `--yes` only for non-interactive automation or scripted adoption
 
 Local CLI smoke examples:
@@ -161,6 +164,8 @@ Existing or legacy repo adoption guidance:
 - if Forge files already exist without `.forge/forge-install.yaml`, `forge update` is the adoption path
 - adoption preserves user-owned context and local-only directories
 - adoption may stop on locally modified managed files so you can review them instead of losing changes
+- `forge update --dry-run` reports detected profile, detected context layout (`legacy-v1`, `v2`, `mixed`, or `empty-or-unknown`), and that migration is not applied automatically
+- mixed legacy/v2 context layouts are preserved as-is; Forge does not auto-clean them up
 
 ## CLAUDE.md And AGENTS.md Usage
 

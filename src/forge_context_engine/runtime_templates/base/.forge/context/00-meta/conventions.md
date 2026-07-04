@@ -14,7 +14,7 @@ updated: 2026-06-05
 
 # Context System Conventions
 
-Rules for **managing the context system itself**. Not product engineering principles (→ `01-core/principles.md`).
+Rules for **managing the context system itself**. Not product engineering principles (→ the active generated service/workspace profile files or legacy `01-core/*` when present).
 
 ## File Meta
 
@@ -77,7 +77,7 @@ review_by: YYYY-MM-DD  # optional
 
 ## Core Loading Baseline
 
-Start from `.forge/adapter.md`, then the requested mode or relevant compatibility/scenario guidance. Load only the relevant `00-meta/*` and `01-core/*` entries needed to execute that request safely. Modes **never** re-list core — delta only.
+Start from `.forge/adapter.md`, then the requested mode or relevant compatibility/scenario guidance. Load only the relevant `00-meta/*` and generated profile files needed to execute that request safely. Legacy repos may still use `01-core/*`. Modes **never** re-list core — delta only.
 
 ## Workspace vs Service Boundary
 
@@ -120,7 +120,7 @@ Every `modes/*.md` file MUST expose exactly these Markdown sections after the ti
 
 `token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid. Treat the number as an operating range for scoped loading, not a blind cap.
 
-Mode files are machine-resolvable context loading deltas and the authority for mode-specific execution behavior. They MUST NOT re-list `00-meta/*` or `01-core/*` unless explicitly needed, contain domain knowledge, or duplicate `conventions.md`.
+Mode files are machine-resolvable context loading deltas and the authority for mode-specific execution behavior. They MUST NOT re-list `00-meta/*` or active profile core files unless explicitly needed, contain domain knowledge, or duplicate `conventions.md`.
 
 ## Mode Invocation
 
@@ -150,6 +150,8 @@ Tool adapters such as `CLAUDE.md`, `AGENTS.md`, and `adapters/<tool>/` are invoc
 See `conventions-validation.md` for full validation status vocabulary, prerequisite checks, and section structure.
 
 Summary: Validation reporting must never imply success without evidence. Execute performs scoped validation for changed work; review checks validation evidence and gaps. Deeper test strategy is a validation activity rather than a core lifecycle mode.
+
+Fresh CLI init seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatibility layouts; preserve them during update unless an explicit future migration flow says otherwise.
 
 ## Artifact Lifecycle Semantics
 
@@ -303,9 +305,9 @@ Promotion to `confirmed` requires entry in `knowledge/confirmations.md`.
 
 - One fact, one home.
 - Shared context referenced via `id`, **never copied**.
-- `systems/*` does not copy `01-core/` or `layers/*` standards.
-- `modes/*` does not list `00-meta/*` or `01-core/*`.
-- Domain/scope facts live in `01-core/product.md`. `systems/<name>/system.md` references — does not re-list — them.
+- `systems/*` does not copy generated profile summaries, `01-core/`, or `layers/*` standards.
+- `modes/*` does not list `00-meta/*` or active profile core files.
+- Domain/scope facts live in the active service/workspace profile files, or `01-core/product.md` in legacy repos. Supporting files reference them rather than re-listing them.
 - When the same list appears in two files, the file closer to the canonical home keeps it; the other becomes a reference by `id`.
 
 ## Ownership Rule

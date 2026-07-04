@@ -1,0 +1,655 @@
+from __future__ import annotations
+
+import io
+import re
+import tempfile
+import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
+
+from forge_context_engine.install_manifest import (
+    CONTEXT_PROFILE_VERSION_CURRENT,
+    CONTEXT_PROFILE_VERSION_LEGACY,
+    load_manifest,
+    load_manifest_text,
+)
+from forge_context_engine.runtime_ops import run_init, run_update
+from forge_context_engine.runtime_ops import (
+    CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN,
+    CONTEXT_LAYOUT_LEGACY_V1,
+    CONTEXT_LAYOUT_MIXED,
+    CONTEXT_LAYOUT_V2,
+    SERVICE_V2_CONTEXT_FILES,
+    WORKSPACE_V2_CONTEXT_FILES,
+    _detect_context_layout,
+)
+
+
+class ContextProfileTests(unittest.TestCase):
+    def test_detect_legacy_v1_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".forge/context/01-core").mkdir(parents=True)
+            (target / ".forge/context/knowledge").mkdir(parents=True)
+
+            self.assertEqual(_detect_context_layout(target, "service"), CONTEXT_LAYOUT_LEGACY_V1)
+
+    def test_detect_v2_service_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nV2 layout.\n", encoding="utf-8")
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(_detect_context_layout(target, "service"), CONTEXT_LAYOUT_V2)
+
+    def test_detect_v2_workspace_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Workspace Repo\n\nV2 layout.\n", encoding="utf-8")
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="workspace",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(_detect_context_layout(target, "workspace"), CONTEXT_LAYOUT_V2)
+
+    def test_detect_mixed_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Mixed Repo\n\nMixed layout.\n", encoding="utf-8")
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            (target / ".forge/context/01-core").mkdir(parents=True, exist_ok=True)
+            self.assertEqual(_detect_context_layout(target, "service"), CONTEXT_LAYOUT_MIXED)
+
+    def test_detect_empty_or_unknown_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".forge/context").mkdir(parents=True)
+
+            self.assertEqual(_detect_context_layout(target, "service"), CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN)
+
+    def test_fresh_service_init_creates_v2_service_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Billing API\n\nService for invoice reads.\n", encoding="utf-8")
+            (target / "pyproject.toml").write_text(
+                '[project]\nname = "billing-api"\nrequires-python = ">=3.12"\n',
+                encoding="utf-8",
+            )
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+
+            expected_files = {
+                ".forge/context/00-index.md",
+                ".forge/context/01-service-overview.md",
+                ".forge/context/02-service-architecture.md",
+                ".forge/context/03-domain-boundary.md",
+                ".forge/context/04-api-contracts.md",
+                ".forge/context/05-data-model-and-database.md",
+                ".forge/context/06-business-rules.md",
+                ".forge/context/07-integration-dependencies.md",
+                ".forge/context/08-error-handling.md",
+                ".forge/context/09-observability.md",
+                ".forge/context/10-testing-strategy.md",
+                ".forge/context/11-runtime-and-deployment.md",
+                ".forge/context/99-open-questions.md",
+            }
+            for rel_path in expected_files:
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
+            legacy_seed_files = {
+                ".forge/context/01-core/product.md",
+                ".forge/context/01-core/architecture.md",
+                ".forge/context/01-core/principles.md",
+                ".forge/context/01-core/constraints.md",
+                ".forge/context/knowledge/inferred.md",
+                ".forge/context/knowledge/unknowns.md",
+                ".forge/context/repo-map/overview.md",
+                ".forge/context/systems/billing-api/system.md",
+            }
+            for rel_path in legacy_seed_files:
+                self.assertFalse((target / rel_path).exists(), rel_path)
+
+            manifest = load_manifest(target / ".forge" / "forge-install.yaml")
+            self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_CURRENT)
+
+    def test_fresh_workspace_init_creates_v2_workspace_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Platform Workspace\n\nLinks multiple services.\n", encoding="utf-8")
+            (target / "services" / "payments").mkdir(parents=True)
+            (target / "services" / "payments" / "README.md").write_text("payments\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="workspace",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+
+            expected_files = {
+                ".forge/context/00-workspace-index.md",
+                ".forge/context/01-platform-overview.md",
+                ".forge/context/02-system-map.md",
+                ".forge/context/03-service-catalog.md",
+                ".forge/context/04-domain-boundaries.md",
+                ".forge/context/05-cross-service-flows.md",
+                ".forge/context/06-api-and-event-contracts.md",
+                ".forge/context/07-data-ownership.md",
+                ".forge/context/08-security-and-access.md",
+                ".forge/context/09-observability-and-operations.md",
+                ".forge/context/10-deployment-topology.md",
+                ".forge/context/11-release-and-feature-flags.md",
+                ".forge/context/99-open-questions.md",
+                ".forge/workspace.yaml",
+            }
+            for rel_path in expected_files:
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
+            legacy_seed_files = {
+                ".forge/context/01-core/product.md",
+                ".forge/context/knowledge/inferred.md",
+                ".forge/context/repo-map/overview.md",
+                ".forge/context/systems/platform-workspace/system.md",
+            }
+            for rel_path in legacy_seed_files:
+                self.assertFalse((target / rel_path).exists(), rel_path)
+
+            manifest = load_manifest(target / ".forge" / "forge-install.yaml")
+            self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_CURRENT)
+
+    def test_update_preserves_user_owned_v2_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Example Service\n\nUser-owned context test.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+            self.assertEqual(status, 0)
+
+            overview = target / ".forge/context/01-service-overview.md"
+            original = overview.read_text(encoding="utf-8")
+            edited = original + "\nUser-owned note.\n"
+            overview.write_text(edited, encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            self.assertEqual(overview.read_text(encoding="utf-8"), edited)
+
+    def test_update_dry_run_reports_service_v2_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDry-run reporting.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected Forge profile: service", rendered)
+            self.assertNotIn("\nProfile: service\n", rendered)
+            self.assertIn("Detected context profile version: 2", rendered)
+            self.assertIn("Detected context layout: v2", rendered)
+            self.assertIn("Migration: not applied automatically", rendered)
+            self.assertIn("User-owned context: preserved; numbered v2 context files remain user-owned", rendered)
+
+    def test_update_dry_run_reports_workspace_v2_layout(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Workspace Repo\n\nDry-run reporting.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="workspace",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected Forge profile: workspace", rendered)
+            self.assertIn("Detected context profile version: 2", rendered)
+            self.assertIn("Detected context layout: v2", rendered)
+
+    def test_update_dry_run_reports_legacy_v1_without_migration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nDry-run reporting.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            manifest_path = target / ".forge/forge-install.yaml"
+            manifest_path.write_text(
+                manifest_path.read_text(encoding="utf-8").replace('context_profile_version: "2"\n', ""),
+                encoding="utf-8",
+            )
+            for rel_path in SERVICE_V2_CONTEXT_FILES:
+                path = target / rel_path
+                if path.exists():
+                    path.unlink()
+            (target / ".forge/context/01-core").mkdir(parents=True, exist_ok=True)
+            (target / ".forge/context/knowledge").mkdir(parents=True, exist_ok=True)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected context profile version: legacy-v1", rendered)
+            self.assertIn("Detected context layout: legacy-v1", rendered)
+            self.assertIn("Migration: not applied automatically; v2 context profiles are available", rendered)
+            self.assertIn("User-owned context: preserved; legacy-v1 context remains user-owned", rendered)
+
+    def test_update_dry_run_reports_mixed_layout_without_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Mixed Repo\n\nDry-run reporting.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            (target / ".forge/context/01-core").mkdir(parents=True, exist_ok=True)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected context layout: mixed", rendered)
+            self.assertIn("Migration: not applied automatically; no cleanup performed for mixed layouts", rendered)
+            self.assertIn("User-owned context: preserved; legacy and v2 context both remain user-owned", rendered)
+
+    def test_update_dry_run_writes_no_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDry-run no-write check.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            before = (target / ".forge/context/01-service-overview.md").read_text(encoding="utf-8")
+            with redirect_stdout(io.StringIO()):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            after = (target / ".forge/context/01-service-overview.md").read_text(encoding="utf-8")
+            self.assertEqual(before, after)
+
+    def test_manifestless_adoption_empty_or_unknown_reports_legacy_v1_consistently(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".forge/context").mkdir(parents=True)
+            (target / ".forge/context/modes").mkdir(parents=True)
+            (target / ".forge/context/modes/ask.md").write_text("# ask\n", encoding="utf-8")
+            (target / ".forge/adapter.md").write_text("adapter\n", encoding="utf-8")
+            (target / ".forge/forge.config.yaml").write_text("forge:\n  version: \"1\"\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertFalse((target / ".forge/forge-install.yaml").exists())
+            self.assertEqual(_detect_context_layout(target, "service"), CONTEXT_LAYOUT_EMPTY_OR_UNKNOWN)
+
+            rendered = output.getvalue()
+            self.assertIn("Detected Forge profile: service", rendered)
+            self.assertIn("Detected context profile version: legacy-v1", rendered)
+            self.assertIn("Detected context layout: empty-or-unknown", rendered)
+            self.assertIn("Migration: not applied automatically", rendered)
+            self.assertIn("User-owned context: preserved", rendered)
+            self.assertFalse((target / ".forge/context/00-index.md").exists())
+
+
+    def test_update_preserves_legacy_context_and_manifest_stays_legacy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nLegacy context preservation test.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+            self.assertEqual(status, 0)
+
+            manifest_path = target / ".forge/forge-install.yaml"
+            legacy_manifest = manifest_path.read_text(encoding="utf-8").replace(
+                'context_profile_version: "2"\n',
+                "",
+            )
+            manifest_path.write_text(legacy_manifest, encoding="utf-8")
+
+            for rel_path in (
+                ".forge/context/00-index.md",
+                ".forge/context/01-service-overview.md",
+                ".forge/context/99-open-questions.md",
+            ):
+                path = target / rel_path
+                if path.exists():
+                    path.unlink()
+
+            legacy_product = target / ".forge/context/01-core/product.md"
+            legacy_unknowns = target / ".forge/context/knowledge/unknowns.md"
+            legacy_product.parent.mkdir(parents=True, exist_ok=True)
+            legacy_unknowns.parent.mkdir(parents=True, exist_ok=True)
+            legacy_product.write_text("legacy product\n", encoding="utf-8")
+            legacy_unknowns.write_text("legacy unknowns\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            self.assertTrue(legacy_product.exists())
+            self.assertTrue(legacy_unknowns.exists())
+            self.assertFalse((target / ".forge/context/00-index.md").exists())
+
+            manifest = load_manifest(manifest_path)
+            self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_LEGACY)
+
+    def test_update_preserves_mixed_layout_without_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Mixed Repo\n\nMixed preservation.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            legacy_product = target / ".forge/context/01-core/product.md"
+            legacy_product.parent.mkdir(parents=True, exist_ok=True)
+            legacy_product.write_text("legacy product\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertTrue(legacy_product.exists())
+            self.assertTrue((target / ".forge/context/00-index.md").exists())
+
+    def test_update_reports_mixed_layout_without_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Mixed Repo\n\nMixed reporting.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            (target / ".forge/context/01-core").mkdir(parents=True, exist_ok=True)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected context layout: mixed", rendered)
+            self.assertIn("no cleanup performed for mixed layouts", rendered)
+
+    def test_manifestless_damaged_workspace_layout_stays_unclassified(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Workspace Repo\n\nDamaged workspace install.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="workspace",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            (target / ".forge/forge-install.yaml").unlink()
+            (target / ".forge/workspace.yaml").unlink()
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Detected context layout: empty-or-unknown", rendered)
+            self.assertIn("context layout could not be safely classified", rendered)
+            self.assertFalse((target / ".forge/forge-install.yaml").exists())
+            for rel_path in WORKSPACE_V2_CONTEXT_FILES:
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
+    def test_missing_evidence_routes_to_open_questions_without_fake_api_or_db_claims(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Sparse Repo\n\nMinimal repo for evidence checks.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+            self.assertEqual(status, 0)
+
+            api_contracts = (target / ".forge/context/04-api-contracts.md").read_text(encoding="utf-8")
+            data_model = (target / ".forge/context/05-data-model-and-database.md").read_text(encoding="utf-8")
+            integrations = (target / ".forge/context/07-integration-dependencies.md").read_text(encoding="utf-8")
+            open_questions = (target / ".forge/context/99-open-questions.md").read_text(encoding="utf-8")
+
+            self.assertIn("No direct evidence found in bounded init scan.", api_contracts)
+            self.assertIn("No direct evidence found in bounded init scan.", data_model)
+            self.assertIn("No direct evidence found in bounded init scan.", integrations)
+            self.assertIn("Service API contracts were not directly evidenced", open_questions)
+            self.assertIn("Data model and database details were not directly evidenced", open_questions)
+            self.assertIn("Integration dependencies were not directly evidenced", open_questions)
+            self.assertNotIn("openapi", api_contracts.lower())
+            self.assertNotIn("schema.prisma", data_model.lower())
+
+    def test_legacy_manifest_without_context_profile_version_loads_safely(self) -> None:
+        manifest = load_manifest_text(
+            "\n".join(
+                [
+                    'manifest_version: "1"',
+                    'forge_version: "1.0.0rc1"',
+                    'profile: "service"',
+                    "selected_tools:",
+                    "  - codex",
+                    'installed_from: "git+https://example.com/forge.git"',
+                    'installed_at: "2026-01-01T00:00:00Z"',
+                    'template_revision: "1.0.0rc1"',
+                    'source_revision: "1.0.0rc1"',
+                    "managed_paths:",
+                    "  - .forge/adapter.md",
+                    "user_owned_paths:",
+                    "  - .forge/context/01-core/",
+                    "local_only_paths:",
+                    "  - .forge/temp/",
+                    "managed_file_hashes:",
+                    "  .forge/adapter.md: abc123",
+                ]
+            )
+            + "\n"
+        )
+
+        self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_LEGACY)
+        self.assertEqual(manifest.profile, "service")
+
+    def test_repo_contains_no_wrong_runtime_ops_path_typo(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        wrong_path = "/".join(("src", "forge_context-engine", "runtime_ops.py"))
+        for path in repo_root.rglob("*"):
+            if not path.is_file() or ".git" in path.parts or "__pycache__" in path.parts or path == Path(__file__):
+                continue
+            try:
+                content = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            self.assertNotIn(wrong_path, content, f"found wrong path reference in {path}")
+
+    def test_docs_do_not_present_legacy_layout_as_fresh_default(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        doc_paths = [
+            repo_root / "README.md",
+            repo_root / "docs/getting-started.md",
+            repo_root / "docs/workflow.md",
+            repo_root / "specs/runtime-install-update.md",
+            repo_root / "specs/context-initialization.md",
+            repo_root / "specs/context-validation.md",
+            repo_root / "specs/platform-context.md",
+        ]
+        forbidden = re.compile(r"fresh[^\n]{0,40}default[^\n]{0,30}layout[^\n]{0,80}01-core/", re.IGNORECASE)
+        for path in doc_paths:
+            content = path.read_text(encoding="utf-8")
+            self.assertFalse(forbidden.search(content), f"legacy fresh-default wording found in {path}")
+
+        self.assertIn("v2 service profile with numbered files", (repo_root / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("v2 numbered service context files", (repo_root / "docs/getting-started.md").read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()

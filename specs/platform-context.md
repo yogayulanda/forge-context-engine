@@ -40,7 +40,7 @@ Platform context does NOT:
 - Replace local `.forge/context/`.
 - Merge unrelated repositories into one cognitive space.
 - Store local repo implementation details.
-- Duplicate `01-core/`, `layers/`, `systems/`, or knowledge ledgers from member repos.
+- Duplicate fresh v2 numbered profile files, legacy `01-core/`, `layers/`, `systems/`, or knowledge ledgers from member repos.
 - Override local repo code or local Forge context.
 - Define runtime folder structure for v0.1.
 - Define CLI, CI, automation, sync, enforcement, or validation tooling.

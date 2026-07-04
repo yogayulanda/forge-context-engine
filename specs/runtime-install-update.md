@@ -70,6 +70,8 @@ Implemented behavior:
 - `forge --version` is implemented.
 - `forge init` writes the service profile.
 - `forge init --workspace` writes the workspace profile.
+- fresh service init seeds the v2 numbered service context profile.
+- fresh workspace init seeds the v2 numbered workspace context profile.
 - `forge update` updates managed files, supports `--tools`, and supports manifest-less adoption preview.
 
 Recommended CLI validation examples:
@@ -117,6 +119,21 @@ Service profile expectations:
 - service context owns repo-specific facts and implementation detail
 - service context is the default source for repo-scoped tasks and code execution
 - service context does not become a workspace-wide coordination file
+
+Fresh service init seeds these user-owned v2 files under `.forge/context/`:
+- `00-index.md`
+- `01-service-overview.md`
+- `02-service-architecture.md`
+- `03-domain-boundary.md`
+- `04-api-contracts.md`
+- `05-data-model-and-database.md`
+- `06-business-rules.md`
+- `07-integration-dependencies.md`
+- `08-error-handling.md`
+- `09-observability.md`
+- `10-testing-strategy.md`
+- `11-runtime-and-deployment.md`
+- `99-open-questions.md`
 
 Tool defaults:
 - default selected tools: `codex`, `claude`
@@ -174,6 +191,21 @@ Rules:
 - Forge does not choose workspace location automatically
 - workspace repositories do not imply global state or background coordination
 
+Fresh workspace init seeds these user-owned v2 files under `.forge/context/`:
+- `00-workspace-index.md`
+- `01-platform-overview.md`
+- `02-system-map.md`
+- `03-service-catalog.md`
+- `04-domain-boundaries.md`
+- `05-cross-service-flows.md`
+- `06-api-and-event-contracts.md`
+- `07-data-ownership.md`
+- `08-security-and-access.md`
+- `09-observability-and-operations.md`
+- `10-deployment-topology.md`
+- `11-release-and-feature-flags.md`
+- `99-open-questions.md`
+
 ---
 
 ## 4. Install Manifest Schema
@@ -188,6 +220,7 @@ Minimum schema:
 
 ```yaml
 manifest_version: "1"
+context_profile_version: "2"
 forge_version: "1.0.0rc1"
 profile: service
 selected_tools:
@@ -206,6 +239,11 @@ managed_paths:
   - .forge/context/00-meta/
   - .forge/context/modes/
 user_owned_paths:
+  - .forge/context/00-index.md
+  - .forge/context/01-service-overview.md
+  - .forge/context/00-workspace-index.md
+  - .forge/context/01-platform-overview.md
+  - .forge/context/99-open-questions.md
   - .forge/context/01-core/
   - .forge/context/layers/
   - .forge/context/repo-map/
@@ -227,6 +265,7 @@ managed_file_hashes:
 
 The manifest exists to:
 - detect installed profile and selected tools
+- detect context profile version for compatibility
 - define managed vs user-owned vs local-only boundaries
 - support safe updates
 - support adoption-preview for older manifest-less installs
@@ -253,6 +292,7 @@ Managed paths may be updated by `forge update` when safe:
 ### 5.2 User-Owned Paths
 
 User-owned paths must be preserved:
+- v2 numbered service/workspace context files under `.forge/context/`
 - `.forge/context/repo-map/`
 - `.forge/context/systems/`
 - `.forge/context/knowledge/`
@@ -330,6 +370,7 @@ Detailed adapter docs remain in the Forge engine repository/package and are not 
 
 When `.forge/forge-install.yaml` exists:
 - detect profile
+- detect context profile version and context layout
 - detect selected tools
 - detect managed paths
 - update only managed runtime/template files
@@ -368,6 +409,11 @@ Conflict behavior:
 Dry-run behavior:
 - show target root
 - show selected profile
+- show detected Forge profile
+- show detected context profile version; manifest-less `empty-or-unknown` adoption reports legacy-v1 compatibility because no v2 migration is implied
+- show detected context layout: `legacy-v1`, `v2`, `mixed`, or `empty-or-unknown`
+- show that migration or cleanup is not applied automatically
+- show that user-owned context is preserved
 - show selected tools
 - show planned creates, updates, skips, adoptions, and conflicts
 - do not write files

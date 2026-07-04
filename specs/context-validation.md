@@ -19,6 +19,14 @@
 > **v3.2 -> v3.3 historical note:** Earlier artifact validation used Execution Contract and Testing Result names. In the current lifecycle, implementation produces ECP and validation is inside execute/review workflows. No orchestration, agents, workflow engines, DAG systems, CI/CD, deploy workflow, runtime executors, persistent AI memory, or knowledge graphs.
 > **v3.3 -> v3.4 changes:** Adds bounded runtime profile, decision authority, decision risk, `NEEDS_HUMAN_APPROVAL`, and automation-safe decision trace validation. No agents, orchestration, workflow engines, DAG systems, schedulers, triggers, CI/CD behavior, deploy workflow, runtime executors, or autonomous loops.
 > **v3.4 -> v3.5 changes:** Adds future-safe intelligence and governance validation for scoped loading, `CONTEXT_BUDGET_LIMITED`, drift, cross-repo awareness, incident/refactor cause/risk semantics, and fintech-grade governance signals. No tooling, RAG, vector DB, knowledge graph, orchestration, agents, deploy workflow, CI/CD behavior, runtime executors, or autonomous loops.
+
+Compatibility note: fresh CLI init now seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid for compatibility and should be interpreted according to repository context profile/version.
+
+Active layout note:
+- v2 service layout validates numbered service files as the primary fresh-default structure.
+- v2 workspace layout validates numbered workspace files as the primary fresh-default structure.
+- legacy-v1 layout validates `01-core/`, `knowledge/`, `repo-map/`, and `systems/` when those paths are the active context layout.
+- mixed layout preserves both legacy and v2 paths; validation should report layout ambiguity or compatibility notes rather than failing solely because both structures coexist.
 > **v3.5 -> v3.6 changes:** Adds thin-adapter validation rules so root adapters reference Forge core instead of duplicating cognition, lifecycle, validation, drift, artifact, governance, or secret semantics. No orchestration, memory, agent, runtime executor, deploy, CI/CD, or workflow behavior added.
 > **v3.6 -> v3.7 changes:** Adds execute hardening validation for minimal diffs, finalization checks, contract-source checks, review-loop closure, and concise recommended next action. No lifecycle redesign, modes, orchestration, memory, agents, runtime executors, deploy, CI/CD, or autonomous chaining added.
 > **v3.7 -> v3.8 changes:** Clarifies curated context quality rules so `.forge/context` stays durable, evidence-backed, compact, and distinct from generated artifacts and reviewed context-patch proposals. No lifecycle redesign, new CLI commands, runtime agent behavior, or structured v0.8B context-impact workflow added.
@@ -63,10 +71,10 @@ Use this as:
 | A2 | `.forge/context/` directory exists | error | yes |
 | A3 | `00-meta/context-manifest.md` exists | error | yes |
 | A4 | `00-meta/conventions.md` exists | error | yes |
-| A5 | `01-core/product.md` exists | error | yes |
-| A6 | `01-core/architecture.md` exists | error | yes |
+| A5 | Active v2 service/workspace numbered profile files or legacy `01-core/product.md` exist for the repository's active context layout | error | yes |
+| A6 | Active v2 service/workspace architecture summary file or legacy `01-core/architecture.md` exist for the repository's active context layout | error | yes |
 | A7 | Every folder in `layers_enabled` (from config) has a corresponding `layers/<name>/` directory | error | yes |
-| A8 | Every entry in `systems[]` (from config) has a corresponding `systems/<name>/` directory with `system.md` | error | yes |
+| A8 | `systems[]` and `systems/<name>/system.md` are required only for legacy-v1 or explicitly curated extension layouts; fresh v2 init does not require them by default | error | partial |
 | A9 | `CLAUDE.md` (or equivalent adapter) exists at repo root | warning | yes |
 | A10 | `temp/` directory is gitignored | error | yes |
 
@@ -112,21 +120,21 @@ Use this as:
 | ID | Rule | Severity | Automatable |
 |---|---|---|---|
 | E1 | Files with `source: human` contain no AI-generated content markers | warning | partial (heuristic) |
-| E2 | `knowledge/inferred.md` entries have `source: ai` or `source: hybrid` | error | yes |
-| E3 | `knowledge/confirmations.md` is only written by humans (no `source: ai` entries) | error | yes |
+| E2 | When legacy knowledge ledgers are present, `knowledge/inferred.md` entries have `source: ai` or `source: hybrid` | error | yes |
+| E3 | When legacy knowledge ledgers are present, `knowledge/confirmations.md` is only written by humans (no `source: ai` entries) | error | yes |
 | E4 | `generated/*` files all have `source: ai` | error | yes |
 
 ### Category F — Anti-Duplication & Zone Boundaries
 
 | ID | Rule | Severity | Automatable |
 |---|---|---|---|
-| F1 | Files in `modes/*` do NOT reference `00-meta/*` or `01-core/*` in their `include` section | error | yes |
-| F2 | Files in `systems/*` do not duplicate verbatim content from `01-core/` | error | partial (similarity check) |
-| F3 | Files in `systems/*` do not duplicate verbatim content from `layers/*` | error | partial (similarity check) |
+| F1 | Files in `modes/*` do NOT reference `00-meta/*`, active v2 core profile files, or legacy `01-core/*` in their `include` section unless explicitly required | error | yes |
+| F2 | When `systems/*` exists, it does not duplicate verbatim content from active global context summaries such as v2 profile files or legacy `01-core/` | error | partial (similarity check) |
+| F3 | When `systems/*` exists, it does not duplicate verbatim content from `layers/*` | error | partial (similarity check) |
 | F4 | No file in `layers/*` contains unit-specific facts (should be in `systems/`) | warning | manual |
-| F5 | No file in `01-core/` contains layer-specific details (should be in `layers/`) | warning | manual |
+| F5 | No active global context summary file, including legacy `01-core/`, contains layer-specific details that should live in `layers/` | warning | manual |
 | F6 | Inter-system dependencies expressed as `id` references, not content copies | warning | partial |
-| F7 | Producer / source-system / domain enumerations defined once in `01-core/product.md`; other files reference rather than re-list *(v1.1)* | warning | partial |
+| F7 | Producer / source-system / domain enumerations are defined once in the active top-level overview file (for example `01-service-overview.md`, `01-platform-overview.md`, or legacy `01-core/product.md`); other files reference rather than re-list *(v1.1)* | warning | partial |
 | F8 | Every `modes/*.md` file exposes Markdown sections `## include`, `## on_demand`, `## exclude`, `## token_budget`, and `## notes` | error | yes |
 | F9 | `modes/*.md` files remain context loading deltas with concise operational notes, not domain knowledge or prose-only narratives | warning | partial |
 | F10 | `modes/*.md` `## token_budget` contains only a decimal integer; labels such as `medium` or `medium-high` are invalid | error | yes |
@@ -323,7 +331,7 @@ Use this as:
 | J6 | Worker/job names cited match actual worker entrypoints | error | yes |
 | J7 | External integrations cited match actual client libraries / config | error | yes |
 | J8 | Validation rules listed in `constraints.md` match actual validators / sentinel checks in code | warning | partial |
-| J9 | Implicit constraints found in code (enums, validators, required fields, ID semantics, currency rules) are reflected in `constraints.md` or `systems/<name>/system.md` | warning | partial |
+| J9 | Implicit constraints found in code (enums, validators, required fields, ID semantics, currency rules) are reflected in the active context summary files such as `11-runtime-and-deployment.md`, `06-business-rules.md`, `03-domain-boundary.md`, or legacy `constraints.md` / `systems/<name>/system.md` | warning | partial |
 | J10 | **Required-field claims match service-layer empty-checks** — no field listed as service-required unless a corresponding empty-check exists in code *(v1.2)* | error | partial |
 | J11 | **DB constraints documented separately from service validation** — fields with `CHECK`/`NOT NULL` but no service empty-check are documented as DB-constrained, NOT service-required *(v1.2)* | error | partial |
 | J12 | **Repository fallback behavior documented** — fields where repository sets a default (e.g. `IsZero() → now`) are documented as repository-fallback, not service-required *(v1.2)* | warning | partial |
@@ -341,7 +349,7 @@ Use this as:
 | K4 | Layer activation matches actual repo evidence (no `infrastructure` activation without IaC/deploy evidence) | warning | partial |
 | K5 | No internal table cell contains the deprecated value `TBD` (use `unresolved` for owner, valid status/priority elsewhere) | warning | yes |
 | K6 | Glossary signal compaction: if all rows share `status`/`source`, header-note format is used | info | yes |
-| K7 | Producer/source-system list is canonical in `01-core/product.md`; other files reference, do not duplicate | warning | partial |
+| K7 | Producer/source-system list is canonical in the active top-level overview file (v2 service/workspace overview or legacy `01-core/product.md`); other files reference, do not duplicate | warning | partial |
 | K8 | `inferred.md` evidence quality: every entry's evidence resolves to a real path/doc | error | yes |
 
 ### Category L — Language & Reference Stability *(v1.2)*
@@ -363,7 +371,7 @@ Use this as:
 |---|---|---|---|
 | M1 | Generated context, reports, plans, reviews, tests, migrations, validation-cases, and platform context contain no raw secrets | critical | partial |
 | M2 | Secret findings report only secret type, file path, line/reference when available, and safe masked preview | critical | manual |
-| M3 | Raw secrets are not copied into `knowledge/inferred.md`, `knowledge/unknowns.md`, `knowledge/confirmations.md`, decisions, modes, or generated context | critical | partial |
+| M3 | Raw secrets are not copied into v2 numbered context files, `99-open-questions.md`, legacy knowledge ledgers, decisions, modes, or generated context | critical | partial |
 | M4 | Discovered secrets are classified as security findings | error | manual |
 | M5 | Rotation is recommended when a secret may have been committed, logged, displayed, copied, or otherwise exposed | warning | manual |
 | M6 | Database URLs with credentials, Kafka/SASL credentials, cloud credentials, OAuth client secrets, JWTs, cookies, private keys, tokens, and passwords are redacted before output | critical | partial |

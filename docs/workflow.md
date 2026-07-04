@@ -8,6 +8,8 @@ For repository setup and adoption:
 - workspace repo: `forge init --workspace`
 - preview before managed refresh: `forge update --dry-run`
 
+Fresh CLI init now seeds the v2 numbered context profiles by default. Legacy-v1 context layouts remain compatible and are preserved during `forge update`; mixed layouts are reported but not cleaned up automatically.
+
 ---
 
 ## The Workflow

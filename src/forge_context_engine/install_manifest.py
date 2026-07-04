@@ -11,6 +11,8 @@ from typing import Any
 from .version import __version__
 
 MANIFEST_VERSION = "1"
+CONTEXT_PROFILE_VERSION_LEGACY = "1"
+CONTEXT_PROFILE_VERSION_CURRENT = "2"
 PROFILE_SERVICE = "service"
 PROFILE_WORKSPACE = "workspace"
 INSTALLED_FROM = "git+https://github.com/yogayulanda/forge-context-engine.git"
@@ -36,6 +38,31 @@ MANAGED_PATHS_BASELINE = (
 USER_OWNED_PATHS_BASELINE = (
     ".forge/context/00-meta/context-manifest.md",
     ".forge/context/00-meta/glossary.md",
+    ".forge/context/00-index.md",
+    ".forge/context/01-service-overview.md",
+    ".forge/context/02-service-architecture.md",
+    ".forge/context/03-domain-boundary.md",
+    ".forge/context/04-api-contracts.md",
+    ".forge/context/05-data-model-and-database.md",
+    ".forge/context/06-business-rules.md",
+    ".forge/context/07-integration-dependencies.md",
+    ".forge/context/08-error-handling.md",
+    ".forge/context/09-observability.md",
+    ".forge/context/10-testing-strategy.md",
+    ".forge/context/11-runtime-and-deployment.md",
+    ".forge/context/00-workspace-index.md",
+    ".forge/context/01-platform-overview.md",
+    ".forge/context/02-system-map.md",
+    ".forge/context/03-service-catalog.md",
+    ".forge/context/04-domain-boundaries.md",
+    ".forge/context/05-cross-service-flows.md",
+    ".forge/context/06-api-and-event-contracts.md",
+    ".forge/context/07-data-ownership.md",
+    ".forge/context/08-security-and-access.md",
+    ".forge/context/09-observability-and-operations.md",
+    ".forge/context/10-deployment-topology.md",
+    ".forge/context/11-release-and-feature-flags.md",
+    ".forge/context/99-open-questions.md",
     ".forge/context/01-core/",
     ".forge/context/layers/",
     ".forge/context/repo-map/",
@@ -58,6 +85,7 @@ class ForgeInstallManifest:
     """Schema model for `.forge/forge-install.yaml`."""
 
     manifest_version: str = MANIFEST_VERSION
+    context_profile_version: str = CONTEXT_PROFILE_VERSION_LEGACY
     forge_version: str = __version__
     profile: str = PROFILE_SERVICE
     selected_tools: tuple[str, ...] = field(default_factory=lambda: DEFAULT_SELECTED_TOOLS)
@@ -168,6 +196,7 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
 def build_manifest(
     *,
     profile: str,
+    context_profile_version: str,
     selected_tools: tuple[str, ...],
     managed_file_hashes: dict[str, str],
     installed_at: str | None = None,
@@ -175,6 +204,7 @@ def build_manifest(
     """Create a manifest with current defaults."""
 
     return ForgeInstallManifest(
+        context_profile_version=context_profile_version,
         profile=profile,
         selected_tools=selected_tools,
         installed_at=installed_at or utc_now_iso(),
@@ -194,6 +224,7 @@ def manifest_to_document(manifest: ForgeInstallManifest) -> dict[str, Any]:
 
     return {
         "manifest_version": manifest.manifest_version,
+        "context_profile_version": manifest.context_profile_version,
         "forge_version": manifest.forge_version,
         "profile": manifest.profile,
         "selected_tools": list(manifest.selected_tools),
@@ -215,6 +246,7 @@ def dump_manifest(manifest: ForgeInstallManifest) -> str:
     lines: list[str] = []
     ordered_keys = (
         "manifest_version",
+        "context_profile_version",
         "forge_version",
         "profile",
         "selected_tools",
@@ -250,6 +282,9 @@ def load_manifest_text(text: str) -> ForgeInstallManifest:
     parsed = _parse_simple_yaml(text)
     return ForgeInstallManifest(
         manifest_version=str(parsed.get("manifest_version", MANIFEST_VERSION)),
+        context_profile_version=str(
+            parsed.get("context_profile_version", CONTEXT_PROFILE_VERSION_LEGACY)
+        ),
         forge_version=str(parsed.get("forge_version", __version__)),
         profile=str(parsed.get("profile", PROFILE_SERVICE)),
         selected_tools=tuple(parsed.get("selected_tools", list(DEFAULT_SELECTED_TOOLS))),
