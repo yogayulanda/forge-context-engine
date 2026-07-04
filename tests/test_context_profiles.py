@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import re
+import shutil
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -19,6 +20,7 @@ from forge_context_engine.runtime_ops import (
     CONTEXT_LAYOUT_LEGACY_V1,
     CONTEXT_LAYOUT_MIXED,
     CONTEXT_LAYOUT_V2,
+    DEPRECATED_RUNTIME_ARCHIVE_ROOT,
     LEGACY_CONTEXT_ARCHIVE_ROOT,
     SERVICE_V2_CONTEXT_FILES,
     WORKSPACE_V2_CONTEXT_FILES,
@@ -188,6 +190,7 @@ class ContextProfileTests(unittest.TestCase):
 
             expected_files = {
                 *SERVICE_V2_CONTEXT_FILES,
+                ".forge/generated/README.md",
                 ".forge/runtime/meta/conventions.md",
                 ".forge/runtime/meta/context-manifest.md",
                 ".forge/runtime/modes/ask.md",
@@ -230,6 +233,7 @@ class ContextProfileTests(unittest.TestCase):
             self.assertIn(".forge/context/01-service-overview.md", manifest.user_owned_paths)
             self.assertIn(".forge/context-patches/", manifest.user_owned_paths)
             self.assertIn(".forge/generated/", manifest.user_owned_paths)
+            self.assertIn(".forge/generated/README.md", manifest.managed_paths)
             self.assertNotIn(".forge/runtime/meta/", manifest.user_owned_paths)
             self.assertNotIn(".forge/context/01-core/", manifest.user_owned_paths)
 
@@ -253,6 +257,7 @@ class ContextProfileTests(unittest.TestCase):
 
             expected_files = {
                 *WORKSPACE_V2_CONTEXT_FILES,
+                ".forge/generated/README.md",
                 ".forge/runtime/meta/conventions.md",
                 ".forge/runtime/meta/context-manifest.md",
                 ".forge/runtime/modes/ask.md",
@@ -288,6 +293,7 @@ class ContextProfileTests(unittest.TestCase):
 
             manifest = load_manifest(target / ".forge" / "forge-install.yaml")
             self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_CURRENT)
+            self.assertIn(".forge/generated/README.md", manifest.managed_paths)
 
     def test_update_preserves_user_owned_v2_context(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -319,6 +325,37 @@ class ContextProfileTests(unittest.TestCase):
 
             self.assertEqual(update_status, 0)
             self.assertEqual(overview.read_text(encoding="utf-8"), edited)
+
+    def test_update_recreates_generated_dir_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Example Service\n\nGenerated dir repair.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+            self.assertEqual(status, 0)
+
+            shutil.rmtree(target / ".forge/generated")
+            self.assertFalse((target / ".forge/generated").exists())
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            self.assertTrue((target / ".forge/generated/README.md").exists())
+            self.assertIn(".forge/generated/README.md", output.getvalue())
 
     def test_update_dry_run_reports_service_v2_layout(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -627,6 +664,33 @@ class ContextProfileTests(unittest.TestCase):
             for path in archived_files:
                 self.assertTrue(path.exists(), str(path))
 
+    def test_migrate_context_on_legacy_preserves_current_generated_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nCurrent generated preservation.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+            current_generated = target / ".forge/generated/manual-note.md"
+            current_generated.parent.mkdir(parents=True, exist_ok=True)
+            current_generated.write_text("keep me\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            self.assertTrue(current_generated.exists())
+            self.assertEqual(current_generated.read_text(encoding="utf-8"), "keep me\n")
+            self.assertFalse((target / LEGACY_CONTEXT_ARCHIVE_ROOT / "generated/manual-note.md").exists())
+
     def test_migrate_context_on_legacy_updates_manifest_to_v2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
@@ -741,10 +805,10 @@ class ContextProfileTests(unittest.TestCase):
             self.assertFalse((target / ".forge/context/00-meta").exists())
             self.assertFalse((target / ".forge/context/modes").exists())
 
-    def test_update_preserves_user_edited_deprecated_runtime_paths(self) -> None:
+    def test_update_archives_user_edited_deprecated_runtime_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
-            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime preservation.\n", encoding="utf-8")
+            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime archive.\n", encoding="utf-8")
 
             with redirect_stdout(io.StringIO()):
                 run_init(
@@ -760,6 +824,8 @@ class ContextProfileTests(unittest.TestCase):
             edited.write_text(edited.read_text(encoding="utf-8") + "\nuser edit\n", encoding="utf-8")
             extra = target / ".forge/context/00-meta/custom.md"
             extra.write_text("custom\n", encoding="utf-8")
+            archive_meta = target / DEPRECATED_RUNTIME_ARCHIVE_ROOT / "00-meta"
+            archive_modes = target / DEPRECATED_RUNTIME_ARCHIVE_ROOT / "modes"
 
             output = io.StringIO()
             with redirect_stdout(output):
@@ -771,14 +837,16 @@ class ContextProfileTests(unittest.TestCase):
                 )
 
             self.assertEqual(status, 0)
-            self.assertTrue((target / ".forge/context/00-meta").exists())
-            self.assertTrue((target / ".forge/context/modes").exists())
-            self.assertEqual(edited.read_text(encoding="utf-8").splitlines()[-1], "user edit")
-            self.assertTrue(extra.exists())
+            self.assertFalse((target / ".forge/context/00-meta").exists())
+            self.assertFalse((target / ".forge/context/modes").exists())
+            self.assertEqual((archive_modes / "ask.md").read_text(encoding="utf-8").splitlines()[-1], "user edit")
+            self.assertTrue((archive_meta / "custom.md").exists())
             rendered = output.getvalue()
-            self.assertIn("deprecated runtime path preserved; contains local edits or unknown files", rendered)
-            self.assertIn(".forge/context/modes/ask.md", rendered)
-            self.assertIn(".forge/context/00-meta/custom.md", rendered)
+            self.assertIn("deprecated runtime path archived for review", rendered)
+            self.assertIn(f"{DEPRECATED_RUNTIME_ARCHIVE_ROOT}/00-meta", rendered)
+            self.assertIn(f"{DEPRECATED_RUNTIME_ARCHIVE_ROOT}/modes", rendered)
+            manifest = load_manifest(target / ".forge/forge-install.yaml")
+            self.assertIn(f"{DEPRECATED_RUNTIME_ARCHIVE_ROOT}/", manifest.user_owned_paths)
 
     def test_update_dry_run_deprecated_runtime_cleanup_writes_nothing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -795,7 +863,10 @@ class ContextProfileTests(unittest.TestCase):
                 )
 
             _seed_deprecated_runtime_paths(target)
+            edited = target / ".forge/context/modes/ask.md"
+            edited.write_text(edited.read_text(encoding="utf-8") + "\nuser edit\n", encoding="utf-8")
             before = _snapshot_tree(target / ".forge/context")
+            archive_root = target / DEPRECATED_RUNTIME_ARCHIVE_ROOT
 
             output = io.StringIO()
             with redirect_stdout(output):
@@ -808,13 +879,15 @@ class ContextProfileTests(unittest.TestCase):
 
             self.assertEqual(status, 0)
             self.assertEqual(before, _snapshot_tree(target / ".forge/context"))
+            self.assertFalse(archive_root.exists())
             self.assertTrue((target / ".forge/context/00-meta").exists())
             self.assertTrue((target / ".forge/context/modes").exists())
             rendered = output.getvalue()
             self.assertIn(".forge/context/00-meta - deprecated managed runtime path cleanup", rendered)
-            self.assertIn(".forge/context/modes - deprecated managed runtime path cleanup", rendered)
+            self.assertIn(".forge/context/modes - deprecated runtime path archived for review", rendered)
+            self.assertIn(f"{DEPRECATED_RUNTIME_ARCHIVE_ROOT}/modes", rendered)
 
-    def test_v2_update_is_idempotent_after_deprecated_runtime_cleanup(self) -> None:
+    def test_v2_update_is_idempotent_after_deprecated_runtime_cleanup_and_archive(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
             (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime idempotence.\n", encoding="utf-8")
@@ -829,6 +902,8 @@ class ContextProfileTests(unittest.TestCase):
                 )
 
             _seed_deprecated_runtime_paths(target)
+            edited = target / ".forge/context/modes/ask.md"
+            edited.write_text(edited.read_text(encoding="utf-8") + "\nuser edit\n", encoding="utf-8")
             with redirect_stdout(io.StringIO()):
                 first_status = run_update(
                     target=target,
@@ -843,7 +918,7 @@ class ContextProfileTests(unittest.TestCase):
             with redirect_stdout(output):
                 second_status = run_update(
                     target=target,
-                    dry_run=False,
+                    dry_run=True,
                     assume_yes=True,
                     selected_tools=None,
                 )
@@ -852,9 +927,49 @@ class ContextProfileTests(unittest.TestCase):
             self.assertFalse((target / ".forge/context/00-meta").exists())
             self.assertFalse((target / ".forge/context/modes").exists())
             rendered = output.getvalue()
+            self.assertIn("Created: 0", rendered)
             self.assertIn("Updated: 0", rendered)
+            self.assertIn("Conflicts: 0", rendered)
             self.assertNotIn(".forge/context/00-meta", rendered)
             self.assertNotIn(".forge/context/modes", rendered)
+
+    def test_update_preserves_source_when_deprecated_runtime_archive_target_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nDeprecated runtime archive conflict.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _seed_deprecated_runtime_paths(target)
+            edited = target / ".forge/context/modes/ask.md"
+            edited.write_text(edited.read_text(encoding="utf-8") + "\nuser edit\n", encoding="utf-8")
+            archive_target = target / DEPRECATED_RUNTIME_ARCHIVE_ROOT / "modes"
+            archive_target.mkdir(parents=True, exist_ok=True)
+            (archive_target / "ask.md").write_text("existing archive\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 1)
+            self.assertTrue((target / ".forge/context/modes").exists())
+            self.assertEqual((archive_target / "ask.md").read_text(encoding="utf-8"), "existing archive\n")
+            rendered = output.getvalue()
+            self.assertIn("deprecated runtime archive target already exists", rendered)
+            self.assertIn(f"{DEPRECATED_RUNTIME_ARCHIVE_ROOT}/modes", rendered)
+            self.assertIn("Update stopped with conflicts", rendered)
 
     def test_fresh_init_never_creates_deprecated_runtime_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -873,6 +988,8 @@ class ContextProfileTests(unittest.TestCase):
             self.assertEqual(status, 0)
             self.assertFalse((target / ".forge/context/00-meta").exists())
             self.assertFalse((target / ".forge/context/modes").exists())
+            self.assertTrue((target / ".forge/runtime/meta").exists())
+            self.assertTrue((target / ".forge/runtime/modes").exists())
 
     def test_migrate_context_on_v2_is_no_op(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

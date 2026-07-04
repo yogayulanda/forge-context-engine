@@ -25,6 +25,7 @@ MANAGED_PATHS_BASELINE = (
     ".forge/adapter.md",
     ".forge/forge.config.yaml",
     ".forge/forge-install.yaml",
+    ".forge/generated/README.md",
     ".forge/skills/",
     ".forge/runtime/meta/",
     ".forge/runtime/modes/",
@@ -86,6 +87,7 @@ LEGACY_USER_OWNED_PATHS = (
 )
 
 LEGACY_ARCHIVE_USER_OWNED_PATHS = (".forge/context-archive/legacy-v1/",)
+DEPRECATED_RUNTIME_ARCHIVE_USER_OWNED_PATHS = (".forge/context-archive/deprecated-runtime/",)
 
 USER_OWNED_PATHS_BASELINE = (
     *SERVICE_USER_OWNED_PATHS_V2,
@@ -123,6 +125,7 @@ def build_user_owned_paths(
     profile: str,
     context_profile_version: str,
     include_legacy_archive: bool = False,
+    include_deprecated_runtime_archive: bool = False,
 ) -> tuple[str, ...]:
     """Build manifest user-owned paths for the active profile and context version."""
 
@@ -139,6 +142,8 @@ def build_user_owned_paths(
 
     if include_legacy_archive:
         paths.extend(LEGACY_ARCHIVE_USER_OWNED_PATHS)
+    if include_deprecated_runtime_archive:
+        paths.extend(DEPRECATED_RUNTIME_ARCHIVE_USER_OWNED_PATHS)
     return tuple(paths)
 
 

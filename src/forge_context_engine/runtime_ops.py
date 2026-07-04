@@ -12,6 +12,7 @@ from .fs_ops import normalize_text, resolve_target_paths, sha256_text, to_manife
 from .install_manifest import (
     CONTEXT_PROFILE_VERSION_CURRENT,
     CONTEXT_PROFILE_VERSION_LEGACY,
+    DEPRECATED_RUNTIME_ARCHIVE_USER_OWNED_PATHS,
     DEFAULT_SELECTED_TOOLS,
     ForgeInstallManifest,
     LEGACY_ARCHIVE_USER_OWNED_PATHS,
@@ -110,6 +111,7 @@ MIGRATION_PROPOSAL_ROOT = ".forge/context-patches/migrations/v2-context-profile"
 MIGRATION_PROPOSAL_CONTEXT_ROOT = f"{MIGRATION_PROPOSAL_ROOT}/context"
 MIGRATION_PROPOSAL_MARKDOWN = f"{MIGRATION_PROPOSAL_ROOT}/MIGRATION.md"
 LEGACY_CONTEXT_ARCHIVE_ROOT = ".forge/context-archive/legacy-v1"
+DEPRECATED_RUNTIME_ARCHIVE_ROOT = ".forge/context-archive/deprecated-runtime"
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -145,6 +147,7 @@ DETAIL_INSTALL_MANIFEST = "install manifest refresh"
 DETAIL_CONFLICT_EXISTING = "existing file would be overwritten"
 DETAIL_CONFLICT_PROPOSAL = "existing migration proposal file differs"
 DETAIL_CONFLICT_MIGRATION = "context migration target already exists"
+DETAIL_CONFLICT_ARCHIVE = "deprecated runtime archive target already exists"
 DETAIL_CONFLICT_HASH = "managed file hash unavailable for safe update"
 DETAIL_CONFLICT_LOCAL = "managed file modified locally"
 DETAIL_PRESERVED_NON_SELECTED = "existing non-selected entrypoint preserved"
@@ -158,7 +161,7 @@ DETAIL_MIGRATION_ARCHIVE = "legacy-v1 context archive"
 DETAIL_MIGRATION_MANIFEST = "context profile version migration"
 DETAIL_DEPRECATED_RUNTIME = "deprecated managed runtime path preserved"
 DETAIL_DEPRECATED_RUNTIME_CLEANUP = "deprecated managed runtime path cleanup"
-DETAIL_DEPRECATED_RUNTIME_LOCAL = "deprecated runtime path preserved; contains local edits or unknown files"
+DETAIL_DEPRECATED_RUNTIME_ARCHIVE = "deprecated runtime path archived for review"
 
 
 MESSAGES = {
@@ -198,10 +201,12 @@ MESSAGES = {
         "conflict_reason_existing": "Reason: Forge would need to overwrite an existing file during init.",
         "conflict_reason_proposal": "Reason: a migration proposal file already exists with different content, so Forge stopped before overwriting it.",
         "conflict_reason_migration": "Reason: a direct migration target already exists, so Forge stopped before overwriting `.forge/context` or the legacy archive.",
+        "conflict_reason_archive": "Reason: archiving this deprecated runtime path would overwrite an existing archive destination, so Forge stopped before moving it.",
         "conflict_reason_local": "Reason: this Forge-managed file differs from the last recorded managed hash, so Forge stopped to avoid overwriting local changes.",
         "conflict_reason_generic": "Reason: this path could not be updated safely without risking local changes.",
         "conflict_action_review": "Review local changes first: `git diff -- {path}`",
         "conflict_action_migrate": "Review, move, rename, or remove the existing migration target or archive path before rerunning `forge migrate-context`.",
+        "conflict_action_archive": "Review, move, rename, or remove the existing deprecated runtime archive path before rerunning `forge update`.",
         "conflict_action_replace": "If the local changes are not needed, replace the file with the current Forge-managed version, then rerun `forge update`.",
         "conflict_action_merge": "If both local changes and new Forge updates matter, merge them manually, then rerun `forge update`.",
         "conflict_action_init": "If you want to keep the existing file, move or rename it before rerunning `forge init`, or initialize Forge in a clean target.",
@@ -270,10 +275,12 @@ MESSAGES = {
         "conflict_reason_existing": "Alasan: Forge perlu menimpa file yang sudah ada saat init.",
         "conflict_reason_proposal": "Alasan: file proposal migrasi sudah ada dengan isi berbeda, jadi Forge berhenti sebelum menimpanya.",
         "conflict_reason_migration": "Alasan: target migrasi langsung sudah ada, jadi Forge berhenti sebelum menimpa `.forge/context` atau arsip legacy.",
+        "conflict_reason_archive": "Alasan: pengarsipan path runtime deprecated ini akan menimpa tujuan arsip yang sudah ada, jadi Forge berhenti sebelum memindahkannya.",
         "conflict_reason_local": "Alasan: file Forge-managed ini berbeda dari hash managed terakhir yang tercatat, jadi Forge berhenti agar perubahan lokal tidak tertimpa.",
         "conflict_reason_generic": "Alasan: path ini tidak bisa diperbarui dengan aman tanpa berisiko menimpa perubahan lokal.",
         "conflict_action_review": "Tinjau perubahan lokal dulu: `git diff -- {path}`",
         "conflict_action_migrate": "Tinjau, pindahkan, rename, atau hapus target migrasi atau path arsip yang sudah ada sebelum menjalankan ulang `forge migrate-context`.",
+        "conflict_action_archive": "Tinjau, pindahkan, rename, atau hapus path arsip runtime deprecated yang sudah ada sebelum menjalankan ulang `forge update`.",
         "conflict_action_replace": "Jika perubahan lokal tidak diperlukan, ganti file dengan versi Forge-managed terbaru, lalu jalankan ulang `forge update`.",
         "conflict_action_merge": "Jika perubahan lokal dan update Forge sama-sama penting, merge manual dulu, lalu jalankan ulang `forge update`.",
         "conflict_action_init": "Jika ingin mempertahankan file yang ada, pindahkan atau rename file tersebut sebelum menjalankan ulang `forge init`, atau inisialisasi Forge di target yang bersih.",
@@ -439,6 +446,9 @@ class OperationReport:
                 continue
             if op.detail == DETAIL_CONFLICT_PROPOSAL:
                 print(f"  {messages['conflict_action_migrate']}")
+                continue
+            if op.detail == DETAIL_CONFLICT_ARCHIVE:
+                print(f"  {messages['conflict_action_archive']}")
                 continue
             if op.detail == DETAIL_CONFLICT_EXISTING:
                 print(f"  {messages['conflict_action_init']}")
@@ -849,6 +859,8 @@ def run_migrate_context(*, target: Path | None, dry_run: bool) -> int:
 def _conflict_reason(locale: str, detail: str) -> str:
     if detail == DETAIL_CONFLICT_MIGRATION:
         return _msg(locale, "conflict_reason_migration")
+    if detail == DETAIL_CONFLICT_ARCHIVE:
+        return _msg(locale, "conflict_reason_archive")
     if detail == DETAIL_CONFLICT_PROPOSAL:
         return _msg(locale, "conflict_reason_proposal")
     if detail == DETAIL_CONFLICT_EXISTING:
@@ -1171,15 +1183,22 @@ def _manifest_for_target(
         managed_file_hashes=managed_hashes,
         installed_at=installed_at,
     )
-    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT and any(
+    include_legacy_archive = any(
         (target_root / rel_path).exists() for rel_path in LEGACY_ARCHIVE_USER_OWNED_PATHS
+    )
+    include_deprecated_runtime_archive = any(
+        (target_root / rel_path).exists() for rel_path in DEPRECATED_RUNTIME_ARCHIVE_USER_OWNED_PATHS
+    )
+    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT and (
+        include_legacy_archive or include_deprecated_runtime_archive
     ):
         return replace(
             manifest,
             user_owned_paths=build_user_owned_paths(
                 profile=profile,
                 context_profile_version=context_profile_version,
-                include_legacy_archive=True,
+                include_legacy_archive=include_legacy_archive,
+                include_deprecated_runtime_archive=include_deprecated_runtime_archive,
             ),
         )
     return manifest
@@ -1214,15 +1233,22 @@ def _manifest_from_current_runtime(
         selected_tools=selected_tools,
         managed_file_hashes=managed_hashes,
     )
-    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT and any(
+    include_legacy_archive = any(
         (target_root / rel_path).exists() for rel_path in LEGACY_ARCHIVE_USER_OWNED_PATHS
+    )
+    include_deprecated_runtime_archive = any(
+        (target_root / rel_path).exists() for rel_path in DEPRECATED_RUNTIME_ARCHIVE_USER_OWNED_PATHS
+    )
+    if context_profile_version == CONTEXT_PROFILE_VERSION_CURRENT and (
+        include_legacy_archive or include_deprecated_runtime_archive
     ):
         return replace(
             manifest,
             user_owned_paths=build_user_owned_paths(
                 profile=profile,
                 context_profile_version=context_profile_version,
-                include_legacy_archive=True,
+                include_legacy_archive=include_legacy_archive,
+                include_deprecated_runtime_archive=include_deprecated_runtime_archive,
             ),
         )
     return manifest
@@ -1662,6 +1688,8 @@ def _detect_tools(target_root: Path) -> tuple[str, ...]:
 def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...]) -> bool:
     if rel_path == ".forge/.gitignore":
         return True
+    if rel_path == ".forge/generated/README.md":
+        return True
     if rel_path == "AGENTS.md":
         return "codex" in selected_tools or "opencode" in selected_tools
     if rel_path == OPENCODE_CONFIG_PATH:
@@ -1772,13 +1800,28 @@ def _cleanup_deprecated_runtime_paths(
             expected_files=expected_files,
         )
         if unexpected_files:
-            report.add("skipped", rel_path, DETAIL_DEPRECATED_RUNTIME_LOCAL)
+            archive_rel_path = _deprecated_runtime_archive_path(rel_path)
+            archive_path = target_root / archive_rel_path
+            if archive_path.exists():
+                report.add("conflict", archive_rel_path, DETAIL_CONFLICT_ARCHIVE)
+                report.add_note(
+                    "Deprecated runtime path "
+                    f"{rel_path} was preserved because it contains user-edited or unknown files, "
+                    f"but the archive destination {archive_rel_path} already exists. "
+                    f"Review these files before rerunning update: {', '.join(unexpected_files)}."
+                )
+                continue
+
+            report.add("updated", rel_path, DETAIL_DEPRECATED_RUNTIME_ARCHIVE)
             report.add_note(
                 "Deprecated runtime path "
-                f"{rel_path} was preserved because it contains user-edited or unknown files: "
-                f"{', '.join(unexpected_files)}. Move any files you still need out of "
-                f"{rel_path}, then remove the deprecated path once it is no longer needed."
+                f"{rel_path} contains user-edited or unknown files and "
+                f"{'would be' if dry_run else 'was'} archived to {archive_rel_path} for review: "
+                f"{', '.join(unexpected_files)}."
             )
+            if not dry_run:
+                archive_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(path), str(archive_path))
             continue
 
         if dry_run:
@@ -1816,6 +1859,10 @@ def _deprecated_runtime_unexpected_files(
         if normalize_text(existing) != normalize_text(expected):
             unexpected.append(rel_path)
     return unexpected
+
+def _deprecated_runtime_archive_path(rel_path: str) -> str:
+    suffix = rel_path.removeprefix(".forge/context/")
+    return f"{DEPRECATED_RUNTIME_ARCHIVE_ROOT}/{suffix}"
 
 def _map_deprecated_runtime_path(rel_path: str) -> str | None:
     if rel_path.startswith(".forge/runtime/meta/"):

@@ -69,6 +69,18 @@ class ToolSelectionTests(unittest.TestCase):
         self.assertIn(".forge/skills/forge-plan/SKILL.md", files)
         self.assertIn(".opencode/skills/forge-plan/SKILL.md", files)
 
+    def test_build_init_files_includes_generated_readme_and_no_legacy_generated_dir(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex",),
+            ui_language="en",
+        )
+        self.assertIn(".forge/generated/README.md", files)
+        self.assertNotIn(".forge/context/generated/README.md", files)
+        for rel_path, content in files.items():
+            self.assertNotIn(".forge/context/generated/", content, msg=f"unexpected legacy generated path in {rel_path}")
+
     def test_opencode_config_points_to_forge_skills(self) -> None:
         files = _build_init_files(
             target_root=Path("/tmp/example"),
