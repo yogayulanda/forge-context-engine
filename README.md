@@ -12,6 +12,8 @@ Existing or legacy Forge repo:
 
 ```bash
 forge update
+forge migrate-context --dry-run
+forge migrate-context
 ```
 
 Workspace repo:
@@ -35,12 +37,14 @@ Forge keeps the workflow inside the target repository so the assistant sees the 
 - `forge init` to install the runtime into a repo
 - `forge update` to refresh Forge-managed files later
 - `forge update --dry-run` to preview adoption or managed-file changes safely
+- `forge migrate-context --dry-run` to preview a legacy-v1 to v2 context migration safely
+- `forge migrate-context` to migrate legacy-v1 context directly into numbered v2 files
 - shared `.forge/adapter.md` entry behavior and adapter parity rules
 - curated `.forge/context` as the committed source of truth
 - tool entrypoints such as `AGENTS.md`, `CLAUDE.md`, and optional Copilot instructions
 - lifecycle modes for `init -> ask -> plan -> implementation -> execute -> review -> verify-context`
 - optional generated artifacts under `.forge/generated/...`
-- reviewable context promotions under `.forge/context-patches/...`
+- reviewable context promotions under `.forge/context-patches/...` for general durable context updates outside direct migration
 
 ## What Forge Is Not
 
@@ -118,7 +122,7 @@ Use workspace repos as thin coordination layers for linked services. Keep repo-s
 Fresh context layout defaults:
 - `forge init` seeds the v2 service profile with numbered files such as `00-index.md`, `01-service-overview.md`, and `99-open-questions.md`
 - `forge init --workspace` seeds the v2 workspace profile with numbered files such as `00-workspace-index.md`, `01-platform-overview.md`, and `99-open-questions.md`
-- legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid and are preserved during `forge update`
+- legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid compatibility layouts and are preserved during `forge update`
 
 Tool selection:
 
@@ -141,6 +145,7 @@ Preview first:
 
 ```bash
 forge update --dry-run
+forge migrate-context --dry-run
 ```
 
 Apply updates:
@@ -149,6 +154,7 @@ Apply updates:
 forge update
 forge update --tools codex,claude
 forge update --tools opencode
+forge migrate-context
 ```
 
 - `--dry-run` previews changes.
@@ -156,6 +162,12 @@ forge update --tools opencode
 - `forge update` refreshes Forge-managed files only.
 - user-owned context is preserved.
 - dry-run reports detected Forge profile, detected context layout, and that migration/cleanup is not automatic.
+- `forge migrate-context --dry-run` is read-only; it previews direct migration and writes nothing.
+- `forge migrate-context` writes numbered v2 context files directly into `.forge/context/`.
+- `forge migrate-context` archives legacy-v1 context under `.forge/context-archive/legacy-v1/` instead of deleting it.
+- `forge migrate-context` updates `.forge/forge-install.yaml` to `context_profile_version: "2"` after a successful migration.
+- mixed layouts require manual review; Forge does not auto-clean them up or overwrite existing v2 files.
+- empty-or-unknown layouts are not migrated automatically.
 - local-only files are preserved.
 - update is intended to be idempotent.
 - use `--yes` for non-interactive automation or scripted adoption.
@@ -227,6 +239,7 @@ Use Forge review mode to review the executed health check change.
 - `.forge/generated` is for working artifacts when requested or approved.
 - saved artifact directories are `.forge/generated/plans/`, `.forge/generated/ecp/`, `.forge/generated/reports/`, and `.forge/generated/reviews/`
 - `.forge/context-patches` is for reviewable context promotion.
+- `.forge/context-archive` is for archived legacy context preserved by explicit migration.
 
 ## Generated Artifacts And Context Patches
 
@@ -345,7 +358,7 @@ Then move through the normal path when a change is needed:
 
 ## Status
 
-- Release candidate target: `1.0.0rc1`
+- Release candidate target: `1.1.0rc1`
 - Validated against fresh service, workspace, adoption, and real repo-shaped dry-run flows
 - CLI install/update and lifecycle contracts are release-candidate hardened for daily usage
 

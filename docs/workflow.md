@@ -7,8 +7,10 @@ For repository setup and adoption:
 - existing or legacy Forge repo: `forge update`
 - workspace repo: `forge init --workspace`
 - preview before managed refresh: `forge update --dry-run`
+- opt-in legacy-v1 to v2 context migration preview: `forge migrate-context --dry-run`
+- opt-in legacy-v1 to v2 context migration: `forge migrate-context`
 
-Fresh CLI init now seeds the v2 numbered context profiles by default. Legacy-v1 context layouts remain compatible and are preserved during `forge update`; mixed layouts are reported but not cleaned up automatically.
+Fresh CLI init now seeds the v2 numbered context profiles by default. Legacy-v1 context layouts remain compatible and are preserved during `forge update`; mixed layouts are reported but not cleaned up automatically. When you want to move legacy-v1 context into the numbered v2 profile shape, use `forge migrate-context --dry-run` to preview the migration and `forge migrate-context` to write numbered v2 files into `.forge/context/`, archive legacy paths under `.forge/context-archive/legacy-v1/`, and update the manifest to context profile version 2.
 
 ---
 

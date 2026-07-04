@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document | Forge Runtime Install and Update Specification |
-| Version | 1.0.0rc1 |
+| Version | 1.1.0rc1 |
 | Date | 2026-06-05 |
 | Status | `draft` |
 | Scope | GitHub-installed CLI contract, safe runtime init/update semantics, ownership boundaries |
@@ -13,7 +13,7 @@
 
 ## 0. Purpose
 
-This document defines the `1.0.0rc1` release-candidate install/update layer for Forge.
+This document defines the `1.1.0rc1` release-candidate install/update layer for Forge.
 
 It standardizes:
 - a lightweight Python CLI package
@@ -55,6 +55,8 @@ forge init
 forge init --workspace
 forge update
 forge update --dry-run
+forge migrate-context --dry-run
+forge migrate-context
 forge update --tools codex,claude
 forge update --tools opencode
 ```
@@ -73,6 +75,9 @@ Implemented behavior:
 - fresh service init seeds the v2 numbered service context profile.
 - fresh workspace init seeds the v2 numbered workspace context profile.
 - `forge update` updates managed files, supports `--tools`, and supports manifest-less adoption preview.
+- `forge migrate-context --dry-run` previews direct legacy-v1 to v2 context migration without writing files.
+- `forge migrate-context` directly writes numbered v2 context files into `.forge/context/`, archives legacy-v1 context under `.forge/context-archive/legacy-v1/`, and updates `context_profile_version: "2"` after successful migration.
+- `forge update` does not migrate context automatically.
 
 Recommended CLI validation examples:
 
@@ -221,7 +226,7 @@ Minimum schema:
 ```yaml
 manifest_version: "1"
 context_profile_version: "2"
-forge_version: "1.0.0rc1"
+forge_version: "1.1.0rc1"
 profile: service
 selected_tools:
   - codex

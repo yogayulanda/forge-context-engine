@@ -12,7 +12,7 @@
 > **v1.2 -> v1.3 changes:** Added machine-resolvable Markdown mode schema, numeric-only `token_budget`, and confidence calibration for AI-inferred brownfield context. No new zones, runtime folders, automation, or tooling.
 > **v1.3 -> v1.4 changes:** Aligns initialization handoff with thin adapters: Claude and universal agent adapters are copied as invocation surfaces only, while `.forge/context` remains the cognition source of truth. No lifecycle, orchestration, memory, runtime executor, deploy, or CI/CD behavior added.
 
-Implementation note for the current CLI: fresh `forge init` now seeds profile-aware v2 numbered context files for service/workspace repos. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid compatibility layouts and are preserved during `forge update`; no automatic migration is applied.
+Implementation note for the current CLI: fresh `forge init` now seeds profile-aware v2 numbered context files for service/workspace repos. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid compatibility layouts and are preserved during `forge update`; no automatic migration is applied. Use `forge migrate-context --dry-run` to preview direct migration and `forge migrate-context` to write v2 files into `.forge/context/`, archive legacy-v1 paths under `.forge/context-archive/legacy-v1/`, and update `context_profile_version: "2"`.
 
 ## Current CLI Fresh Init Output
 
@@ -58,7 +58,7 @@ Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` structures should b
 - legacy-v1 compatibility layout
 - preserved user-owned context
 - curated extension paths when humans intentionally maintain them
-- future migration candidates for an opt-in migration command
+- direct migration candidates for the explicit `forge migrate-context` command
 
 The detailed phase flow below remains useful for manual curation and legacy-v1 compatibility work, but it is no longer the fresh-default CLI-generated layout contract.
 
@@ -124,7 +124,7 @@ Phase 7:    Human Confirmation Pass            ← NEW (operational feedback v1.
    - Set `run.interaction` for manual or automation-safe behavior.
    - Set `workflow.default_mode` based on immediate work type.
    - Confirm `context.root`, policy confirmation boundaries, artifact directories, and tool adapter defaults.
-   - Keep `tools.adapters` defaulted to `codex` and `claude_code`; add Copilot or OpenCode only when that repository explicitly opts in.
+   - Keep `tools.adapters` defaulted to `codex` and `claude`; add Copilot or OpenCode only when that repository explicitly opts in.
 3. Merge `.gitignore` entries with target repo's existing `.gitignore`.
 4. Verify `.forge/` structure is intact after copy.
 5. Keep `.forge/temp/` and `.forge/cache/` local-only; do not push them.

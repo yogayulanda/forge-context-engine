@@ -151,7 +151,7 @@ See `conventions-validation.md` for full validation status vocabulary, prerequis
 
 Summary: Validation reporting must never imply success without evidence. Execute performs scoped validation for changed work; review checks validation evidence and gaps. Deeper test strategy is a validation activity rather than a core lifecycle mode.
 
-Fresh CLI init seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatibility layouts; preserve them during update unless an explicit future migration flow says otherwise.
+Fresh CLI init seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatibility layouts; preserve them during `forge update`. When humans explicitly run `forge migrate-context`, Forge writes numbered v2 files into `.forge/context/`, archives legacy-v1 paths under `.forge/context-archive/legacy-v1/`, and updates the manifest to context profile version 2. Mixed and empty-or-unknown layouts remain conservative no-op paths that require manual review.
 
 ## Artifact Lifecycle Semantics
 

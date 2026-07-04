@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from .context_builder import build_repo_context_seed
@@ -34,6 +34,10 @@ TEMPLATE_SKILLS_PREFIX = "skills/"
 CANONICAL_SKILLS_PREFIX = ".forge/skills/"
 OPENCODE_SKILLS_PREFIX = ".opencode/skills/"
 OPENCODE_CONFIG_PATH = ".opencode/opencode.json"
+OPENCODE_SIGNAL_PATHS = (
+    OPENCODE_CONFIG_PATH,
+    OPENCODE_SKILLS_PREFIX.rstrip("/"),
+)
 OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, TEMPLATE_SKILLS_PREFIX)
 LEGACY_CONTEXT_TEMPLATE_PREFIXES = (
     ".forge/context/01-core/",
@@ -80,6 +84,10 @@ WORKSPACE_V2_CONTEXT_FILES = (
     ".forge/context/11-release-and-feature-flags.md",
     ".forge/context/99-open-questions.md",
 )
+MIGRATION_PROPOSAL_ROOT = ".forge/context-patches/migrations/v2-context-profile"
+MIGRATION_PROPOSAL_CONTEXT_ROOT = f"{MIGRATION_PROPOSAL_ROOT}/context"
+MIGRATION_PROPOSAL_MARKDOWN = f"{MIGRATION_PROPOSAL_ROOT}/MIGRATION.md"
+LEGACY_CONTEXT_ARCHIVE_ROOT = ".forge/context-archive/legacy-v1"
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -109,6 +117,8 @@ DETAIL_MANAGED_REFRESH = "managed file refresh"
 DETAIL_ENTRYPOINT = "entrypoint managed block"
 DETAIL_INSTALL_MANIFEST = "install manifest refresh"
 DETAIL_CONFLICT_EXISTING = "existing file would be overwritten"
+DETAIL_CONFLICT_PROPOSAL = "existing migration proposal file differs"
+DETAIL_CONFLICT_MIGRATION = "context migration target already exists"
 DETAIL_CONFLICT_HASH = "managed file hash unavailable for safe update"
 DETAIL_CONFLICT_LOCAL = "managed file modified locally"
 DETAIL_PRESERVED_NON_SELECTED = "existing non-selected entrypoint preserved"
@@ -117,12 +127,16 @@ DETAIL_LEGACY_PRESERVED = "legacy managed file preserved; current hash adopted"
 DETAIL_LEGACY_CONFIG_MIGRATION = "legacy config migration"
 DETAIL_ENTRYPOINT_ADOPTED = "existing Forge-like wrapper adopted"
 DETAIL_WORKSPACE_PRESERVED = "user-edited workspace file preserved"
+DETAIL_MIGRATION_V2_WRITE = "v2 context migration"
+DETAIL_MIGRATION_ARCHIVE = "legacy-v1 context archive"
+DETAIL_MIGRATION_MANIFEST = "context profile version migration"
 
 
 MESSAGES = {
     UI_LANGUAGE_EN: {
         "init_title": "Forge init",
         "update_title": "Forge update",
+        "migrate_title": "Forge migrate-context",
         "dry_run_suffix": "dry-run",
         "target": "Target",
         "profile": "Profile",
@@ -130,12 +144,16 @@ MESSAGES = {
         "context_profile_version": "Detected context profile version",
         "context_layout": "Detected context layout",
         "context_migration": "Migration",
+        "migration_proposal": "Migration",
+        "migration_mode": "Migration mode",
+        "files_changed": "Files changed",
         "user_owned_context": "User-owned context",
         "selected_tools": "Selected tools",
         "detected_tools": "Detected tools",
         "tool_selection_change": "Tool selection change",
         "mode": "Mode",
         "managed_files": "Managed file checks",
+        "proposal_files": "Migration changes",
         "preserved_paths": "Preserved paths",
         "user_owned": "user-owned",
         "local_only": "local-only",
@@ -149,9 +167,12 @@ MESSAGES = {
         "conflicts": "Conflicts",
         "conflict_help": "Conflict resolution guidance",
         "conflict_reason_existing": "Reason: Forge would need to overwrite an existing file during init.",
+        "conflict_reason_proposal": "Reason: a migration proposal file already exists with different content, so Forge stopped before overwriting it.",
+        "conflict_reason_migration": "Reason: a direct migration target already exists, so Forge stopped before overwriting `.forge/context` or the legacy archive.",
         "conflict_reason_local": "Reason: this Forge-managed file differs from the last recorded managed hash, so Forge stopped to avoid overwriting local changes.",
         "conflict_reason_generic": "Reason: this path could not be updated safely without risking local changes.",
         "conflict_action_review": "Review local changes first: `git diff -- {path}`",
+        "conflict_action_migrate": "Review, move, rename, or remove the existing migration target or archive path before rerunning `forge migrate-context`.",
         "conflict_action_replace": "If the local changes are not needed, replace the file with the current Forge-managed version, then rerun `forge update`.",
         "conflict_action_merge": "If both local changes and new Forge updates matter, merge them manually, then rerun `forge update`.",
         "conflict_action_init": "If you want to keep the existing file, move or rename it before rerunning `forge init`, or initialize Forge in a clean target.",
@@ -187,6 +208,7 @@ MESSAGES = {
     UI_LANGUAGE_ID: {
         "init_title": "Forge init",
         "update_title": "Forge update",
+        "migrate_title": "Forge migrate-context",
         "dry_run_suffix": "dry-run",
         "target": "Target",
         "profile": "Profile",
@@ -194,12 +216,16 @@ MESSAGES = {
         "context_profile_version": "Detected context profile version",
         "context_layout": "Detected context layout",
         "context_migration": "Migration",
+        "migration_proposal": "Migration",
+        "migration_mode": "Migration mode",
+        "files_changed": "Files changed",
         "user_owned_context": "User-owned context",
         "selected_tools": "Selected tools",
         "detected_tools": "Detected tools",
         "tool_selection_change": "Perubahan tool",
         "mode": "Mode",
         "managed_files": "Pemeriksaan file terkelola",
+        "proposal_files": "Perubahan migrasi",
         "preserved_paths": "Path yang dipertahankan",
         "user_owned": "user-owned",
         "local_only": "local-only",
@@ -213,9 +239,12 @@ MESSAGES = {
         "conflicts": "Conflicts",
         "conflict_help": "Panduan penyelesaian konflik",
         "conflict_reason_existing": "Alasan: Forge perlu menimpa file yang sudah ada saat init.",
+        "conflict_reason_proposal": "Alasan: file proposal migrasi sudah ada dengan isi berbeda, jadi Forge berhenti sebelum menimpanya.",
+        "conflict_reason_migration": "Alasan: target migrasi langsung sudah ada, jadi Forge berhenti sebelum menimpa `.forge/context` atau arsip legacy.",
         "conflict_reason_local": "Alasan: file Forge-managed ini berbeda dari hash managed terakhir yang tercatat, jadi Forge berhenti agar perubahan lokal tidak tertimpa.",
         "conflict_reason_generic": "Alasan: path ini tidak bisa diperbarui dengan aman tanpa berisiko menimpa perubahan lokal.",
         "conflict_action_review": "Tinjau perubahan lokal dulu: `git diff -- {path}`",
+        "conflict_action_migrate": "Tinjau, pindahkan, rename, atau hapus target migrasi atau path arsip yang sudah ada sebelum menjalankan ulang `forge migrate-context`.",
         "conflict_action_replace": "Jika perubahan lokal tidak diperlukan, ganti file dengan versi Forge-managed terbaru, lalu jalankan ulang `forge update`.",
         "conflict_action_merge": "Jika perubahan lokal dan update Forge sama-sama penting, merge manual dulu, lalu jalankan ulang `forge update`.",
         "conflict_action_init": "Jika ingin mempertahankan file yang ada, pindahkan atau rename file tersebut sebelum menjalankan ulang `forge init`, atau inisialisasi Forge di target yang bersih.",
@@ -312,7 +341,14 @@ class OperationReport:
     def count(self, status: str) -> int:
         return sum(1 for op in self.operations if op.status == status)
 
-    def print(self, *, locale: str, title: str, context: list[tuple[str, str]]) -> None:
+    def print(
+        self,
+        *,
+        locale: str,
+        title: str,
+        context: list[tuple[str, str]],
+        operations_label: str | None = None,
+    ) -> None:
         messages = MESSAGES[locale]
         status_labels = STATUS_LABELS[locale]
         rendered_title = f"{title} ({messages['dry_run_suffix']})" if self.dry_run else title
@@ -328,7 +364,7 @@ class OperationReport:
 
         if self.operations:
             print()
-            print(f"{messages['managed_files']}:")
+            print(f"{operations_label or messages['managed_files']}:")
             for op in self.operations:
                 label = status_labels[op.status]
                 line = f"  {label:10} {op.path}"
@@ -369,6 +405,12 @@ class OperationReport:
             print(f"- {op.path}")
             print(f"  {_conflict_reason(locale, op.detail)}")
             print(f"  {_msg(locale, 'conflict_action_review', path=op.path)}")
+            if op.detail == DETAIL_CONFLICT_MIGRATION:
+                print(f"  {messages['conflict_action_migrate']}")
+                continue
+            if op.detail == DETAIL_CONFLICT_PROPOSAL:
+                print(f"  {messages['conflict_action_migrate']}")
+                continue
             if op.detail == DETAIL_CONFLICT_EXISTING:
                 print(f"  {messages['conflict_action_init']}")
                 continue
@@ -669,7 +711,117 @@ def run_update(
     return 0
 
 
+def run_migrate_context(*, target: Path | None, dry_run: bool) -> int:
+    """Migrate legacy-v1 context layout to numbered v2 context files."""
+
+    paths = resolve_target_paths(target)
+    locale = _read_ui_language(paths.target_root)
+    report = OperationReport(dry_run=dry_run)
+    manifest_path = paths.forge_root / "forge-install.yaml"
+
+    manifest: ForgeInstallManifest | None = None
+    if manifest_path.exists():
+        manifest = load_manifest(manifest_path)
+        profile = manifest.profile
+        context_layout = _detect_context_layout(paths.target_root, profile)
+        context_profile_version = _reported_context_profile_version(
+            context_layout,
+            manifest.context_profile_version,
+        )
+    else:
+        if not _detect_runtime(paths.target_root):
+            print(_msg(locale, "no_runtime", target=str(paths.target_root)))
+            return 1
+        profile = _detect_profile(paths.target_root)
+        context_layout = _detect_context_layout(paths.target_root, profile)
+        context_profile_version = _display_context_profile_version(
+            _detect_context_profile_version(paths.target_root)
+        )
+
+    migration_mode = "dry-run" if dry_run else "apply"
+    migration_status = _migration_proposal_status(context_layout, outcome="not-run")
+    files_changed = "none"
+
+    if context_layout == CONTEXT_LAYOUT_LEGACY_V1:
+        desired_context_files = build_repo_context_seed(
+            target_root=paths.target_root,
+            profile=profile,
+        ).files
+        effective_tools = manifest.selected_tools if manifest is not None else _detect_tools(paths.target_root)
+        manifest_text, manifest_write_status = _build_migrated_manifest_text(
+            target_root=paths.target_root,
+            manifest=manifest,
+            profile=profile,
+            selected_tools=effective_tools,
+        )
+        preview = OperationReport(dry_run=True)
+        _plan_context_migration(
+            target_root=paths.target_root,
+            desired_context_files=desired_context_files,
+            manifest_text=manifest_text,
+            manifest_write_status=manifest_write_status,
+            report=preview,
+            dry_run=True,
+        )
+        if preview.statuses("conflict"):
+            migration_status = _migration_proposal_status(context_layout, outcome="blocked")
+            report.operations.extend(preview.statuses("conflict"))
+            report.add_note(
+                "Migration stopped before writing because at least one numbered v2 target path or legacy archive path would be overwritten."
+            )
+        elif dry_run:
+            migration_status = _migration_proposal_status(context_layout, outcome="would-migrate")
+            report.operations.extend(preview.operations)
+            report.add_note(
+                f"Would write {len(desired_context_files)} numbered v2 context files into `.forge/context/`, archive legacy-v1 paths under `{LEGACY_CONTEXT_ARCHIVE_ROOT}/`, and {manifest_write_status} `.forge/forge-install.yaml`."
+            )
+        else:
+            _plan_context_migration(
+                target_root=paths.target_root,
+                desired_context_files=desired_context_files,
+                manifest_text=manifest_text,
+                manifest_write_status=manifest_write_status,
+                report=report,
+                dry_run=False,
+            )
+            migration_status = _migration_proposal_status(context_layout, outcome="completed")
+            files_changed = str(report.count("created") + report.count("updated"))
+            report.add_note(
+                "Migration completed: numbered v2 context files were written into `.forge/context/`, legacy-v1 context was archived, and `.forge/forge-install.yaml` was updated to context profile version 2."
+            )
+    elif context_layout == CONTEXT_LAYOUT_V2:
+        migration_status = _migration_proposal_status(context_layout, outcome="already-current")
+        report.add_note("Repository already uses numbered v2 context files. No migration is needed.")
+    elif context_layout == CONTEXT_LAYOUT_MIXED:
+        migration_status = _migration_proposal_status(context_layout, outcome="not-run")
+        report.add_note(
+            "Mixed context layout detected. Forge did not overwrite existing v2 files, archive legacy paths, or update the manifest automatically. Manual review is required before migrating."
+        )
+    else:
+        migration_status = _migration_proposal_status(context_layout, outcome="not-run")
+        report.add_note(
+            "Migration cannot be safely performed because the context layout could not be classified as legacy-v1 or v2. Review `.forge/context` manually, restore a recognizable legacy-v1 or v2 layout, or run `forge update --dry-run` to inspect the current Forge context state."
+        )
+
+    _print_migration_report(
+        report=report,
+        locale=locale,
+        target_root=paths.target_root,
+        profile=profile,
+        context_profile_version=context_profile_version,
+        context_layout=context_layout,
+        migration_mode=migration_mode,
+        proposal_status=migration_status,
+        files_changed=files_changed,
+    )
+    return 0 if not report.statuses("conflict") else 1
+
+
 def _conflict_reason(locale: str, detail: str) -> str:
+    if detail == DETAIL_CONFLICT_MIGRATION:
+        return _msg(locale, "conflict_reason_migration")
+    if detail == DETAIL_CONFLICT_PROPOSAL:
+        return _msg(locale, "conflict_reason_proposal")
     if detail == DETAIL_CONFLICT_EXISTING:
         return _msg(locale, "conflict_reason_existing")
     if detail == DETAIL_CONFLICT_LOCAL:
@@ -1227,6 +1379,22 @@ def _migration_note(context_layout: str) -> str:
     return "not applied automatically; context layout could not be safely classified"
 
 
+def _migration_proposal_status(context_layout: str, *, outcome: str) -> str:
+    if context_layout == CONTEXT_LAYOUT_LEGACY_V1:
+        if outcome == "would-migrate":
+            return f"would migrate legacy-v1 context to numbered v2 files in `.forge/context/` and archive legacy paths under `{LEGACY_CONTEXT_ARCHIVE_ROOT}/`"
+        if outcome == "completed":
+            return f"completed; wrote numbered v2 context files into `.forge/context/` and archived legacy paths under `{LEGACY_CONTEXT_ARCHIVE_ROOT}/`"
+        if outcome == "blocked":
+            return "not run; an existing v2 target path or archive destination would be overwritten"
+        return "not run; direct migration is available for legacy-v1 context"
+    if context_layout == CONTEXT_LAYOUT_V2:
+        return "not needed; repository already uses numbered v2 context files"
+    if context_layout == CONTEXT_LAYOUT_MIXED:
+        return "not run; mixed layout detected and manual review is required"
+    return "not run; migration cannot be safely performed"
+
+
 def _user_owned_context_note(context_layout: str) -> str:
     if context_layout == CONTEXT_LAYOUT_V2:
         return "preserved; numbered v2 context files remain user-owned"
@@ -1237,6 +1405,163 @@ def _user_owned_context_note(context_layout: str) -> str:
     return "preserved"
 
 
+def _build_migrated_manifest_text(
+    *,
+    target_root: Path,
+    manifest: ForgeInstallManifest | None,
+    profile: str,
+    selected_tools: tuple[str, ...],
+) -> tuple[str, str]:
+    if manifest is None:
+        base_manifest = _manifest_from_current_runtime(
+            target_root=target_root,
+            profile=profile,
+            context_profile_version=CONTEXT_PROFILE_VERSION_LEGACY,
+            selected_tools=selected_tools,
+        )
+        migrated = replace(base_manifest, context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT)
+        return dump_manifest(migrated), "create"
+
+    migrated = replace(manifest, context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT)
+    if dump_manifest(migrated) == dump_manifest(manifest):
+        return dump_manifest(migrated), "leave unchanged"
+    return dump_manifest(migrated), "update"
+
+
+def _plan_context_migration(
+    *,
+    target_root: Path,
+    desired_context_files: dict[str, str],
+    manifest_text: str,
+    manifest_write_status: str,
+    report: OperationReport,
+    dry_run: bool,
+) -> None:
+    for rel_path, content in sorted(desired_context_files.items()):
+        _apply_context_migration_file(
+            target_root=target_root,
+            path=target_root / rel_path,
+            content=content,
+            report=report,
+            dry_run=dry_run,
+        )
+
+    for source_rel, archive_rel in _legacy_archive_pairs(target_root):
+        _apply_legacy_archive_move(
+            target_root=target_root,
+            source=target_root / source_rel,
+            archive=target_root / archive_rel,
+            report=report,
+            dry_run=dry_run,
+        )
+
+    _apply_migration_manifest(
+        target_root=target_root,
+        content=manifest_text,
+        report=report,
+        dry_run=dry_run,
+        write_status=manifest_write_status,
+    )
+
+
+def _legacy_archive_pairs(target_root: Path) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for rel_path in LEGACY_CONTEXT_PATHS:
+        source = target_root / rel_path
+        if source.exists():
+            pairs.append((rel_path, f"{LEGACY_CONTEXT_ARCHIVE_ROOT}/{Path(rel_path).name}"))
+    return pairs
+
+
+def _apply_context_migration_file(
+    *,
+    target_root: Path,
+    path: Path,
+    content: str,
+    report: OperationReport,
+    dry_run: bool,
+) -> bool:
+    rel_path = to_manifest_path(target_root, path)
+    if path.exists():
+        existing = path.read_text(encoding="utf-8")
+        if normalize_text(existing) == normalize_text(content):
+            report.add("unchanged", rel_path, DETAIL_CURRENT)
+            return False
+        report.add("conflict", rel_path, DETAIL_CONFLICT_MIGRATION)
+        return True
+
+    if dry_run:
+        report.add("created", rel_path, DETAIL_MIGRATION_V2_WRITE)
+        return False
+
+    _write_text_atomic(path, content)
+    report.add("created", rel_path, DETAIL_MIGRATION_V2_WRITE)
+    return False
+
+
+def _apply_legacy_archive_move(
+    *,
+    target_root: Path,
+    source: Path,
+    archive: Path,
+    report: OperationReport,
+    dry_run: bool,
+) -> bool:
+    source_rel = to_manifest_path(target_root, source)
+    archive_rel = to_manifest_path(target_root, archive)
+    if archive.exists():
+        report.add("conflict", archive_rel, DETAIL_CONFLICT_MIGRATION)
+        return True
+
+    if dry_run:
+        report.add("created", archive_rel, f"{DETAIL_MIGRATION_ARCHIVE} from {source_rel}")
+        return False
+
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    source.rename(archive)
+    report.add("updated", archive_rel, f"{DETAIL_MIGRATION_ARCHIVE} from {source_rel}")
+    return False
+
+
+def _apply_migration_manifest(
+    *,
+    target_root: Path,
+    content: str,
+    report: OperationReport,
+    dry_run: bool,
+    write_status: str,
+) -> bool:
+    del write_status
+    path = target_root / ".forge/forge-install.yaml"
+    rel_path = to_manifest_path(target_root, path)
+    if path.exists():
+        existing = path.read_text(encoding="utf-8")
+        if normalize_text(existing) == normalize_text(content):
+            report.add("unchanged", rel_path, DETAIL_CURRENT)
+            return False
+        if dry_run:
+            report.add("updated", rel_path, DETAIL_MIGRATION_MANIFEST)
+            return False
+        _write_text_atomic(path, content)
+        report.add("updated", rel_path, DETAIL_MIGRATION_MANIFEST)
+        return False
+
+    if dry_run:
+        report.add("created", rel_path, DETAIL_MIGRATION_MANIFEST)
+        return False
+
+    _write_text_atomic(path, content)
+    report.add("created", rel_path, DETAIL_MIGRATION_MANIFEST)
+    return False
+
+
+def _write_text_atomic(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_name(f".{path.name}.tmp")
+    temp_path.write_text(content, encoding="utf-8")
+    temp_path.replace(path)
+
+
 def _detect_tools(target_root: Path) -> tuple[str, ...]:
     selected: list[str] = []
     if (target_root / "AGENTS.md").exists():
@@ -1245,6 +1570,8 @@ def _detect_tools(target_root: Path) -> tuple[str, ...]:
         selected.append("claude")
     if (target_root / ".github/copilot-instructions.md").exists() or (target_root / ".github" / "prompts").exists():
         selected.append("copilot")
+    if any((target_root / rel_path).exists() for rel_path in OPENCODE_SIGNAL_PATHS):
+        selected.append("opencode")
     return tuple(selected) or DEFAULT_SELECTED_TOOLS
 
 
@@ -1383,6 +1710,36 @@ def _print_report(
     if detected_tools is not None:
         context.append((_msg(locale, "detected_tools"), ", ".join(detected_tools)))
     report.print(locale=locale, title=title, context=context)
+
+
+def _print_migration_report(
+    *,
+    report: OperationReport,
+    locale: str,
+    target_root: Path,
+    profile: str,
+    context_profile_version: str,
+    context_layout: str,
+    migration_mode: str,
+    proposal_status: str,
+    files_changed: str,
+) -> None:
+    context = [
+        (_msg(locale, "target"), str(target_root)),
+        (_msg(locale, "detected_profile"), profile),
+        (_msg(locale, "context_profile_version"), context_profile_version),
+        (_msg(locale, "context_layout"), context_layout),
+        (_msg(locale, "migration_mode"), migration_mode),
+        (_msg(locale, "migration_proposal"), proposal_status),
+        (_msg(locale, "files_changed"), files_changed),
+        (_msg(locale, "user_owned_context"), _user_owned_context_note(context_layout)),
+    ]
+    report.print(
+        locale=locale,
+        title=_msg(locale, "migrate_title"),
+        context=context,
+        operations_label=_msg(locale, "proposal_files"),
+    )
 
 
 def _read_ui_language(target_root: Path) -> str:

@@ -19,10 +19,50 @@ from forge_context_engine.runtime_ops import (
     CONTEXT_LAYOUT_LEGACY_V1,
     CONTEXT_LAYOUT_MIXED,
     CONTEXT_LAYOUT_V2,
+    LEGACY_CONTEXT_ARCHIVE_ROOT,
     SERVICE_V2_CONTEXT_FILES,
     WORKSPACE_V2_CONTEXT_FILES,
     _detect_context_layout,
+    run_migrate_context,
 )
+
+
+def _snapshot_tree(root: Path) -> dict[str, str]:
+    if not root.exists():
+        return {}
+    snapshot: dict[str, str] = {}
+    for path in sorted(p for p in root.rglob("*") if p.is_file()):
+        snapshot[str(path.relative_to(root))] = path.read_text(encoding="utf-8")
+    return snapshot
+
+
+def _convert_repo_to_legacy_layout(target: Path, profile: str) -> str:
+    manifest_path = target / ".forge/forge-install.yaml"
+    manifest_text = manifest_path.read_text(encoding="utf-8")
+    manifest_path.write_text(
+        manifest_text.replace('context_profile_version: "2"\n', ""),
+        encoding="utf-8",
+    )
+
+    expected_files = WORKSPACE_V2_CONTEXT_FILES if profile == "workspace" else SERVICE_V2_CONTEXT_FILES
+    for rel_path in expected_files:
+        path = target / rel_path
+        if path.exists():
+            path.unlink()
+
+    legacy_product = target / ".forge/context/01-core/product.md"
+    legacy_unknowns = target / ".forge/context/knowledge/unknowns.md"
+    legacy_overview = target / ".forge/context/repo-map/overview.md"
+    legacy_system = target / ".forge/context/systems/legacy/system.md"
+    legacy_product.parent.mkdir(parents=True, exist_ok=True)
+    legacy_unknowns.parent.mkdir(parents=True, exist_ok=True)
+    legacy_overview.parent.mkdir(parents=True, exist_ok=True)
+    legacy_system.parent.mkdir(parents=True, exist_ok=True)
+    legacy_product.write_text("legacy product\n", encoding="utf-8")
+    legacy_unknowns.write_text("legacy unknowns\n", encoding="utf-8")
+    legacy_overview.write_text("legacy repo map\n", encoding="utf-8")
+    legacy_system.write_text("legacy system\n", encoding="utf-8")
+    return manifest_text
 
 
 class ContextProfileTests(unittest.TestCase):
@@ -382,6 +422,305 @@ class ContextProfileTests(unittest.TestCase):
             after = (target / ".forge/context/01-service-overview.md").read_text(encoding="utf-8")
             self.assertEqual(before, after)
 
+    def test_migrate_context_dry_run_on_legacy_writes_no_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nMigration dry-run.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+            before_context = _snapshot_tree(target / ".forge/context")
+            before_manifest = (target / ".forge/forge-install.yaml").read_text(encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=True)
+
+            self.assertEqual(status, 0)
+            self.assertEqual(before_context, _snapshot_tree(target / ".forge/context"))
+            self.assertFalse((target / LEGACY_CONTEXT_ARCHIVE_ROOT).exists())
+            self.assertEqual((target / ".forge/forge-install.yaml").read_text(encoding="utf-8"), before_manifest)
+            rendered = output.getvalue()
+            self.assertIn("Detected context layout: legacy-v1", rendered)
+            self.assertIn("Migration mode: dry-run", rendered)
+            self.assertIn("would migrate legacy-v1 context to numbered v2 files", rendered)
+            self.assertIn("legacy-v1 context archive", rendered)
+            self.assertIn("context profile version migration", rendered)
+            self.assertIn("Files changed: none", rendered)
+
+    def test_migrate_context_on_legacy_writes_v2_files_into_forge_context(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nMigration write test.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            for rel_path in SERVICE_V2_CONTEXT_FILES:
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
+    def test_migrate_context_on_legacy_archives_legacy_v1_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nArchive legacy paths.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            for name in ("01-core", "knowledge", "repo-map", "systems"):
+                self.assertFalse((target / ".forge/context" / name).exists(), name)
+                self.assertTrue((target / LEGACY_CONTEXT_ARCHIVE_ROOT / name).exists(), name)
+
+    def test_migrate_context_on_legacy_preserves_legacy_files_in_archive(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nLegacy file preservation.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+            legacy_files = [
+                target / ".forge/context/01-core/product.md",
+                target / ".forge/context/knowledge/unknowns.md",
+                target / ".forge/context/repo-map/overview.md",
+                target / ".forge/context/systems/legacy/system.md",
+            ]
+
+            with redirect_stdout(io.StringIO()):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            archived_files = [
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "01-core/product.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "knowledge/unknowns.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "repo-map/overview.md",
+                target / LEGACY_CONTEXT_ARCHIVE_ROOT / "systems/legacy/system.md",
+            ]
+            for path in legacy_files:
+                self.assertFalse(path.exists(), str(path))
+            for path in archived_files:
+                self.assertTrue(path.exists(), str(path))
+
+    def test_migrate_context_on_legacy_updates_manifest_to_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nManifest migration.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            manifest = load_manifest(target / ".forge/forge-install.yaml")
+            self.assertEqual(manifest.context_profile_version, CONTEXT_PROFILE_VERSION_CURRENT)
+
+    def test_migrate_context_on_v2_is_no_op(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nAlready v2.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            self.assertFalse((target / LEGACY_CONTEXT_ARCHIVE_ROOT).exists())
+            self.assertIn("already uses numbered v2 context files", output.getvalue())
+            self.assertIn("Files changed: none", output.getvalue())
+
+    def test_migrate_context_on_mixed_does_not_clean_up_or_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Mixed Repo\n\nMigration mixed layout.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            overview = target / ".forge/context/01-service-overview.md"
+            overview_before = overview.read_text(encoding="utf-8")
+            legacy_product = target / ".forge/context/01-core/product.md"
+            legacy_product.parent.mkdir(parents=True, exist_ok=True)
+            legacy_product.write_text("legacy product\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            self.assertTrue(legacy_product.exists())
+            self.assertEqual(overview.read_text(encoding="utf-8"), overview_before)
+            self.assertFalse((target / LEGACY_CONTEXT_ARCHIVE_ROOT).exists())
+            self.assertIn("mixed layout detected", output.getvalue().lower())
+
+    def test_migrate_context_on_empty_or_unknown_writes_no_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".forge/context").mkdir(parents=True)
+            (target / ".forge/context/modes").mkdir(parents=True)
+            (target / ".forge/context/modes/ask.md").write_text("# ask\n", encoding="utf-8")
+            (target / ".forge/adapter.md").write_text("adapter\n", encoding="utf-8")
+            (target / ".forge/forge.config.yaml").write_text("forge:\n  version: \"1\"\n", encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            self.assertFalse((target / LEGACY_CONTEXT_ARCHIVE_ROOT).exists())
+            rendered = output.getvalue().lower()
+            self.assertIn("migration cannot be safely performed", rendered)
+            self.assertIn("review `.forge/context` manually", rendered)
+            self.assertIn("forge update --dry-run", rendered)
+            self.assertIn("files changed: none", rendered)
+
+    def test_migrate_context_conflict_stops_before_writing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nConflict behavior.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+            conflict_path = target / LEGACY_CONTEXT_ARCHIVE_ROOT / "01-core"
+            conflict_path.parent.mkdir(parents=True, exist_ok=True)
+            conflict_path.write_text("different\n", encoding="utf-8")
+
+            before_context = _snapshot_tree(target / ".forge/context")
+            before_manifest = (target / ".forge/forge-install.yaml").read_text(encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 1)
+            self.assertEqual(conflict_path.read_text(encoding="utf-8"), "different\n")
+            self.assertEqual(before_context, _snapshot_tree(target / ".forge/context"))
+            self.assertEqual((target / ".forge/forge-install.yaml").read_text(encoding="utf-8"), before_manifest)
+            rendered = output.getvalue()
+            self.assertIn("Migration mode: apply", rendered)
+            self.assertIn("Migration: not run", rendered)
+            self.assertIn("Files changed: none", rendered)
+            self.assertNotIn("Migration: completed", rendered)
+            self.assertNotIn("rerunning `forge init`", rendered)
+            self.assertIn("before rerunning `forge migrate-context`", rendered)
+
+    def test_migrate_context_writes_expected_service_v2_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Service\n\nService migration files.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+
+            with redirect_stdout(io.StringIO()):
+                run_migrate_context(target=target, dry_run=False)
+
+            for rel_path in SERVICE_V2_CONTEXT_FILES:
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
+    def test_migrate_context_writes_expected_workspace_v2_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Workspace\n\nWorkspace migration files.\n", encoding="utf-8")
+            (target / "services" / "payments").mkdir(parents=True)
+            (target / "services" / "payments" / "README.md").write_text("payments\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="workspace",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="workspace")
+
+            with redirect_stdout(io.StringIO()):
+                run_migrate_context(target=target, dry_run=False)
+
+            for rel_path in WORKSPACE_V2_CONTEXT_FILES:
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
     def test_manifestless_adoption_empty_or_unknown_reports_legacy_v1_consistently(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
@@ -595,14 +934,14 @@ class ContextProfileTests(unittest.TestCase):
             "\n".join(
                 [
                     'manifest_version: "1"',
-                    'forge_version: "1.0.0rc1"',
+                    'forge_version: "1.1.0rc1"',
                     'profile: "service"',
                     "selected_tools:",
                     "  - codex",
                     'installed_from: "git+https://example.com/forge.git"',
                     'installed_at: "2026-01-01T00:00:00Z"',
-                    'template_revision: "1.0.0rc1"',
-                    'source_revision: "1.0.0rc1"',
+                    'template_revision: "1.1.0rc1"',
+                    'source_revision: "1.1.0rc1"',
                     "managed_paths:",
                     "  - .forge/adapter.md",
                     "user_owned_paths:",

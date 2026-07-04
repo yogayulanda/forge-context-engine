@@ -5,8 +5,9 @@ Use this guide when you want the first successful Forge setup and invocation in 
 Goal: within 10-15 minutes, a new engineer should be able to install the runtime template, invoke one mode, and understand the next workflow step.
 
 Release note:
-- `1.0.0rc1` hardening focuses on install, init, update, adoption, workspace usage, recovery guidance, and compact default context
+- `1.1.0rc1` hardening focuses on install, init, update, adoption, workspace usage, recovery guidance, and compact default context
 - `forge init`, `forge init --workspace`, and `forge update` are the primary user flows
+- `forge migrate-context` is the opt-in legacy-v1 to v2 direct migration flow
 - manual runtime copy remains a compatible fallback when the CLI install path is not available
 
 ## What You Need
@@ -34,6 +35,8 @@ forge init
 cd existing-forge-repo
 forge update
 forge update --dry-run
+forge migrate-context --dry-run
+forge migrate-context
 forge update --tools codex,claude
 
 cd work-context
@@ -57,6 +60,7 @@ Local CLI smoke examples:
 uv run python -m forge_context_engine.cli --version
 uv run python -m forge_context_engine.cli init --help
 uv run python -m forge_context_engine.cli update --help
+uv run python -m forge_context_engine.cli migrate-context --help
 ```
 
 ## What Forge Is
@@ -159,6 +163,8 @@ Use the smallest matching entrypoint:
 - Existing or legacy Forge repo: `forge update`
 - Workspace coordination repo: `forge init --workspace`
 - Safer preview before a managed refresh: `forge update --dry-run`
+- Legacy-v1 to v2 context migration preview: `forge migrate-context --dry-run`
+- Legacy-v1 to v2 context migration: `forge migrate-context`
 
 Existing or legacy repo adoption guidance:
 - if Forge files already exist without `.forge/forge-install.yaml`, `forge update` is the adoption path
@@ -166,6 +172,12 @@ Existing or legacy repo adoption guidance:
 - adoption may stop on locally modified managed files so you can review them instead of losing changes
 - `forge update --dry-run` reports detected profile, detected context layout (`legacy-v1`, `v2`, `mixed`, or `empty-or-unknown`), and that migration is not applied automatically
 - mixed legacy/v2 context layouts are preserved as-is; Forge does not auto-clean them up
+- `forge migrate-context --dry-run` previews direct migration, archives nothing, and writes nothing
+- `forge migrate-context` writes numbered v2 context files directly into `.forge/context/`
+- `forge migrate-context` archives legacy-v1 context under `.forge/context-archive/legacy-v1/` instead of deleting it
+- `forge migrate-context` updates `.forge/forge-install.yaml` to `context_profile_version: "2"` after successful migration
+- mixed layouts require manual review and are not migrated automatically
+- empty-or-unknown layouts are not migrated automatically
 
 ## CLAUDE.md And AGENTS.md Usage
 

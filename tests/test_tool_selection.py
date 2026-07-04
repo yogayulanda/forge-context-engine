@@ -9,6 +9,7 @@ from pathlib import Path
 from forge_context_engine.install_manifest import build_managed_paths, load_manifest, parse_tools_args
 from forge_context_engine.runtime_ops import (
     _build_init_files,
+    _detect_tools,
     _is_managed_file,
     _preserve_non_selected_entrypoints,
     OperationReport,
@@ -154,6 +155,49 @@ class ToolSelectionTests(unittest.TestCase):
             manifest = load_manifest(target / ".forge" / "forge-install.yaml")
             self.assertIn(".forge/skills/", manifest.managed_paths)
             self.assertIn(".opencode/skills/", manifest.managed_paths)
+
+
+    def test_detect_tools_recognizes_opencode_config_or_skills_signals(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".opencode").mkdir(parents=True)
+            (target / ".opencode" / "opencode.json").write_text("{}", encoding="utf-8")
+            self.assertEqual(_detect_tools(target), ("opencode",))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".opencode" / "skills").mkdir(parents=True)
+            self.assertEqual(_detect_tools(target), ("opencode",))
+
+    def test_manifestless_adoption_detects_opencode_from_skills_signal_and_records_managed_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# OpenCode Repo\n", encoding="utf-8")
+            (target / ".forge" / "context" / "modes").mkdir(parents=True)
+            (target / ".forge" / "context" / "modes" / "ask.md").write_text("# ask\n", encoding="utf-8")
+            (target / ".forge" / "adapter.md").write_text("adapter\n", encoding="utf-8")
+            (target / ".forge" / "forge.config.yaml").write_text("forge:\n  version: \"1\"\n", encoding="utf-8")
+            (target / ".opencode" / "skills" / "legacy-skill").mkdir(parents=True)
+            (target / ".opencode" / "skills" / "legacy-skill" / "SKILL.md").write_text(
+                "legacy\n",
+                encoding="utf-8",
+            )
+
+            with redirect_stdout(io.StringIO()):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 0)
+            manifest = load_manifest(target / ".forge" / "forge-install.yaml")
+            self.assertEqual(manifest.selected_tools, ("opencode",))
+            self.assertIn(".opencode/skills/", manifest.managed_paths)
+            self.assertIn(".opencode/opencode.json", manifest.managed_paths)
+            self.assertTrue((target / ".opencode" / "opencode.json").exists())
+            self.assertTrue((target / ".opencode" / "skills" / "forge-plan" / "SKILL.md").exists())
 
 
 if __name__ == "__main__":

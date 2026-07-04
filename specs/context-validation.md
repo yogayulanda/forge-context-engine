@@ -22,6 +22,11 @@
 
 Compatibility note: fresh CLI init now seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain valid for compatibility and should be interpreted according to repository context profile/version.
 
+Migration note:
+- `forge update` refreshes Forge-managed runtime files only and does not migrate context automatically.
+- `forge migrate-context --dry-run` previews direct migration without writing files.
+- `forge migrate-context` writes numbered v2 context files into `.forge/context/`, archives legacy-v1 context under `.forge/context-archive/legacy-v1/`, updates `context_profile_version: "2"`, and stops safely on mixed, empty-or-unknown, or conflicting layouts.
+
 Active layout note:
 - v2 service layout validates numbered service files as the primary fresh-default structure.
 - v2 workspace layout validates numbered workspace files as the primary fresh-default structure.

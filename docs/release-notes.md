@@ -1,8 +1,8 @@
 # Release Notes
 
-## 1.0.0rc1
+## 1.1.0rc1
 
-Forge `1.0.0rc1` is the release-candidate hardening milestone for daily repo usage. This RC keeps the product simple:
+Forge `1.1.0rc1` is the release-candidate hardening milestone for daily repo usage. This RC keeps the product simple:
 
 - fresh repo: `forge init`
 - existing or legacy Forge repo: `forge update`

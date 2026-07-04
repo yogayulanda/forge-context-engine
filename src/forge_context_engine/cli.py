@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from .install_manifest import DEFAULT_SELECTED_TOOLS, ALL_SUPPORTED_TOOLS, parse_tools_args
-from .runtime_ops import run_init, run_update
+from .runtime_ops import run_init, run_migrate_context, run_update
 from .version import __version__
 
 
@@ -97,6 +97,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     update_parser.set_defaults(handler=_handle_update)
 
+    migrate_parser = subparsers.add_parser(
+        "migrate-context",
+        help="Migrate legacy Forge context layouts to numbered v2 context files.",
+    )
+    migrate_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview context migration changes without writing files.",
+    )
+    migrate_parser.add_argument(
+        "--target",
+        type=Path,
+        help="Optional automation/test target path. Current directory remains the default UX.",
+    )
+    migrate_parser.set_defaults(handler=_handle_migrate_context)
+
     return parser
 
 
@@ -129,6 +145,13 @@ def _handle_update(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
         assume_yes=args.yes,
         selected_tools=tools,
+    )
+
+
+def _handle_migrate_context(args: argparse.Namespace) -> int:
+    return run_migrate_context(
+        target=args.target,
+        dry_run=args.dry_run,
     )
 
 

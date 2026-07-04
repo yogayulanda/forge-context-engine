@@ -13,7 +13,7 @@ updated: 2026-06-09
 
 Index and routing map for the entire context system. Not a knowledge source.
 
-Fresh CLI init now seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatible and may still appear in older repositories.
+Fresh CLI init now seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatible and may still appear in older repositories. `forge update` does not migrate them automatically; `forge migrate-context --dry-run` previews direct migration, and `forge migrate-context` writes numbered v2 files into `.forge/context/`, archives legacy-v1 paths under `.forge/context-archive/legacy-v1/`, and updates the manifest to context profile version 2.
 
 ## File Meta
 

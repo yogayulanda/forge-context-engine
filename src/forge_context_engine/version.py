@@ -1,3 +1,3 @@
 """Version metadata for Forge Context Engine."""
 
-__version__ = "1.0.0rc1"
+__version__ = "1.1.0rc1"

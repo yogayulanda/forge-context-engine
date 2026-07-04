@@ -46,6 +46,10 @@ Platform context does NOT:
 - Define CLI, CI, automation, sync, enforcement, or validation tooling.
 - Create a universal enterprise knowledge graph.
 
+Migration note:
+- `forge update` does not migrate local service/workspace context automatically.
+- Legacy-v1 local repo context can be upgraded explicitly with `forge migrate-context --dry-run` and `forge migrate-context`; that direct migration archives legacy paths under `.forge/context-archive/legacy-v1/` instead of deleting them.
+
 ---
 
 ## 3. When To Create Platform Context
