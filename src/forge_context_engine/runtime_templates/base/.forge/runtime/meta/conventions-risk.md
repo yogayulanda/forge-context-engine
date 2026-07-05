@@ -71,7 +71,7 @@ When a secret is detected:
 
 - Redact the raw value before output or context write.
 - Report only secret type, file path, line/reference when available, and safe masked preview such as `<REDACTED_SECRET>`, `<REDACTED_PRIVATE_KEY>`, or `****a91f`.
-- Do not copy the raw value into `.forge/context`, `knowledge/inferred.md`, `knowledge/unknowns.md`, `knowledge/confirmations.md`, decisions, modes, reports, validation-cases, or platform context.
+- Do not copy the raw value into `.forge/context`, `.forge/context-patches/`, `.forge/generated/`, decisions, modes, reports, validation-cases, or platform context.
 - Classify it as a security finding.
 - Recommend rotation if the secret may have been committed, logged, displayed, copied, or otherwise exposed.
 - Preserve enough evidence for remediation without revealing the value.

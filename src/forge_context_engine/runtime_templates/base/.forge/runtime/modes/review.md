@@ -23,7 +23,7 @@ updated: 2026-06-05
 - Git diff / changed files
 - Validation results
 - `systems/<related>`
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 - `knowledge/assumptions.md`
 - `.forge/generated/<relevant>`
 

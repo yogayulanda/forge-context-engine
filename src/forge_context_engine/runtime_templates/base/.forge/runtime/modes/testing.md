@@ -27,7 +27,7 @@ updated: 2026-06-05
 ## on_demand
 - `layers/<related>`
 - `knowledge/decisions/`
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 - `.forge/generated/<relevant>`
 
 ## exclude

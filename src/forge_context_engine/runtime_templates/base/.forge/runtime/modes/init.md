@@ -13,8 +13,8 @@ updated: 2026-06-04
 # Mode: Init
 
 ## include
-- `00-meta/*`
-- `01-core/*`
+- `.forge/runtime/meta/*`
+- active `.forge/context/*.md` files for the selected profile
 
 ## on_demand
 - Repository tree, README/docs, build/config files, package manifests, tests, representative source files, CI/workflow files, API/interface definitions, migrations, and auth/security files when present
@@ -43,12 +43,10 @@ Create confirmed repository context and Forge config.
 
 ## outputs
 - `.forge/forge.config.yaml`.
-- `.forge/context/repo-map/`.
-- `.forge/context/systems/`.
-- `.forge/context/decisions/`.
-- `.forge/context/unknowns/`.
-- `.forge/context/verification/`.
-- `.forge/context/loading-map.md`.
+- numbered `.forge/context/*.md` profile files.
+- `.forge/generated/README.md`.
+- `.forge/context-patches/README.md`.
+- `.forge/context-archive/README.md`.
 
 ## status values
 - `ready`

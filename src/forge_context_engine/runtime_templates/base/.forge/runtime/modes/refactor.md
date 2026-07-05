@@ -26,7 +26,7 @@ updated: 2026-06-05
 - `knowledge/decisions/`
 
 ## on_demand
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 - `knowledge/assumptions.md`
 - `.forge/generated/<relevant>`
 - Tests, coverage, contracts, and call sites needed to prove behavior preservation

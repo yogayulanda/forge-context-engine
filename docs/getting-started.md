@@ -22,6 +22,10 @@ Release note:
 
 Forge does not require a server, daemon, workflow engine, scheduler, or separate memory store.
 
+Default shared tools:
+- `codex`
+- `copilot`
+
 ## CLI Flow
 
 Current CLI flow:
@@ -37,6 +41,7 @@ forge update
 forge update --dry-run
 forge migrate-context --dry-run
 forge migrate-context
+forge update --tools codex,copilot
 forge update --tools codex,claude
 
 cd work-context
@@ -92,11 +97,12 @@ Manual setup remains available when you want to copy runtime files directly.
 
    ```text
    AGENTS.md
-   CLAUDE.md
+   .github/copilot-instructions.md
+   .github/skills/
    .forge/
    ```
 
-   Add `.github/copilot-instructions.md` only when GitHub Copilot is explicitly selected. Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, or `runtime/adapters/` into every target repository.
+   Add `CLAUDE.md`, `.claude/commands/**`, and `.claude/.gitignore` only when Claude is explicitly selected. Do not copy engine-only folders such as `docs/`, `specs/`, `validation-cases/`, or `runtime/adapters/` into every target repository.
 
 2. Open `<target-repo>/.forge/forge.config.yaml`.
 
@@ -108,7 +114,7 @@ Manual setup remains available when you want to copy runtime files directly.
    - `workflow.default_mode: ask` unless the repository has an explicit reason to start elsewhere.
    - `context.root: .forge/context` so context stays repository-local.
    - `policy.require_human_confirmation_for` covers important domain, data, architecture, contract, security, and migration changes.
-   - `tools.adapters` defaults to `codex` and `claude`; add Copilot or OpenCode only when needed.
+   - `tools.adapters` defaults to `codex` and `copilot`; add Claude or OpenCode only when needed.
 
 3. Keep `.forge/context` repository-first.
 
@@ -126,7 +132,7 @@ Manual setup remains available when you want to copy runtime files directly.
 
 5. Keep tool entrypoints thin.
 
-   `CLAUDE.md` and the shared `AGENTS.md` wrapper should point to `.forge/adapter.md` and `.forge/context`. Optional `.github/copilot-instructions.md` should do the same. These wrappers should not store repo-specific cognition, lifecycle logic, or artifact policy.
+   Optional `CLAUDE.md`, the shared `AGENTS.md` wrapper, and optional `.github/copilot-instructions.md` should point to `.forge/adapter.md` and `.forge/context`. Copilot skill exports should live under `.github/skills/**/SKILL.md` and mirror canonical `.forge/skills/**/SKILL.md`. These wrappers should not store repo-specific cognition, lifecycle logic, or artifact policy.
 
 6. Make one scoped first request.
 
@@ -286,7 +292,7 @@ Short rule:
 
 - The documented install path is GitHub plus `uv`; PyPI publishing is not part of this release flow.
 - `forge update` refreshes managed runtime files; it does not redesign an existing repository.
-- Copilot support is opt-in and may depend on the host environment's prompt-file behavior.
+- Copilot support is opt-in and uses `.github/copilot-instructions.md` plus `.github/skills/**/SKILL.md` when selected.
 - Manifest-less legacy repos can be adopted, but local managed-file edits may require manual conflict resolution.
 - Workspace repos coordinate linked services; they do not replace service-repo evidence.
 

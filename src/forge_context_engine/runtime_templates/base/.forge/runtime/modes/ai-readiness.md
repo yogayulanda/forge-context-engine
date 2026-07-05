@@ -13,18 +13,15 @@ updated: 2026-06-09
 # Mode: AI Readiness
 
 ## include
-- `00-meta/conventions.md`
-- `01-core/*`
-- `knowledge/inferred.md`
-- `knowledge/unknowns.md`
+- `.forge/runtime/meta/conventions.md`
+- active `.forge/context/*.md` files relevant to the audit
+- `.forge/context/14-decisions-assumptions-and-constraints.md`
+- `.forge/context/99-open-questions.md`
 
 ## on_demand
-- `00-meta/context-manifest.md`
-- `00-meta/ai-readiness-factors.md`
-- `knowledge/decisions/`
-- `knowledge/assumptions.md`
-- `systems/<related>`
-- `layers/<related>`
+- `.forge/runtime/meta/context-manifest.md`
+- `.forge/runtime/meta/ai-readiness-factors.md`
+- related active `.forge/context/*.md` files
 - `.forge/generated/<relevant>`
 - `.forge/context-patches/<relevant>`
 - Current docs, manifests, representative source files, tests, build/validation entrypoints, config surfaces, and integration boundaries needed for the audit
@@ -47,16 +44,16 @@ Audit whether the repository is ready for safe, effective AI-assisted engineerin
 
 ## behavior
 - Assess repository discoverability, context fitness, code cognitive load, architecture and boundary clarity, interface clarity, validation readiness, change-safety hotspots, governance signals, ambiguity, and generated-noise hygiene.
-- Evaluate against the `FAR-*` factor families in `00-meta/ai-readiness-factors.md`. Bands are evidence-anchored qualitative judgments, not tool scores; Forge runs no scanners. Mark a factor not-evaluated rather than guessing when evidence is thin.
+- Evaluate against the `FAR-*` factor families in `.forge/runtime/meta/ai-readiness-factors.md`. Bands are evidence-anchored qualitative judgments, not tool scores; Forge runs no scanners. Mark a factor not-evaluated rather than guessing when evidence is thin.
 - Cite the primary `FAR-*` factor ID in each finding so results stay trackable across scans.
-- Derive the verdict from the dominant readiness band using the band→verdict map in `00-meta/ai-readiness-factors.md`.
+- Derive the verdict from the dominant readiness band using the band→verdict map in `.forge/runtime/meta/ai-readiness-factors.md`.
 - Separate confirmed facts, inferred risks, ambiguities, and questions that require human confirmation.
 - Emit structured `Questions For Human` entries when unresolved decisions materially affect safe AI use. Each question should include `ID`, `Decision Needed`, `Why This Is Unresolved`, `Options`, `Recommended Option`, `Why Recommended`, and `Impact If Unanswered`. Provide three distinct, mutually-exclusive options by default (drop to two only when a genuine third path does not exist; never pad with a filler option), and name exactly one Recommended Option grounded in repository evidence.
-- Compute the derived `Readiness Score` (0–100) and coverage using the scoring rules in `00-meta/ai-readiness-factors.md`. The qualitative band stays authoritative; record any score/band gap as a calibration note rather than overriding the band.
+- Compute the derived `Readiness Score` (0–100) and coverage using the scoring rules in `.forge/runtime/meta/ai-readiness-factors.md`. The qualitative band stays authoritative; record any score/band gap as a calibration note rather than overriding the band.
 - When a comparable prior saved report exists (same `scoring_method` and `engine_version`), include a `Readiness Trend` showing the score delta and which families moved; omit unchanged families.
 - Prefer current repository evidence when context or artifacts drift.
 - Produce a compact readiness report, a remediation roadmap, and optional context-patch recommendations.
-- Lead the report with an `At a Glance` block written in plain English for a non-author, using the plain-language label tables in `00-meta/ai-readiness-factors.md`. It must:
+- Lead the report with an `At a Glance` block written in plain English for a non-author, using the plain-language label tables in `.forge/runtime/meta/ai-readiness-factors.md`. It must:
   1. Open with one line stating what the report answers (e.g. "Can AI safely help with code here, and what to fix first?") and a note that everything after the block is supporting detail.
   2. Give the overall `Readiness Score /100` plus the plain headline sentence mapped from the verdict — not the raw enum — and the coverage in plain words ("we checked N of M things").
   3. List every open decision under `What needs your decision`, each in plain terms with what it gates; full options stay in `Questions For Human` below.

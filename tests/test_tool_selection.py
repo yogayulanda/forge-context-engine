@@ -62,6 +62,11 @@ class ToolSelectionTests(unittest.TestCase):
         managed_paths = build_managed_paths("service", ("opencode",))
         self.assertIn(".opencode/skills/", managed_paths)
 
+    def test_build_managed_paths_includes_copilot_skills_dir(self) -> None:
+        managed_paths = build_managed_paths("service", ("codex", "copilot"))
+        self.assertIn(".github/skills/", managed_paths)
+        self.assertNotIn(".github/prompts/", managed_paths)
+
     def test_canonical_forge_skill_is_managed(self) -> None:
         self.assertTrue(_is_managed_file(".forge/skills/forge-plan/SKILL.md", "service", ("opencode",)))
 
@@ -75,6 +80,26 @@ class ToolSelectionTests(unittest.TestCase):
         self.assertIn(".forge/skills/forge-plan/SKILL.md", files)
         self.assertIn(".opencode/skills/forge-plan/SKILL.md", files)
 
+    def test_build_init_files_exports_copilot_skills_from_canonical_templates(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex", "copilot"),
+            ui_language="en",
+        )
+        self.assertIn(".github/copilot-instructions.md", files)
+        self.assertIn(".github/skills/forge-update-context/SKILL.md", files)
+        self.assertIn(".github/skills/forge-verify-context/SKILL.md", files)
+        self.assertEqual(
+            files[".github/skills/forge-update-context/SKILL.md"],
+            files[".forge/skills/forge-update-context/SKILL.md"],
+        )
+        self.assertNotIn(".github/prompts/forge-update-context.prompt.md", files)
+
+    def test_base_templates_do_not_include_legacy_copilot_prompt_wrappers(self) -> None:
+        files = iter_template_files("base")
+        self.assertFalse(any(rel_path.startswith(".github/prompts/") for rel_path in files), files.keys())
+
     def test_build_init_files_includes_update_context_skill_and_claude_wrapper(self) -> None:
         files = _build_init_files(
             target_root=Path("/tmp/example"),
@@ -84,7 +109,22 @@ class ToolSelectionTests(unittest.TestCase):
         )
         self.assertIn(".forge/skills/forge-update-context/SKILL.md", files)
         self.assertIn(".forge/runtime/modes/update-context.md", files)
+        self.assertIn(".claude/.gitignore", files)
         self.assertIn(".claude/commands/forge-update-context.md", files)
+        _assert_contains_all(
+            self,
+            files[".claude/.gitignore"],
+            (
+                "settings.local.json",
+                "*.local.json",
+                "tmp/",
+                "cache/",
+                "logs/",
+                "sessions/",
+                "!commands/",
+                "!commands/**",
+            ),
+        )
 
     def test_update_context_uses_canonical_base_template_locations_only(self) -> None:
         files = iter_template_files("base")
@@ -162,9 +202,36 @@ class ToolSelectionTests(unittest.TestCase):
             ui_language="en",
         )
         self.assertIn(".forge/generated/README.md", files)
+        self.assertIn(".forge/context-patches/README.md", files)
+        self.assertIn(".forge/context-archive/README.md", files)
         self.assertNotIn(".forge/context/generated/README.md", files)
         for rel_path, content in files.items():
             self.assertNotIn(".forge/context/generated/", content, msg=f"unexpected legacy generated path in {rel_path}")
+
+    def test_forge_gitignore_uses_local_hygiene_policy(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex",),
+            ui_language="en",
+        )
+        gitignore = files[".forge/.gitignore"]
+        _assert_contains_all(
+            self,
+            gitignore,
+            (
+                "/cache/",
+                "/temp/",
+                "/generated/**",
+                "!/generated/README.md",
+                "/context-patches/**",
+                "!/context-patches/README.md",
+                "/context-archive/**",
+                "!/context-archive/README.md",
+                "/forge.local.yaml",
+            ),
+        )
+        self.assertNotIn(".github/skills", gitignore)
 
     def test_opencode_config_points_to_forge_skills(self) -> None:
         files = _build_init_files(
@@ -200,6 +267,7 @@ class ToolSelectionTests(unittest.TestCase):
                 content,
                 msg=f"unexpected legacy runtime skill reference in {rel_path}",
             )
+            self.assertNotIn(".forge/context/generated", content, msg=f"unexpected legacy generated path in {rel_path}")
 
     def test_update_context_skill_preserves_write_boundaries(self) -> None:
         files = _build_init_files(
@@ -288,6 +356,61 @@ class ToolSelectionTests(unittest.TestCase):
                 report=report,
             )
             self.assertFalse(any(op.path == "AGENTS.md" for op in report.operations))
+
+    def test_detect_tools_recognizes_copilot_skills_signal(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / ".github" / "skills").mkdir(parents=True)
+            self.assertEqual(_detect_tools(target), ("copilot",))
+
+    def test_default_init_installs_agents_and_copilot_without_claude(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=parse_tools_args(None),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertTrue((target / "AGENTS.md").exists())
+            self.assertTrue((target / ".github/copilot-instructions.md").exists())
+            self.assertTrue((target / ".github/skills/forge-update-context/SKILL.md").exists())
+            self.assertTrue((target / ".github/skills/forge-verify-context/SKILL.md").exists())
+            self.assertTrue((target / ".forge/skills/forge-update-context/SKILL.md").exists())
+            self.assertTrue((target / ".forge/skills/forge-verify-context/SKILL.md").exists())
+            self.assertFalse((target / ".github/prompts").exists())
+            self.assertTrue((target / ".forge/generated/README.md").exists())
+            self.assertTrue((target / ".forge/context-patches/README.md").exists())
+            self.assertTrue((target / ".forge/context-archive/README.md").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+            self.assertFalse((target / ".claude").exists())
+
+    def test_default_workspace_init_uses_same_shared_tool_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Workspace\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="workspace",
+                    selected_tools=parse_tools_args(None),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertTrue((target / "AGENTS.md").exists())
+            self.assertTrue((target / ".github/copilot-instructions.md").exists())
+            self.assertTrue((target / ".github/skills/forge-update-context/SKILL.md").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+            self.assertFalse((target / ".claude").exists())
 
     def test_update_migrates_legacy_opencode_layout_to_canonical_forge_skills(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

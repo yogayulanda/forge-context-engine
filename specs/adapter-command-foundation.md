@@ -379,7 +379,7 @@ Forge separates three concerns:
 | Forge core | Repository cognition, lifecycle modes, governance semantics, artifact lifecycle, runtime semantics |
 | Shared skill layer | Reusable tool-neutral workflow entrypoints under `.forge/skills/` in target repos |
 | Adapter layer | Tool-specific entry files, command text, loading hints, compatibility wrappers |
-| Execution surface | Claude slash commands, Codex `AGENTS.md`, GitHub Copilot prompt files, Cursor rules, future assistant invocation surfaces |
+| Execution surface | Claude slash commands, Codex `AGENTS.md`, GitHub Copilot instructions plus repo-local skills, Cursor rules, future assistant invocation surfaces |
 
 ### 5.1 Claude
 
@@ -410,7 +410,7 @@ Cursor compatibility uses:
 
 GitHub Copilot compatibility uses:
 - `.github/copilot-instructions.md` as the thin repository instruction surface when Copilot is explicitly selected.
-- Optional `.github/prompts/*.prompt.md` as tool UX wrappers.
+- `.github/skills/**/SKILL.md` as repo-local Copilot skill exports generated from canonical Forge skills.
 - No Copilot-specific repository intelligence, lifecycle semantics, governance layer, or workflow system.
 
 ### 5.4.1 Target Repository Surface
@@ -419,15 +419,20 @@ Default target-repository output is:
 
 ```text
 AGENTS.md
-CLAUDE.md
+.github/copilot-instructions.md
+.github/skills/
 .forge/
 ```
 
-Optional target-repository output when Copilot is selected:
+Optional target-repository output when Claude is selected:
 
 ```text
-.github/copilot-instructions.md
+CLAUDE.md
+.claude/.gitignore
+.claude/commands/
 ```
+
+Legacy `.github/prompts/**` wrappers are obsolete and are not current target-repository output.
 
 Engine/package folders such as `docs/`, `specs/`, `validation-cases/`, and `runtime/adapters/` must not be copied into every target repository by default.
 
@@ -465,7 +470,7 @@ If it needs state, scheduling, autonomous loops, execution graphs, or repository
 | `.forge/adapter.md` | Shared compact adapter source for copied target-repo wrappers. |
 | `adapters/claude/` | Engine/package Claude invocation notes and optional slash-command templates. |
 | `adapters/codex/` | Engine/package Codex invocation notes and shared `AGENTS.md` mapping references. |
-| `adapters/copilot/` | Opt-in GitHub Copilot instruction and prompt-wrapper templates. |
+| `adapters/copilot/` | Opt-in GitHub Copilot instruction and skill-export mapping docs. |
 | `adapters/opencode/` | Engine/package OpenCode invocation notes and shared `AGENTS.md` mapping references. |
 | `adapters/cursor/` | Engine/package Cursor rules/invocation notes. |
 | `adapters/shared/` | Portable command semantics and anti-duplication rules. |

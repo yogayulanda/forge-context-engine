@@ -166,8 +166,8 @@ def _resolve_tools(args: argparse.Namespace) -> tuple[str, ...]:
 
     options = ", ".join(f"{index + 1}:{tool}" for index, tool in enumerate(ALL_SUPPORTED_TOOLS))
     prompt = (
-        "Enable AI tools [codex,claude] "
-        f"(options: {options}, 0:all; you can type names, numbers, comma, or spaces; default: codex,claude): "
+        "Enable AI tools [codex,copilot] "
+        f"(options: {options}, 0:all; you can type names, numbers, comma, or spaces; default: codex,copilot): "
     )
     try:
         response = input(prompt).strip()

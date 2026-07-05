@@ -57,6 +57,7 @@ forge update
 forge update --dry-run
 forge migrate-context --dry-run
 forge migrate-context
+forge update --tools codex,copilot
 forge update --tools codex,claude
 forge update --tools opencode
 ```
@@ -64,7 +65,7 @@ forge update --tools opencode
 Rules:
 - Current directory is the default target.
 - `--target` may exist for automation, tests, or scripting, but it is not the primary UX.
-- `--tools` supports non-interactive selection such as `codex,claude`, `opencode`, `codex,opencode`, or `all`.
+- `--tools` supports non-interactive selection such as `codex,copilot`, `codex,claude`, `opencode`, `codex,opencode`, or `all`.
 - `--yes` supports future non-interactive confirmation.
 - `--dry-run` supports future preview without writing files.
 
@@ -108,14 +109,17 @@ Expected target-repo output:
 
 ```text
 AGENTS.md
-CLAUDE.md
+.github/copilot-instructions.md
+.github/skills/
 .forge/
 ```
 
-Additional output only when GitHub Copilot is explicitly selected:
+Additional output only when Claude is explicitly selected:
 
 ```text
-.github/copilot-instructions.md
+CLAUDE.md
+.claude/.gitignore
+.claude/commands/
 ```
 
 Service profile stores repository-local service context. Forge does not choose or create a global workspace location.
@@ -141,8 +145,8 @@ Fresh service init seeds these user-owned v2 files under `.forge/context/`:
 - `99-open-questions.md`
 
 Tool defaults:
-- default selected tools: `codex`, `claude`
-- Copilot and OpenCode are opt-in
+- default selected tools: `codex`, `copilot`
+- Claude and OpenCode are opt-in
 - only selected tool entrypoints are created
 
 ---
@@ -182,7 +186,7 @@ loading_policy:
   cross_repo: load workspace summary, then only relevant linked service context
 default_tools:
   - codex
-  - claude
+  - copilot
 ```
 
 Rules:
@@ -230,17 +234,22 @@ forge_version: "1.1.0rc1"
 profile: service
 selected_tools:
   - codex
-  - claude
+  - copilot
 installed_from: git+https://github.com/yogayulanda/forge-context-engine.git
 installed_at: "2026-06-05T00:00:00Z"
 template_revision: "<package-template-revision>"
 source_revision: "<git-commit-or-tag>"
 managed_paths:
   - AGENTS.md
-  - CLAUDE.md
+  - .github/copilot-instructions.md
+  - .github/skills/
   - .forge/adapter.md
   - .forge/forge.config.yaml
   - .forge/forge-install.yaml
+  - .forge/generated/README.md
+  - .forge/context-patches/README.md
+  - .forge/context-archive/README.md
+  - .forge/skills/
   - .forge/runtime/meta/
   - .forge/runtime/modes/
 user_owned_paths:
@@ -275,7 +284,7 @@ The manifest exists to:
 - support safe updates
 - support adoption-preview for older manifest-less installs
 
-`forge update --tools ...` updates `selected_tools`, adds missing selected entrypoints safely, and does not prune older entrypoints unless a future explicit prune flag is introduced.
+`forge update --tools ...` replaces `selected_tools`, adds missing selected entrypoints safely, and removes obsolete managed entrypoints only when the existing files are still safe managed content. User-edited or ambiguous files are preserved and reported as conflicts for manual review.
 
 ---
 
@@ -287,10 +296,17 @@ Managed paths may be updated by `forge update` when safe:
 - `.forge/.gitignore`
 - `AGENTS.md` when Codex or OpenCode selected
 - `CLAUDE.md` when Claude selected
+- `.claude/.gitignore` when Claude selected
+- `.claude/commands/*` when Claude selected
 - `.github/copilot-instructions.md` when Copilot selected
+- `.github/skills/*` when Copilot selected
 - `.forge/adapter.md`
 - `.forge/forge.config.yaml`
 - `.forge/forge-install.yaml`
+- `.forge/generated/README.md`
+- `.forge/context-patches/README.md`
+- `.forge/context-archive/README.md`
+- `.forge/skills/*`
 - runtime-owned `.forge/runtime/meta/*`
 - runtime-owned `.forge/runtime/modes/*`
 
@@ -344,24 +360,30 @@ Rules:
 ## 7. Tool Selection Behavior
 
 Tool selection contract:
-- default selected tools: `codex`, `claude`
-- Copilot and OpenCode are opt-in
+- default selected tools: `codex`, `copilot`
+- Claude and OpenCode are opt-in
 - `all` means `codex`, `claude`, `copilot`, `opencode`
 - only selected tool entrypoints are created
+- explicit `--tools` replaces the selected tool set instead of unioning with previous defaults
 
 Default target output stays:
 
 ```text
 AGENTS.md
-CLAUDE.md
+.github/copilot-instructions.md
+.github/skills/
 .forge/
 ```
 
-Copilot adds:
+Claude adds:
 
 ```text
-.github/copilot-instructions.md
+CLAUDE.md
+.claude/.gitignore
+.claude/commands/
 ```
+
+Legacy `.github/prompts/**` wrappers are not part of current init/update output.
 
 OpenCode does not add a second root wrapper. It uses the shared `AGENTS.md` surface when selected.
 

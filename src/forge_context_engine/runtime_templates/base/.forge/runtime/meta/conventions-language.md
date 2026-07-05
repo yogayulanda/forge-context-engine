@@ -58,7 +58,7 @@ Each repo's `.forge/context/` uses **one dominant natural language** for narrati
 
 The chosen language must be applied consistently across:
 
-`01-core/product.md` · `01-core/architecture.md` · `01-core/principles.md` · `01-core/constraints.md` · `systems/<unit>/system.md` · `layers/<x>/<x>.md` · `00-meta/glossary.md` · `knowledge/inferred.md` · `knowledge/assumptions.md` · `knowledge/unknowns.md` · `knowledge/decisions/ADR-NNNN-*.md` · layer `README.md`
+active `.forge/context/*.md` profile files · `systems/<unit>/system.md` · `layers/<x>/<x>.md` · `.forge/runtime/meta/glossary.md` · layer `README.md`
 
 ### What MUST NEVER Be Translated
 
@@ -121,7 +121,7 @@ When one context file refers to content in another, prefer **stable references**
 | Prefer (stable) | Avoid (fragile) |
 |---|---|
 | `core.product` (id ref) | "the product file" |
-| `01-core/product.md` (file ref) | the file currently named "Product" |
+| `.forge/context/01-service-overview.md` (file ref) | the file currently named "Product" |
 | `core.product → producers list` (semantic ref) | `"Sumber Data"` section / `"Data Sources"` section |
 | `system.payment-service` (id ref) | "payment service docs" |
 | Slug anchor `#producers` if used consistently | Verbatim heading text in any language |

@@ -24,7 +24,7 @@ updated: 2026-06-05
 ## include
 - `layers/<related>`
 - `systems/<affected>`
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 
 ## on_demand
 - `knowledge/decisions/`, `knowledge/assumptions.md`, `knowledge/unknowns.md`

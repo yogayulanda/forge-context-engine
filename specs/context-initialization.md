@@ -275,11 +275,11 @@ status: confirmed | inferred | assumption | unknown | deprecated
 confidence: high | medium | low
 source_paths:
   - <repo path used as evidence>
-source_commit: <git commit sha or unknown>
-last_verified: YYYY-MM-DD
 ```
 
-`source_paths` identify the repository files that support or affect the card. `source_commit` records the commit used when the card was last verified; use `unknown` only when git evidence is unavailable and record why in `knowledge/unknowns.md`. `last_verified` is the date the evidence was checked, not the date the card was first written.
+`source_paths` identify the repository files that support or affect the card.
+
+Forge v2 does not require legacy per-card freshness fields. Context freshness is handled through verification workflows, runtime manifests, and explicit context update/review processes rather than per-card timestamp fields.
 
 Examples:
 
@@ -734,7 +734,7 @@ After successful initialization:
 | Operation | When | How |
 |---|---|---|
 | Incremental updates | During development | changed files -> affected context cards -> `.forge/context-patches` proposal -> review -> promote to `.forge/context` |
-| Staleness check | During `verify-context` or context-impact review | Re-verify `source_paths` and `last_verified`; demote stale entries |
+| Staleness check | During `verify-context` or context-impact review | Re-check active evidence, refresh affected cards when needed, and demote stale entries |
 | New unit added | When new service/app created | Run Phase 3 steps for that unit only |
 | New layer activated | When new discipline enters scope | Run Phase 2 steps for that layer only |
 | Promote assumption | When implementation validates it | Add evidence → promote to `inferred` → human confirms → `confirmed` + entry in `confirmations.md` |

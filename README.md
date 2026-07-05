@@ -130,6 +130,7 @@ Fresh context layout defaults:
 Tool selection:
 
 ```bash
+forge init --tools codex,copilot
 forge init --tools codex,claude
 forge init --tools opencode
 forge init --tools all
@@ -155,6 +156,7 @@ Apply updates:
 
 ```bash
 forge update
+forge update --tools codex,copilot
 forge update --tools codex,claude
 forge update --tools opencode
 forge migrate-context
@@ -198,8 +200,8 @@ Forge keeps the repo contract shared while the tool entrypoints stay thin.
 
 - Codex uses `AGENTS.md`
 - OpenCode uses `AGENTS.md`
-- Claude Code uses `CLAUDE.md`
-- Copilot can use optional `.github/copilot-instructions.md` and prompt wrappers
+- Claude Code uses optional `CLAUDE.md`
+- Copilot uses optional `.github/copilot-instructions.md` and `.github/skills/**/SKILL.md`
 
 Universal artifacts remain tool-neutral across those tools. If a workflow needs tool-specific notes, isolate them under `Target Tool Notes` instead of embedding tool mechanics in shared Plan, ECP, execution report, or review content.
 
@@ -226,21 +228,27 @@ Use Forge review mode to review the executed health check change.
 ```text
 .
 ├── AGENTS.md
-├── CLAUDE.md
 ├── .github/
-│   └── copilot-instructions.md
+│   ├── copilot-instructions.md
+│   └── skills/
+│       └── <skill>/SKILL.md
+├── .github/
 └── .forge/
     ├── adapter.md
     ├── forge.config.yaml
     ├── forge-install.yaml
     ├── context/
     ├── generated/
+    ├── skills/
     ├── context-patches/
     ├── temp/
     └── cache/
 ```
 
+- `AGENTS.md` plus Copilot files are the default shared adapter output.
+- `CLAUDE.md`, `.claude/commands/**`, and `.claude/.gitignore` exist only if Claude is selected.
 - `.github/copilot-instructions.md` exists only if Copilot is selected.
+- `.github/skills/**/SKILL.md` exists only if Copilot is selected.
 - `.forge/temp` and `.forge/cache` are local-only.
 - `.forge/context` is the curated source of truth.
 - `.forge/generated` is for working artifacts when requested or approved.

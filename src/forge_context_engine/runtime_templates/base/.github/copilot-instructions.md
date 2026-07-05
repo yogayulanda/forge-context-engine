@@ -1,9 +1,11 @@
-# GitHub Copilot Forge Wrapper
+# Forge Copilot Instructions
 
-Thin GitHub Copilot-compatible entrypoint.
+This repository uses Forge.
 
-Read `.forge/adapter.md` and follow it. `.forge/context` remains the curated source of truth.
+Read `AGENTS.md` and `.forge/adapter.md`, then follow the installed Forge runtime and skills.
 
-Copilot may receive Forge requests through natural prompts or tool-specific `/forge-<mode>` syntax when available. Resolve those invocations to the active Forge core lifecycle or clearly labeled compatibility/scenario guidance.
+`.forge/context/` is the active curated repository context.
+`.forge/generated/` is generated output, not source of truth.
+`.forge/context-archive/` is archive/reference only.
 
-Keep suggestions inside the approved file and scope boundary. Do not promise autonomous workflow execution, and do not store repository cognition, lifecycle logic, validation policy, or artifact policy in this file.
+Do not store repository cognition, lifecycle logic, validation policy, or artifact policy in this file.

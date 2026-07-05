@@ -34,7 +34,7 @@ When initializing or updating context, AI must perform an evidence sweep on thes
 | Config / runtime hooks | Config loaders, bootstrap files |
 | Validation rules | Validators, sentinel checks, enum constraints |
 
-If context says "N items" and repo has a different count → context is wrong; correct it. Log the discrepancy in `unknowns.md` if root cause is unclear.
+If context says "N items" and repo has a different count → context is wrong; correct it. Log the discrepancy in `.forge/context/99-open-questions.md` if the root cause is unclear.
 
 ---
 
@@ -44,7 +44,7 @@ When repo evidence at an `evidence: ref` path changes:
 
 1. Affected file's `status: confirmed` demotes to `inferred`.
 2. AI proposes refresh from current code.
-3. If refresh introduces ambiguity not resolvable from code alone → log to `unknowns.md`.
+3. If refresh introduces ambiguity not resolvable from code alone → log to `.forge/context/99-open-questions.md`.
 4. Old assertions that no longer hold are marked `deprecated`, not silently deleted.
 
 Drift statuses:
@@ -83,10 +83,10 @@ During brownfield init, AI must scan code for **implicit constraints not obvious
 
 | Constraint nature | Destination |
 |---|---|
-| Global hard rule (compliance, platform-wide, regulatory) | `01-core/constraints.md` |
+| Global hard rule (compliance, platform-wide, regulatory) | `.forge/context/14-decisions-assumptions-and-constraints.md` |
 | Single-unit behavior | `systems/<name>/system.md` |
-| Weak inference (no clear ADR backing) | `knowledge/inferred.md` |
-| Unclear business intent | `knowledge/unknowns.md` (priority `important`) |
+| Weak inference (no clear ADR backing) | active `.forge/context/*.md` entries labeled `inferred` |
+| Unclear business intent | `.forge/context/99-open-questions.md` |
 
 ### Audit Triggers
 
@@ -141,6 +141,6 @@ When documenting tables in `architecture.md`, `system.md`, or `constraints.md`:
 
 ### If Classification Is Unclear
 
-- Record table role as `unknown` in `knowledge/unknowns.md` (priority `important`).
+- Record table role as `unknown` in `.forge/context/99-open-questions.md`.
 - Do not flatten into a generic "owned tables" claim.
 - Do not assume a table is part of the runtime write path without evidence in repository code.

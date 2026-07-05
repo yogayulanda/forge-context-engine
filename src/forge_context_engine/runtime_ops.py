@@ -19,6 +19,7 @@ from .install_manifest import (
     PROFILE_SERVICE,
     PROFILE_WORKSPACE,
     LOCAL_ONLY_PATHS_BASELINE,
+    build_managed_paths,
     build_user_owned_paths,
     build_manifest,
     dump_manifest,
@@ -29,10 +30,35 @@ from .runtime_templates import iter_template_files, read_template
 from .version import __version__
 
 
-FORGE_LOCAL_GITIGNORE = ".forge/temp/\n.forge/cache/\n"
+FORGE_LOCAL_GITIGNORE = """# Forge local cache/scratch
+/cache/
+/temp/
+
+# Generated artifacts are local by default.
+# Keep README.md tracked so the directory exists and explains the policy.
+/generated/**
+!/generated/
+!/generated/README.md
+
+# Context patch proposals are local by default.
+# Force-add a specific patch if your team wants to review/commit it.
+/context-patches/**
+!/context-patches/
+!/context-patches/README.md
+
+# Migration/deprecated archives are local safety backups by default.
+# Force-add archive content only when your team intentionally wants migration history in git.
+/context-archive/**
+!/context-archive/
+!/context-archive/README.md
+
+# Local personal Forge config
+/forge.local.yaml
+"""
 CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
+CLAUDE_GITIGNORE_PATH = ".claude/.gitignore"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
-COPILOT_PROMPTS_PREFIX = ".github/prompts/"
+COPILOT_SKILLS_PREFIX = ".github/skills/"
 TEMPLATE_SKILLS_PREFIX = "skills/"
 CANONICAL_SKILLS_PREFIX = ".forge/skills/"
 OPENCODE_SKILLS_PREFIX = ".opencode/skills/"
@@ -41,7 +67,7 @@ OPENCODE_SIGNAL_PATHS = (
     OPENCODE_CONFIG_PATH,
     OPENCODE_SKILLS_PREFIX.rstrip("/"),
 )
-OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, COPILOT_PROMPTS_PREFIX, TEMPLATE_SKILLS_PREFIX)
+OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, ".github/prompts/", TEMPLATE_SKILLS_PREFIX)
 LEGACY_CONTEXT_TEMPLATE_PREFIXES = (
     ".forge/context/01-core/",
     ".forge/context/knowledge/",
@@ -112,6 +138,19 @@ MIGRATION_PROPOSAL_CONTEXT_ROOT = f"{MIGRATION_PROPOSAL_ROOT}/context"
 MIGRATION_PROPOSAL_MARKDOWN = f"{MIGRATION_PROPOSAL_ROOT}/MIGRATION.md"
 LEGACY_CONTEXT_ARCHIVE_ROOT = ".forge/context-archive/legacy-v1"
 DEPRECATED_RUNTIME_ARCHIVE_ROOT = ".forge/context-archive/deprecated-runtime"
+DEPRECATED_ROOT_WRAPPERS_ARCHIVE_ROOT = ".forge/context-archive/deprecated-root-wrappers"
+LEGACY_WRAPPER_MARKERS = (
+    ".forge/context/00-meta",
+    ".forge/context/modes",
+    "00-meta/",
+    "01-core/",
+    "knowledge/inferred.md",
+    "knowledge/confirmations.md",
+    "unknowns.md",
+    "systems/<name>/system.md",
+    "source_commit",
+    "last_verified",
+)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -156,6 +195,10 @@ DETAIL_LEGACY_PRESERVED = "legacy managed file preserved; current hash adopted"
 DETAIL_LEGACY_CONFIG_MIGRATION = "legacy config migration"
 DETAIL_ENTRYPOINT_ADOPTED = "existing Forge-like wrapper adopted"
 DETAIL_WORKSPACE_PRESERVED = "user-edited workspace file preserved"
+DETAIL_ENTRYPOINT_LEGACY_REPLACED = "legacy wrapper archived and replaced"
+DETAIL_ENTRYPOINT_MANUAL_REVIEW = "entrypoint contains unmanaged content; manual review required"
+DETAIL_OBSOLETE_MANAGED_CLEANUP = "obsolete managed path cleanup"
+DETAIL_OBSOLETE_MANAGED_PRESERVED = "obsolete managed path preserved; manual review required"
 DETAIL_MIGRATION_V2_WRITE = "v2 context migration"
 DETAIL_MIGRATION_ARCHIVE = "legacy-v1 context archive"
 DETAIL_MIGRATION_MANIFEST = "context profile version migration"
@@ -916,6 +959,13 @@ def _update_from_manifest(
             expected_hash=expected_hash,
         )
 
+    _cleanup_obsolete_managed_paths(
+        target_root=target_root,
+        manifest=manifest,
+        selected_tools=selected_tools,
+        report=report,
+        dry_run=dry_run,
+    )
     _preserve_non_selected_entrypoints(
         target_root=target_root,
         selected_tools=selected_tools,
@@ -968,7 +1018,14 @@ def _build_init_files(
     files = {
         rel: content
         for rel, content in template_files.items()
-        if rel not in {"AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md", ".forge/forge.config.yaml"}
+        if rel
+        not in {
+            "AGENTS.md",
+            "CLAUDE.md",
+            CLAUDE_GITIGNORE_PATH,
+            ".github/copilot-instructions.md",
+            ".forge/forge.config.yaml",
+        }
         and not rel.startswith(OPTIONAL_TEMPLATE_PREFIXES)
         and not rel.startswith(LEGACY_CONTEXT_TEMPLATE_PREFIXES)
     }
@@ -1000,10 +1057,17 @@ def _build_init_files(
         files[OPENCODE_CONFIG_PATH] = _render_opencode_config()
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
+        files[CLAUDE_GITIGNORE_PATH] = read_template("base", CLAUDE_GITIGNORE_PATH)
         files.update({rel: content for rel, content in template_files.items() if rel.startswith(CLAUDE_COMMANDS_PREFIX)})
     if "copilot" in selected_tools:
         files[COPILOT_TEMPLATE_PATH] = read_template("base", COPILOT_TEMPLATE_PATH)
-        files.update({rel: content for rel, content in template_files.items() if rel.startswith(COPILOT_PROMPTS_PREFIX)})
+        files.update(
+            {
+                _map_copilot_skill_path(rel): content
+                for rel, content in template_files.items()
+                if rel.startswith(TEMPLATE_SKILLS_PREFIX)
+            }
+        )
     if profile == PROFILE_WORKSPACE:
         files[".forge/workspace.yaml"] = _render_workspace_yaml(target_root.name, selected_tools)
 
@@ -1052,6 +1116,35 @@ def _apply_entrypoint_file(
     rel_path = to_manifest_path(target_root, path)
     if path.exists():
         existing = path.read_text(encoding="utf-8")
+        legacy_cleanup = _plan_legacy_entrypoint_cleanup(
+            target_root=target_root,
+            rel_path=rel_path,
+            existing=existing,
+        )
+        if legacy_cleanup is not None:
+            status, detail, archive_rel_path = legacy_cleanup
+            if status == "conflict":
+                report.add("conflict", rel_path, detail)
+                report.add_note(
+                    f"Wrapper {rel_path} contains unmanaged content outside the Forge-managed block and was preserved for manual review."
+                )
+                return True
+            if dry_run:
+                report.add("updated", rel_path, detail)
+                report.add_note(
+                    f"Wrapper {rel_path} would be archived to {archive_rel_path} and replaced with the current thin wrapper."
+                )
+                return False
+            archive_path = target_root / archive_rel_path
+            archive_path.parent.mkdir(parents=True, exist_ok=True)
+            archive_path.write_text(existing, encoding="utf-8")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(upsert_managed_block("", content)[0], encoding="utf-8")
+            report.add("updated", rel_path, detail)
+            report.add_note(
+                f"Wrapper {rel_path} was archived to {archive_rel_path} and replaced with the current thin wrapper."
+            )
+            return False
         if not has_managed_block(existing) and _is_wrapper_like_entrypoint(existing):
             report.add("unchanged", rel_path, DETAIL_ENTRYPOINT_ADOPTED)
             return False
@@ -1360,6 +1453,9 @@ def _map_canonical_skill_path(relative_path: str) -> str:
 def _map_opencode_skill_path(relative_path: str) -> str:
     return relative_path.replace(TEMPLATE_SKILLS_PREFIX, OPENCODE_SKILLS_PREFIX, 1)
 
+def _map_copilot_skill_path(relative_path: str) -> str:
+    return relative_path.replace(TEMPLATE_SKILLS_PREFIX, COPILOT_SKILLS_PREFIX, 1)
+
 
 def _render_opencode_skill(relative_path: str, content: str) -> str:
     if content.startswith("---\n"):
@@ -1396,10 +1492,7 @@ def _yaml_list(items: tuple[str, ...]) -> str:
 def _merge_selected_tools(current_tools: tuple[str, ...], requested_tools: tuple[str, ...] | None) -> tuple[str, ...]:
     if requested_tools is None:
         return current_tools
-    merged = set(current_tools)
-    merged.update(requested_tools)
-    canonical_order = ("codex", "claude", "copilot", "opencode")
-    return tuple(tool for tool in canonical_order if tool in merged)
+    return requested_tools
 
 
 def _detect_runtime(target_root: Path) -> bool:
@@ -1671,6 +1764,62 @@ def _write_text_atomic(path: Path, content: str) -> None:
     temp_path.write_text(content, encoding="utf-8")
     temp_path.replace(path)
 
+def _plan_legacy_entrypoint_cleanup(
+    *,
+    target_root: Path,
+    rel_path: str,
+    existing: str,
+) -> tuple[str, str, str | None] | None:
+    if not has_managed_block(existing):
+        return None
+
+    start_marker = "<!-- BEGIN FORGE MANAGED BLOCK -->"
+    end_marker = "<!-- END FORGE MANAGED BLOCK -->"
+    start = existing.index(start_marker)
+    end = existing.index(end_marker) + len(end_marker)
+    prefix = existing[:start].strip()
+    suffix = existing[end:].strip()
+    if not prefix and not suffix:
+        return None
+
+    archive_rel_path = _deprecated_root_wrapper_archive_path(rel_path)
+    if (target_root / archive_rel_path).exists():
+        return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, archive_rel_path)
+
+    unmanaged = "\n".join(part for part in (prefix, suffix) if part)
+    if _looks_like_known_legacy_wrapper_content(unmanaged):
+        return ("updated", DETAIL_ENTRYPOINT_LEGACY_REPLACED, archive_rel_path)
+    return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, None)
+
+def _plan_obsolete_entrypoint_cleanup(
+    *,
+    target_root: Path,
+    rel_path: str,
+    existing: str,
+    current_content: str,
+) -> tuple[str, str, str | None]:
+    legacy_cleanup = _plan_legacy_entrypoint_cleanup(
+        target_root=target_root,
+        rel_path=rel_path,
+        existing=existing,
+    )
+    if legacy_cleanup is not None:
+        return legacy_cleanup
+
+    expected = upsert_managed_block("", current_content)[0]
+    if normalize_text(existing) == normalize_text(expected):
+        return ("updated", DETAIL_OBSOLETE_MANAGED_CLEANUP, None)
+    return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, None)
+
+def _deprecated_root_wrapper_archive_path(rel_path: str) -> str:
+    return f"{DEPRECATED_ROOT_WRAPPERS_ARCHIVE_ROOT}/{Path(rel_path).name}"
+
+def _looks_like_known_legacy_wrapper_content(content: str) -> bool:
+    normalized = content.strip()
+    if not normalized:
+        return False
+    return any(marker in normalized for marker in LEGACY_WRAPPER_MARKERS)
+
 
 def _detect_tools(target_root: Path) -> tuple[str, ...]:
     selected: list[str] = []
@@ -1678,7 +1827,11 @@ def _detect_tools(target_root: Path) -> tuple[str, ...]:
         selected.append("codex")
     if (target_root / "CLAUDE.md").exists() or (target_root / ".claude" / "commands").exists():
         selected.append("claude")
-    if (target_root / ".github/copilot-instructions.md").exists() or (target_root / ".github" / "prompts").exists():
+    if (
+        (target_root / ".github/copilot-instructions.md").exists()
+        or (target_root / ".github" / "skills").exists()
+        or (target_root / ".github" / "prompts").exists()
+    ):
         selected.append("copilot")
     if any((target_root / rel_path).exists() for rel_path in OPENCODE_SIGNAL_PATHS):
         selected.append("opencode")
@@ -1688,7 +1841,11 @@ def _detect_tools(target_root: Path) -> tuple[str, ...]:
 def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...]) -> bool:
     if rel_path == ".forge/.gitignore":
         return True
-    if rel_path == ".forge/generated/README.md":
+    if rel_path in {
+        ".forge/generated/README.md",
+        ".forge/context-patches/README.md",
+        ".forge/context-archive/README.md",
+    }:
         return True
     if rel_path == "AGENTS.md":
         return "codex" in selected_tools or "opencode" in selected_tools
@@ -1698,11 +1855,13 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return "opencode" in selected_tools
     if rel_path == "CLAUDE.md":
         return "claude" in selected_tools
+    if rel_path == CLAUDE_GITIGNORE_PATH:
+        return "claude" in selected_tools
     if rel_path.startswith(CLAUDE_COMMANDS_PREFIX):
         return "claude" in selected_tools
     if rel_path == COPILOT_TEMPLATE_PATH:
         return "copilot" in selected_tools
-    if rel_path.startswith(COPILOT_PROMPTS_PREFIX):
+    if rel_path.startswith(COPILOT_SKILLS_PREFIX):
         return "copilot" in selected_tools
     if rel_path in {".forge/adapter.md", ".forge/forge.config.yaml"}:
         return True
@@ -1775,6 +1934,118 @@ def _preserve_non_selected_entrypoints(
     for rel_path in {path for path in tool_paths.values() if path not in active_paths}:
         if (target_root / rel_path).exists():
             report.add("skipped", rel_path, DETAIL_PRESERVED_NON_SELECTED)
+
+def _cleanup_obsolete_managed_paths(
+    *,
+    target_root: Path,
+    manifest: ForgeInstallManifest,
+    selected_tools: tuple[str, ...],
+    report: OperationReport,
+    dry_run: bool,
+) -> None:
+    active_managed_paths = set(build_managed_paths(manifest.profile, selected_tools))
+    for rel_path in manifest.managed_paths:
+        if rel_path in active_managed_paths:
+            continue
+        if rel_path.endswith("/"):
+            _cleanup_obsolete_managed_directory(
+                target_root=target_root,
+                rel_path=rel_path.rstrip("/"),
+                manifest=manifest,
+                report=report,
+                dry_run=dry_run,
+            )
+            continue
+        _cleanup_obsolete_managed_file(
+            target_root=target_root,
+            rel_path=rel_path,
+            manifest=manifest,
+            report=report,
+            dry_run=dry_run,
+        )
+
+def _cleanup_obsolete_managed_file(
+    *,
+    target_root: Path,
+    rel_path: str,
+    manifest: ForgeInstallManifest,
+    report: OperationReport,
+    dry_run: bool,
+) -> None:
+    path = target_root / rel_path
+    if not path.exists():
+        return
+
+    if rel_path in ENTRYPOINT_TEMPLATE_MAP:
+        section, template_rel_path = ENTRYPOINT_TEMPLATE_MAP[rel_path]
+        existing = path.read_text(encoding="utf-8")
+        status, detail, archive_rel_path = _plan_obsolete_entrypoint_cleanup(
+            target_root=target_root,
+            rel_path=rel_path,
+            existing=existing,
+            current_content=read_template(section, template_rel_path),
+        )
+        if status == "conflict":
+            report.add("conflict", rel_path, detail)
+            report.add_note(f"Obsolete wrapper {rel_path} was preserved for manual review.")
+            return
+        if dry_run:
+            report.add("updated", rel_path, detail)
+            return
+        if archive_rel_path is not None:
+            archive_path = target_root / archive_rel_path
+            archive_path.parent.mkdir(parents=True, exist_ok=True)
+            archive_path.write_text(existing, encoding="utf-8")
+        path.unlink()
+        report.add("updated", rel_path, detail)
+        return
+
+    expected_hash = manifest.managed_file_hashes.get(rel_path)
+    existing = path.read_text(encoding="utf-8")
+    if expected_hash is None or sha256_text(existing) != expected_hash:
+        report.add("conflict", rel_path, DETAIL_OBSOLETE_MANAGED_PRESERVED)
+        report.add_note(
+            f"Obsolete managed file {rel_path} was preserved because local changes or an unknown hash prevent safe cleanup."
+        )
+        return
+    if dry_run:
+        report.add("updated", rel_path, DETAIL_OBSOLETE_MANAGED_CLEANUP)
+        return
+    path.unlink()
+    report.add("updated", rel_path, DETAIL_OBSOLETE_MANAGED_CLEANUP)
+
+def _cleanup_obsolete_managed_directory(
+    *,
+    target_root: Path,
+    rel_path: str,
+    manifest: ForgeInstallManifest,
+    report: OperationReport,
+    dry_run: bool,
+) -> None:
+    path = target_root / rel_path
+    if not path.exists():
+        return
+
+    unknown_files: list[str] = []
+    for child in sorted(path.rglob("*")):
+        if not child.is_file():
+            continue
+        child_rel = to_manifest_path(target_root, child)
+        expected_hash = manifest.managed_file_hashes.get(child_rel)
+        existing = child.read_text(encoding="utf-8")
+        if expected_hash is None or sha256_text(existing) != expected_hash:
+            unknown_files.append(child_rel)
+    if unknown_files:
+        report.add("conflict", rel_path, DETAIL_OBSOLETE_MANAGED_PRESERVED)
+        report.add_note(
+            f"Obsolete managed path {rel_path} was preserved because it contains user-edited or unknown files: {', '.join(unknown_files)}."
+        )
+        return
+    if dry_run:
+        report.add("updated", rel_path, DETAIL_OBSOLETE_MANAGED_CLEANUP)
+        return
+    shutil.rmtree(path)
+    report.add("updated", rel_path, DETAIL_OBSOLETE_MANAGED_CLEANUP)
 
 def _report_deprecated_runtime_paths(*, target_root: Path, report: OperationReport) -> None:
     for rel_path in DEPRECATED_RUNTIME_PATHS:

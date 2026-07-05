@@ -2,10 +2,10 @@
 
 Thin Claude-compatible entrypoint.
 
-Read `.forge/adapter.md` and follow it. `.forge/context` remains the curated source of truth.
+Read `.forge/adapter.md` and follow it. `.forge/context/` is the active curated repository context.
 
-Claude may receive Forge requests through natural prompts or tool-specific `/forge-<mode>` syntax when available. Resolve those invocations to the active Forge core lifecycle or clearly labeled compatibility/scenario guidance.
+Claude may receive Forge requests through natural prompts or `/forge-<mode>` slash commands when available. Resolve those invocations through `.forge/adapter.md`, `.forge/runtime/`, and the installed Forge skills.
 
-Keep replies concise and mode-aligned. Keep Claude-specific tool mechanics out of universal artifacts unless they appear under a clearly labeled `Target Tool Notes` section.
+Keep Claude-specific mechanics in `.claude/commands/` or clearly labeled `Target Tool Notes`.
 
 Do not store repository cognition, lifecycle logic, validation policy, or artifact policy in this file.

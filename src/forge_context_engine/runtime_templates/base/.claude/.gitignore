@@ -1,0 +1,11 @@
+# Claude local state
+settings.local.json
+*.local.json
+tmp/
+cache/
+logs/
+sessions/
+
+# Keep shared Forge command wrappers tracked
+!commands/
+!commands/**

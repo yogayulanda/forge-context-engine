@@ -16,7 +16,7 @@ updated: 2026-06-04
 - `layers/<related>`
 - `systems/<related>`
 - `knowledge/decisions/`
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 
 ## on_demand
 - Approved ECP

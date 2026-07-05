@@ -17,7 +17,7 @@ PROFILE_SERVICE = "service"
 PROFILE_WORKSPACE = "workspace"
 INSTALLED_FROM = "git+https://github.com/yogayulanda/forge-context-engine.git"
 
-DEFAULT_SELECTED_TOOLS = ("codex", "claude")
+DEFAULT_SELECTED_TOOLS = ("codex", "copilot")
 ALL_SUPPORTED_TOOLS = ("codex", "claude", "copilot", "opencode")
 
 MANAGED_PATHS_BASELINE = (
@@ -26,6 +26,8 @@ MANAGED_PATHS_BASELINE = (
     ".forge/forge.config.yaml",
     ".forge/forge-install.yaml",
     ".forge/generated/README.md",
+    ".forge/context-patches/README.md",
+    ".forge/context-archive/README.md",
     ".forge/skills/",
     ".forge/runtime/meta/",
     ".forge/runtime/modes/",
@@ -99,6 +101,7 @@ USER_OWNED_PATHS_BASELINE = (
 LOCAL_ONLY_PATHS_BASELINE = (
     ".forge/temp/",
     ".forge/cache/",
+    ".forge/forge.local.yaml",
 )
 
 
@@ -233,9 +236,9 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
         paths.append(".opencode/skills/")
         paths.append(".opencode/opencode.json")
     if "claude" in selected_tools:
-        paths.extend(("CLAUDE.md", ".claude/commands/"))
+        paths.extend(("CLAUDE.md", ".claude/.gitignore", ".claude/commands/"))
     if "copilot" in selected_tools:
-        paths.extend((".github/copilot-instructions.md", ".github/prompts/"))
+        paths.extend((".github/copilot-instructions.md", ".github/skills/"))
     if profile == PROFILE_WORKSPACE:
         paths.append(".forge/workspace.yaml")
     return tuple(paths)

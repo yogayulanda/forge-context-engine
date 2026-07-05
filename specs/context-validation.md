@@ -88,7 +88,7 @@ Use this as:
 | ID | Rule | Severity | Automatable |
 |---|---|---|---|
 | B1 | Every `.md` file under `.forge/context/` has YAML front-matter block (`---` delimited) | error | yes |
-| B2 | Front-matter contains required fields: `id`, `title`, `type`, `status`, `confidence`, `source`, `owner`, `updated`; curated context cards also include `source_paths`, `source_commit`, and `last_verified` or an explicit compatibility exception | error | yes |
+| B2 | Front-matter contains required fields: `id`, `title`, `type`, `status`, `confidence`, `source`, `owner`, `updated`; curated context cards also include `source_paths` when evidence is tracked per card | error | yes |
 | B3 | `type` value is one of: `meta`, `core`, `layer`, `system`, `knowledge`, `mode`, `generated` | error | yes |
 | B4 | `status` value is one of: `confirmed`, `inferred`, `assumption`, `unknown`, `deprecated` | error | yes |
 | B5 | `confidence` value is one of: `high`, `medium`, `low` | error | yes |

@@ -15,10 +15,10 @@ updated: 2026-06-04
 ## include
 - `layers/<related>`
 - `systems/<related>`
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 
 ## on_demand
-- `knowledge/decisions/`, `knowledge/assumptions.md`, `knowledge/unknowns.md`
+- `.forge/context/14-decisions-assumptions-and-constraints.md`, `.forge/context/99-open-questions.md`
 - Current code/docs/config only when the answer needs scoped verification
 
 ## exclude

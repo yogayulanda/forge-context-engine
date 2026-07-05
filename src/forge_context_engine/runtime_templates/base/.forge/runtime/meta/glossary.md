@@ -18,7 +18,7 @@ Canonical definitions for **project/domain-specific** terms that are ambiguous i
 | Attribute | Value |
 |---|---|
 | Source of truth | Local repo terminology |
-| AI writable | Propose via `knowledge/inferred.md` first; promotion requires owner confirmation |
+| AI writable | Propose via active `.forge/context/*.md` work or `.forge/context-patches/` first; promotion requires owner confirmation |
 | Human confirmation | Required before entry lands here |
 | Populated | During Context Initialization; grows incrementally |
 

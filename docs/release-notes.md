@@ -8,7 +8,7 @@ Forge `1.1.0rc1` is the release-candidate hardening milestone for daily repo usa
 - existing or legacy Forge repo: `forge update`
 - workspace repo: `forge init --workspace`
 - preview before refresh: `forge update --dry-run`
-- refresh selected wrappers: `forge update --tools codex,claude`
+- refresh selected wrappers: `forge update --tools codex,copilot` or `forge update --tools codex,claude`
 
 Included in this RC:
 
@@ -32,7 +32,7 @@ Known limitations:
 
 - GitHub plus `uv` is the documented install path for this RC; PyPI publishing is not part of the release.
 - `forge update` refreshes Forge-managed files only; it does not migrate arbitrary repo conventions.
-- Copilot support is opt-in and depends on the host environment honoring the instruction file.
+- Copilot support is opt-in and uses `.github/copilot-instructions.md` plus `.github/skills/**/SKILL.md` when selected.
 - Workspace repos coordinate linked services but do not replace service-repo `.forge/context`.
 
 Recommended daily workflow:

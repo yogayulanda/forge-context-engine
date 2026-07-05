@@ -96,8 +96,8 @@ Validation lives in **multiple layers**. Context must preserve where each rule i
 | Service | `internal/service/*` (or use-cases) | Business validation, empty-checks, normalization | Functions like `sanitize<X>Input`, explicit `if x == "" return error` |
 | Database | `migrations/*`, schema | `NOT NULL`, `CHECK`, `UNIQUE`, FK | SQL DDL + index definitions |
 | Repository | `internal/repository/*` | Persistence-time fallback, defaults, transaction boundary | Code paths like `if x.IsZero() { x = now }` |
-| Business intent | ADRs, product spec | Why a rule exists | Cross-reference between code and `01-core/product.md` |
-| Inferred | `knowledge/inferred.md` | AI-derived guesses (still needs validation) | — |
+| Business intent | ADRs, product spec | Why a rule exists | Cross-reference between code and `.forge/context/06-business-rules-and-flows.md` |
+| Inferred | active `.forge/context/*.md` entries labeled `inferred` | AI-derived guesses (still needs validation) | — |
 
 ### Mandatory Distinctions
 

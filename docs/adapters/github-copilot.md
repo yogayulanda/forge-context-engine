@@ -1,15 +1,15 @@
 # GitHub Copilot Adapter
 
-GitHub Copilot enters Forge through Copilot instructions and prompt files that resolve to shared Forge skills.
+GitHub Copilot enters Forge through repository instructions plus repo-local Forge skill exports.
 
-Copilot support is opt-in. Default target-repo output stays `AGENTS.md`, `CLAUDE.md`, and `.forge/` unless the repository explicitly selects Copilot.
+Copilot support is opt-in. Default target-repo output includes `AGENTS.md`, `.github/copilot-instructions.md`, `.github/skills/**/SKILL.md`, and `.forge/skills/**/SKILL.md`. Claude files remain optional and are installed only when Claude is selected.
 
 ## How Invocation Works
 
-Common prompt-file style:
+Common invocation style:
 
 ```text
-/forge-ask
+Use Forge ask mode
 /forge-plan
 /forge-review
 /forge-ai-readiness
@@ -18,28 +18,28 @@ Common prompt-file style:
 The expected path is:
 
 ```text
-Copilot prompt -> prompt wrapper -> shared skill -> .forge/context mode -> scoped repository evidence
+Copilot instruction surface -> .github/skills/<skill>/SKILL.md -> shared Forge mode -> scoped repository evidence
 ```
 
 Runtime adapter files live under:
 
 ```text
 runtime/.github/copilot-instructions.md
-runtime/adapters/copilot/prompts/
+runtime/skills/
 ```
 
-When materialized into a target repository, `.github/copilot-instructions.md` and prompt wrappers can live under `.github/` only if that repository uses Copilot prompt files.
+When materialized into a target repository, `.github/copilot-instructions.md` and `.github/skills/**/SKILL.md` are created only when that repository selects Copilot. Legacy `.github/prompts/**` wrappers are obsolete and are not current output.
 
 ## What The Adapter Does
 
 The Copilot adapter:
 
 - explains how Copilot invokes Forge modes
-- maps prompt files to shared skills
+- maps Copilot usage to shared repo-local skills
 - reminds Copilot to load scoped context
 - keeps `.forge/context` authoritative
 
-Prompt wrappers are thin. They should point to shared skills instead of copying full mode behavior.
+Copilot instructions stay thin. Repo-local skill exports should point to canonical Forge skills instead of copying full mode behavior.
 
 ## Expected Usage Style
 

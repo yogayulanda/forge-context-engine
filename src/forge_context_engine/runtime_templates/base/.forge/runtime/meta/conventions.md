@@ -14,7 +14,7 @@ updated: 2026-06-05
 
 # Context System Conventions
 
-Rules for **managing the context system itself**. Not product engineering principles (→ the active generated service/workspace profile files or legacy `01-core/*` when present).
+Rules for **managing the context system itself**. Not product engineering principles (→ the active service/workspace profile files under `.forge/context/`).
 
 ## File Meta
 
@@ -77,7 +77,7 @@ review_by: YYYY-MM-DD  # optional
 
 ## Core Loading Baseline
 
-Start from `.forge/adapter.md`, then the requested mode or relevant compatibility/scenario guidance. Load only the relevant `00-meta/*` and generated profile files needed to execute that request safely. Legacy repos may still use `01-core/*`. Modes **never** re-list core — delta only.
+Start from `.forge/adapter.md`, then the requested mode or relevant compatibility/scenario guidance. Load only the relevant `.forge/runtime/meta/*` guidance and active `.forge/context/*.md` profile files needed to execute that request safely. Modes never re-list core; they describe deltas only.
 
 ## Workspace vs Service Boundary
 
@@ -120,7 +120,7 @@ Every `modes/*.md` file MUST expose exactly these Markdown sections after the ti
 
 `token_budget` MUST contain only a decimal integer such as `4000`, `8000`, or `12000`; labels such as `medium` or `medium-high` are invalid. Treat the number as an operating range for scoped loading, not a blind cap.
 
-Mode files are machine-resolvable context loading deltas and the authority for mode-specific execution behavior. They MUST NOT re-list `00-meta/*` or active profile core files unless explicitly needed, contain domain knowledge, or duplicate `conventions.md`.
+Mode files are machine-resolvable context loading deltas and the authority for mode-specific execution behavior. They MUST NOT re-list `.forge/runtime/meta/*` or active profile core files unless explicitly needed, contain domain knowledge, or duplicate `conventions.md`.
 
 ## Mode Invocation
 
@@ -151,7 +151,7 @@ See `conventions-validation.md` for full validation status vocabulary, prerequis
 
 Summary: Validation reporting must never imply success without evidence. Execute performs scoped validation for changed work; review checks validation evidence and gaps. Deeper test strategy is a validation activity rather than a core lifecycle mode.
 
-Fresh CLI init seeds v2 numbered service/workspace context profiles by default. Legacy `01-core/`, `knowledge/`, `repo-map/`, and `systems/` layouts remain compatibility layouts; preserve them during `forge update`. When humans explicitly run `forge migrate-context`, Forge writes numbered v2 files into `.forge/context/`, archives legacy-v1 paths under `.forge/context-archive/legacy-v1/`, and updates the manifest to context profile version 2. Mixed and empty-or-unknown layouts remain conservative no-op paths that require manual review.
+Fresh CLI init seeds v2 numbered service/workspace context profiles by default. Older pre-v2 layouts remain compatibility inputs for targeted migration/update flows. When humans explicitly run `forge migrate-context`, Forge writes numbered v2 files into `.forge/context/`, archives legacy-v1 paths under `.forge/context-archive/legacy-v1/`, and updates the manifest to context profile version 2. Mixed and empty-or-unknown layouts remain conservative no-op paths that require manual review.
 
 ## Artifact Lifecycle Semantics
 
@@ -252,7 +252,7 @@ Proposed defaults never become confirmed facts without human confirmation.
 1. AI does not self-promote status — **propose only**.
 2. AI does not present `inferred`/`assumption` as fact.
 3. On encountering `unknown`, AI classifies it as `blocking`, `proposed-default`, or `informational`; guessing confirmed facts is forbidden.
-4. New inferences go to `knowledge/inferred.md` or `generated/`, never to `source: human` files.
+4. New inferences stay labeled in active `.forge/context/*.md` work or reviewable `.forge/context-patches/` artifacts; never promote them into `source: human` files without confirmation.
 5. Without `evidence`, max status is `assumption`.
 6. AI does not fabricate architecture, APIs, services, databases, integrations, ownership, or business rules.
 7. Treat legacy AI artifacts (`.ai/`, `.claude/`, `AGENTS.md`, etc.) as **reference**, not source-of-truth. Repo code wins on conflict.
@@ -286,7 +286,7 @@ Use `confidence: high` only when the claim is directly and deterministically ver
 assumption ──(evidence)──► inferred ──(human confirmation)──► confirmed
 ```
 
-Promotion to `confirmed` requires entry in `knowledge/confirmations.md`.
+Promotion to `confirmed` requires human confirmation recorded in the relevant active `.forge/context/*.md` entry.
 
 ## Lifecycle & Staleness
 
@@ -305,9 +305,9 @@ Promotion to `confirmed` requires entry in `knowledge/confirmations.md`.
 
 - One fact, one home.
 - Shared context referenced via `id`, **never copied**.
-- `systems/*` does not copy generated profile summaries, `01-core/`, or `layers/*` standards.
-- `modes/*` does not list `00-meta/*` or active profile core files.
-- Domain/scope facts live in the active service/workspace profile files, or `01-core/product.md` in legacy repos. Supporting files reference them rather than re-listing them.
+- `systems/*` does not copy generated profile summaries or `layers/*` standards.
+- `modes/*` does not list `.forge/runtime/meta/*` or active profile core files.
+- Domain/scope facts live in the active service/workspace profile files under `.forge/context/`. Supporting files reference them rather than re-listing them.
 - When the same list appears in two files, the file closer to the canonical home keeps it; the other becomes a reference by `id`.
 
 ## Ownership Rule
@@ -356,7 +356,7 @@ When initializing on a repo that already has AI/context artifacts (`.ai/`, `.cla
 - Repository code always wins on conflict.
 - Conflicts go to `knowledge/unknowns.md`.
 - Useful legacy content is re-expressed in correct zones with proper `status` + `evidence`.
-- Never copy legacy content verbatim into `01-core/`/`layers/`/`systems/` without re-validating against code.
+- Never copy legacy content verbatim into active `.forge/context/` files, `layers/`, or `systems/` without re-validating against code.
 
 ## Unknown Classification
 

@@ -1034,6 +1034,338 @@ class ContextProfileTests(unittest.TestCase):
             self.assertIn("Updated: 0", rendered)
             self.assertIn("Conflicts: 0", rendered)
 
+    def test_init_with_claude_selected_installs_wrapper_commands_and_local_gitignore(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Claude Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertTrue((target / "CLAUDE.md").exists())
+            self.assertTrue((target / ".claude/commands/forge-update-context.md").exists())
+            self.assertTrue((target / ".claude/.gitignore").exists())
+            gitignore = (target / ".claude/.gitignore").read_text(encoding="utf-8")
+            self.assertIn("settings.local.json", gitignore)
+            self.assertIn("!commands/**", gitignore)
+
+    def test_update_adds_copilot_wrappers_and_skills_when_tools_enable_copilot(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Agents Only\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+            self.assertEqual(status, 0)
+
+            preview = io.StringIO()
+            with redirect_stdout(preview):
+                dry_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(dry_status, 0)
+            rendered = preview.getvalue()
+            self.assertIn(".github/copilot-instructions.md", rendered)
+            self.assertIn(".github/skills/forge-update-context/SKILL.md", rendered)
+            self.assertIn(".github/skills/forge-verify-context/SKILL.md", rendered)
+            self.assertNotIn("CLAUDE.md", rendered)
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(update_status, 0)
+            self.assertTrue((target / ".github/copilot-instructions.md").exists())
+            self.assertTrue((target / ".github/skills/forge-update-context/SKILL.md").exists())
+            self.assertTrue((target / ".github/skills/forge-verify-context/SKILL.md").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+            self.assertFalse((target / ".claude").exists())
+
+            second_preview = io.StringIO()
+            with redirect_stdout(second_preview):
+                second_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(second_status, 0)
+            second_rendered = second_preview.getvalue()
+            self.assertIn("Created: 0", second_rendered)
+            self.assertIn("Updated: 0", second_rendered)
+            self.assertIn("Conflicts: 0", second_rendered)
+
+    def test_explicit_tool_replacement_removes_managed_claude_files_and_preserves_user_edited_claude_content(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Tool Swap Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            self.assertTrue((target / "CLAUDE.md").exists())
+            self.assertTrue((target / ".claude/.gitignore").exists())
+            self.assertTrue((target / ".claude/commands/forge-update-context.md").exists())
+
+            preview = io.StringIO()
+            with redirect_stdout(preview):
+                dry_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(dry_status, 0)
+            rendered = preview.getvalue()
+            self.assertIn("codex, claude -> codex, copilot", rendered)
+            self.assertIn(".github/copilot-instructions.md", rendered)
+            self.assertIn("CLAUDE.md", rendered)
+            self.assertEqual((target / "CLAUDE.md").exists(), True)
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(update_status, 0)
+            self.assertTrue((target / "AGENTS.md").exists())
+            self.assertTrue((target / ".github/copilot-instructions.md").exists())
+            self.assertTrue((target / ".github/skills/forge-update-context/SKILL.md").exists())
+            self.assertTrue((target / ".github/skills/forge-verify-context/SKILL.md").exists())
+            self.assertTrue((target / ".forge/skills/forge-update-context/SKILL.md").exists())
+            self.assertFalse((target / ".github/prompts").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+            self.assertFalse((target / ".claude/.gitignore").exists())
+            self.assertFalse((target / ".claude/commands").exists())
+
+            manifest = load_manifest(target / ".forge/forge-install.yaml")
+            self.assertEqual(manifest.selected_tools, ("codex", "copilot"))
+
+            second_preview = io.StringIO()
+            with redirect_stdout(second_preview):
+                second_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(second_status, 0)
+            second_rendered = second_preview.getvalue()
+            self.assertIn("Created: 0", second_rendered)
+            self.assertIn("Updated: 0", second_rendered)
+            self.assertIn("Conflicts: 0", second_rendered)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Tool Swap Conflict Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            claude_path = target / "CLAUDE.md"
+            original = claude_path.read_text(encoding="utf-8")
+            claude_path.write_text("Project operator notes.\n\n" + original, encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                conflict_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(conflict_status, 1)
+            self.assertTrue((target / "CLAUDE.md").exists())
+            self.assertTrue((target / ".claude/.gitignore").exists())
+            self.assertTrue((target / ".claude/commands/forge-update-context.md").exists())
+            self.assertEqual(claude_path.read_text(encoding="utf-8"), "Project operator notes.\n\n" + original)
+            self.assertIn("manual review required", output.getvalue())
+
+    def test_update_archives_and_replaces_legacy_agents_wrapper_preamble(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Agents Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            agents_path = target / "AGENTS.md"
+            original = agents_path.read_text(encoding="utf-8")
+            legacy_preamble = "# Legacy Forge Wrapper\n\nSee `.forge/context/00-meta` and `source_commit`.\n\n"
+            agents_path.write_text(legacy_preamble + original, encoding="utf-8")
+
+            preview = io.StringIO()
+            with redirect_stdout(preview):
+                dry_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(dry_status, 0)
+            self.assertEqual(agents_path.read_text(encoding="utf-8"), legacy_preamble + original)
+            self.assertIn("legacy wrapper archived and replaced", preview.getvalue())
+            self.assertFalse((target / ".forge/context-archive/deprecated-root-wrappers/AGENTS.md").exists())
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            self.assertEqual(
+                (target / ".forge/context-archive/deprecated-root-wrappers/AGENTS.md").read_text(encoding="utf-8"),
+                legacy_preamble + original,
+            )
+            updated = agents_path.read_text(encoding="utf-8")
+            self.assertNotIn(".forge/context/00-meta", updated)
+            self.assertNotIn("source_commit", updated)
+            self.assertTrue(updated.startswith("<!-- BEGIN FORGE MANAGED BLOCK -->"))
+
+            second_preview = io.StringIO()
+            with redirect_stdout(second_preview):
+                second_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(second_status, 0)
+            rendered = second_preview.getvalue()
+            self.assertIn("Created: 0", rendered)
+            self.assertIn("Updated: 0", rendered)
+            self.assertIn("Conflicts: 0", rendered)
+
+    def test_update_archives_and_replaces_legacy_claude_wrapper_preamble(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Claude Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            claude_path = target / "CLAUDE.md"
+            original = claude_path.read_text(encoding="utf-8")
+            legacy_preamble = "# Legacy Claude Wrapper\n\nUse `.forge/context/modes` and `last_verified`.\n\n"
+            claude_path.write_text(legacy_preamble + original, encoding="utf-8")
+
+            preview = io.StringIO()
+            with redirect_stdout(preview):
+                dry_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(dry_status, 0)
+            self.assertIn("legacy wrapper archived and replaced", preview.getvalue())
+            self.assertFalse((target / ".forge/context-archive/deprecated-root-wrappers/CLAUDE.md").exists())
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            updated = claude_path.read_text(encoding="utf-8")
+            self.assertNotIn(".forge/context/modes", updated)
+            self.assertNotIn("last_verified", updated)
+            self.assertTrue((target / ".forge/context-archive/deprecated-root-wrappers/CLAUDE.md").exists())
+
+    def test_update_preserves_unknown_unmanaged_wrapper_content_for_manual_review(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Review Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            agents_path = target / "AGENTS.md"
+            original = agents_path.read_text(encoding="utf-8")
+            agents_path.write_text("Project-specific operator notes.\n\n" + original, encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(status, 1)
+            self.assertEqual(agents_path.read_text(encoding="utf-8"), "Project-specific operator notes.\n\n" + original)
+            self.assertIn("manual review required", output.getvalue())
+
     def test_installed_context_templates_include_hardened_update_and_verify_instructions(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
@@ -1644,6 +1976,47 @@ class ContextProfileTests(unittest.TestCase):
                     continue
                 content = path.read_text(encoding="utf-8")
                 self.assertNotIn(".forge/context/generated", content, f"legacy generated path found in {path}")
+
+    def test_active_runtime_assets_do_not_reference_forbidden_legacy_wrapper_markers(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        roots = [
+            repo_root / "src/forge_context_engine/runtime_templates/base/skills",
+            repo_root / "src/forge_context_engine/runtime_templates/base/.forge/runtime",
+            repo_root / "src/forge_context_engine/runtime_templates/base/.claude/commands",
+            repo_root / "src/forge_context_engine/runtime_templates/base/AGENTS.md",
+            repo_root / "src/forge_context_engine/runtime_templates/base/CLAUDE.md",
+            repo_root / "src/forge_context_engine/runtime_templates/base/.github/copilot-instructions.md",
+        ]
+        forbidden = (
+            ".forge/context/00-meta",
+            ".forge/context/modes",
+            "01-core/",
+            "knowledge/inferred.md",
+            "knowledge/confirmations.md",
+            "source_commit",
+            "last_verified",
+            ".forge/context/generated",
+        )
+        for root in roots:
+            paths = [root] if root.is_file() else list(root.rglob("*"))
+            for path in paths:
+                if not path.is_file():
+                    continue
+                content = path.read_text(encoding="utf-8")
+                for token in forbidden:
+                    self.assertNotIn(token, content, f"legacy marker {token} found in {path}")
+
+    def test_active_specs_do_not_present_legacy_per_card_freshness_fields(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        specs = [
+            repo_root / "specs/context-initialization.md",
+            repo_root / "specs/context-validation.md",
+        ]
+        forbidden = ("source_commit", "last_verified")
+        for path in specs:
+            content = path.read_text(encoding="utf-8")
+            for token in forbidden:
+                self.assertNotIn(token, content, f"legacy per-card freshness field {token} found in active spec {path}")
 
 
 if __name__ == "__main__":

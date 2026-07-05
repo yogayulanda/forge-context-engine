@@ -20,7 +20,7 @@ updated: 2026-06-05
 
 ## on_demand
 - `systems/<related>`
-- `knowledge/inferred.md`
+- active `.forge/context/*.md` entries labeled `inferred`
 - Contracts/events/data/API/runtime/security context when needed for risk or evidence
 
 ## exclude
