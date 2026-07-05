@@ -46,6 +46,7 @@ Fresh CLI init now seeds v2 numbered service/workspace context profiles by defau
 - legacy `01-core/*` when present in older repos
 - `00-meta/context-manifest.md` only when routing help is needed
 - `00-meta/ai-readiness-factors.md` only during `ai-readiness` audits (factor catalog and band→verdict map)
+- active `.forge/context/*.md` plus `00-index.md` during `update-context` and `verify-context` work, scoped to the area under review
 
 ## Scoped Convention Files (On Demand)
 

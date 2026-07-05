@@ -191,10 +191,13 @@ class ContextProfileTests(unittest.TestCase):
             expected_files = {
                 *SERVICE_V2_CONTEXT_FILES,
                 ".forge/generated/README.md",
+                ".forge/skills/forge-update-context/SKILL.md",
                 ".forge/runtime/meta/conventions.md",
                 ".forge/runtime/meta/context-manifest.md",
                 ".forge/runtime/modes/ask.md",
                 ".forge/runtime/modes/plan.md",
+                ".forge/runtime/modes/update-context.md",
+                ".claude/commands/forge-update-context.md",
             }
             for rel_path in expected_files:
                 self.assertTrue((target / rel_path).exists(), rel_path)
@@ -258,10 +261,13 @@ class ContextProfileTests(unittest.TestCase):
             expected_files = {
                 *WORKSPACE_V2_CONTEXT_FILES,
                 ".forge/generated/README.md",
+                ".forge/skills/forge-update-context/SKILL.md",
                 ".forge/runtime/meta/conventions.md",
                 ".forge/runtime/meta/context-manifest.md",
                 ".forge/runtime/modes/ask.md",
+                ".forge/runtime/modes/update-context.md",
                 ".forge/workspace.yaml",
+                ".claude/commands/forge-update-context.md",
             }
             for rel_path in expected_files:
                 self.assertTrue((target / rel_path).exists(), rel_path)
@@ -932,6 +938,96 @@ class ContextProfileTests(unittest.TestCase):
             self.assertIn("Conflicts: 0", rendered)
             self.assertNotIn(".forge/context/00-meta", rendered)
             self.assertNotIn(".forge/context/modes", rendered)
+
+    def test_update_dry_run_reports_new_update_context_managed_files_when_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nManaged file additions.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            for rel_path in (
+                ".forge/skills/forge-update-context/SKILL.md",
+                ".forge/runtime/modes/update-context.md",
+                ".claude/commands/forge-update-context.md",
+            ):
+                (target / rel_path).unlink()
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                update_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            rendered = output.getvalue()
+            self.assertIn(".forge/skills/forge-update-context/SKILL.md", rendered)
+            self.assertIn(".forge/runtime/modes/update-context.md", rendered)
+            self.assertIn(".claude/commands/forge-update-context.md", rendered)
+
+    def test_update_recreates_update_context_managed_files_and_is_idempotent_afterward(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nManaged file recreation.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            for rel_path in (
+                ".forge/skills/forge-update-context/SKILL.md",
+                ".forge/runtime/modes/update-context.md",
+                ".claude/commands/forge-update-context.md",
+            ):
+                (target / rel_path).unlink()
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(update_status, 0)
+            for rel_path in (
+                ".forge/skills/forge-update-context/SKILL.md",
+                ".forge/runtime/modes/update-context.md",
+                ".claude/commands/forge-update-context.md",
+            ):
+                self.assertTrue((target / rel_path).exists(), rel_path)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                second_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=None,
+                )
+
+            self.assertEqual(second_status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Created: 0", rendered)
+            self.assertIn("Updated: 0", rendered)
+            self.assertIn("Conflicts: 0", rendered)
 
     def test_update_preserves_source_when_deprecated_runtime_archive_target_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

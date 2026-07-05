@@ -127,9 +127,9 @@ Mode files are machine-resolvable context loading deltas and the authority for m
 - Modes are loading deltas on top of always-loaded core.
 - Read `.forge/forge.config.yaml` before mode execution and apply `run.interaction`.
 - Mode files are authoritative for mode-specific execution behavior.
-- Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, and `verify-context`.
-- `init` owns confirmed repo context/config creation; `ask` owns evidence-aware understanding; `plan` owns Quick Plan or SDD; `implementation` owns ECP generation; `execute` owns approved ECP application; `review` owns executed-result review; `verify-context` owns context health/freshness only.
-- Keep mode responsibilities distinct: ask does not plan or mutate; plan does not emit executable patches; implementation does not modify code; execute does not redesign; review does not modify code by default; verify-context does not validate plan/ECP/code/MR readiness.
+- Visible core modes are limited to `init`, `ask`, `plan`, `implementation`, `execute`, `review`, `verify-context`, and `update-context`.
+- `init` owns confirmed repo context/config creation; `ask` owns evidence-aware understanding; `plan` owns Quick Plan or SDD; `implementation` owns ECP generation; `execute` owns approved ECP application; `review` owns executed-result review; `verify-context` owns context health/freshness only; `update-context` owns active curated context refresh.
+- Keep mode responsibilities distinct: ask does not plan or mutate; plan does not emit executable patches; implementation does not modify code; execute does not redesign; review does not modify code by default; verify-context does not validate plan/ECP/code/MR readiness; update-context does not modify application code or runtime-managed files outside `.forge/context`.
 - Test placement is convention-sensitive; validation is handled inside execute/review or as a workflow activity, not as a core lifecycle mode.
 - Start from `.forge/adapter.md`, then load only the requested mode contract; bring in `conventions.md` and scoped convention files only when the task needs their rules.
 - Load only context required by the task; do not broad-load `.forge/context` by default.
@@ -207,7 +207,7 @@ Context maintenance cadence:
 - `Context Quality Audit` is a larger milestone/release/manual check for stale, noisy, missing, or low-quality context.
 - Do not turn every task into a full context quality audit.
 
-`review` should use a structured `Context Impact` section to determine whether a durable context update is needed. When an update is needed, propose a reviewable `.forge/context-patches/...` patch instead of mutating `.forge/context` directly. `verify-context` may validate curated context health and reviewable patch quality, but it must not accept patches automatically.
+`review` should use a structured `Context Impact` section to determine whether a durable context update is needed. When an update is needed, propose a reviewable `.forge/context-patches/...` patch instead of mutating `.forge/context` directly. `verify-context` may validate curated context health and reviewable patch quality, but it must not accept patches automatically. `update-context` is the explicit direct-refresh workflow for active curated context only; it must stay scoped to `.forge/context` and preserve the runtime/generated/archive boundaries above.
 
 When artifact persistence is mentioned in mode output or docs, keep it concise. Prefer wording such as:
 - `Artifact Persistence: Not saved by default.`

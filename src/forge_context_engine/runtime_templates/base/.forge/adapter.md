@@ -30,7 +30,8 @@ Thin adapter contract for target-repository entrypoints such as `AGENTS.md`, `CL
 Use only these active core modes:
 
 ```text
-init -> ask -> plan -> implementation -> execute -> review -> verify-context
+init -> ask -> plan -> implementation -> execute -> review
+verify-context | update-context
 ```
 
 - `plan` creates a reviewable plan or SDD and does not edit code.
@@ -43,6 +44,7 @@ init -> ask -> plan -> implementation -> execute -> review -> verify-context
 - `review` checks correctness, validation evidence, security, and context impact.
 - `review` is read-only by default; fixes require a separately approved execution flow.
 - `verify-context` checks `.forge/context` health only.
+- `update-context` refreshes active curated context under `.forge/context/` only.
 
 Legacy names such as `planning`, `testing`, `incident`, and `refactor` are not active core modes. If present, they are legacy aliases or scenario guidance only.
 

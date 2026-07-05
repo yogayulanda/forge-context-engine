@@ -16,6 +16,7 @@ from forge_context_engine.runtime_ops import (
     run_init,
     run_update,
 )
+from forge_context_engine.runtime_templates import iter_template_files
 
 
 class ToolSelectionTests(unittest.TestCase):
@@ -69,6 +70,24 @@ class ToolSelectionTests(unittest.TestCase):
         self.assertIn(".forge/skills/forge-plan/SKILL.md", files)
         self.assertIn(".opencode/skills/forge-plan/SKILL.md", files)
 
+    def test_build_init_files_includes_update_context_skill_and_claude_wrapper(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex", "claude"),
+            ui_language="en",
+        )
+        self.assertIn(".forge/skills/forge-update-context/SKILL.md", files)
+        self.assertIn(".forge/runtime/modes/update-context.md", files)
+        self.assertIn(".claude/commands/forge-update-context.md", files)
+
+    def test_update_context_uses_canonical_base_template_locations_only(self) -> None:
+        files = iter_template_files("base")
+        self.assertIn("skills/forge-update-context/SKILL.md", files)
+        self.assertIn(".forge/runtime/modes/update-context.md", files)
+        self.assertIn(".claude/commands/forge-update-context.md", files)
+        self.assertNotIn(".forge/skills/forge-update-context/SKILL.md", files)
+
     def test_build_init_files_includes_generated_readme_and_no_legacy_generated_dir(self) -> None:
         files = _build_init_files(
             target_root=Path("/tmp/example"),
@@ -115,6 +134,21 @@ class ToolSelectionTests(unittest.TestCase):
                 content,
                 msg=f"unexpected legacy runtime skill reference in {rel_path}",
             )
+
+    def test_update_context_skill_preserves_write_boundaries(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex", "claude"),
+            ui_language="en",
+        )
+        skill = files[".forge/skills/forge-update-context/SKILL.md"]
+        mode = files[".forge/runtime/modes/update-context.md"]
+        self.assertIn("Do not modify application code.", skill)
+        self.assertIn("`.forge/generated/`", skill)
+        self.assertIn("## forbidden writes", mode)
+        self.assertIn("Application code.", mode)
+        self.assertIn("`.forge/context-patches/`", mode)
 
     def test_shared_agents_entrypoint_not_preserved_when_opencode_selected(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
