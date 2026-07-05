@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-05
+updated: 2026-07-05
 ---
 
 # Mode: Verify Context
@@ -50,6 +50,9 @@ Verify `.forge/context` health, freshness, consistency, and reviewable context-p
 - Identify unresolved unknowns or stale decision ledger entries.
 - Report whether a reviewable context patch is required.
 - Distinguish lightweight per-task context freshness/impact follow-up from larger periodic Context Quality Audit work.
+- Treat `.forge/context` as the active curated source of truth.
+- Treat `.forge/runtime` as read-only instructions.
+- Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth.
 
 ## outputs
 - Status.
@@ -67,12 +70,15 @@ Verify `.forge/context` health, freshness, consistency, and reviewable context-p
 
 ## boundaries
 - Verify context health only.
+- This workflow is read-only.
+- Must not modify files.
 - It may validate context quality and reviewable context-patch proposals.
 - Do not verify plan readiness, ECP completeness, code diff result, MR readiness, or general validation.
 - Do not run broad code review or become a general testing mode.
-- Do not silently overwrite `.forge/context`.
+- Do not modify `.forge/context`.
 - Do not accept context patches automatically.
 
 ## next mode transitions
-- Create a reviewable context patch when context is stale or incomplete.
+- Recommend running `forge-update-context` when safe active-context updates are needed.
+- Create a reviewable context patch when context is stale or incomplete and patch review is the intended workflow.
 - Use `ask`, `plan`, `execute`, or `review` only for their own lifecycle responsibilities.

@@ -16,4 +16,4 @@ Check source paths, metadata, stale cards, contradictions with current repo evid
 Return verify-context status: `pass`, `stale`, `incomplete`, or `blocked`, with affected context files, evidence, required decisions, and next action.
 
 ## Do NOT
-Do not verify plan readiness, ECP completeness, code diff result, MR readiness, or general validation. Do not silently overwrite `.forge/context`.
+Do not verify plan readiness, ECP completeness, code diff result, MR readiness, or general validation. This workflow is read-only. It must not modify files. Do not modify `.forge/context`. Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth. Detect context drift and recommend `forge-update-context` when safe updates are needed.

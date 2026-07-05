@@ -19,6 +19,11 @@ from forge_context_engine.runtime_ops import (
 from forge_context_engine.runtime_templates import iter_template_files
 
 
+def _assert_contains_all(testcase: unittest.TestCase, text: str, phrases: tuple[str, ...]) -> None:
+    for phrase in phrases:
+        testcase.assertIn(phrase, text)
+
+
 class ToolSelectionTests(unittest.TestCase):
     def test_parse_tools_args_accepts_opencode(self) -> None:
         self.assertEqual(parse_tools_args("opencode"), ("opencode",))
@@ -88,6 +93,67 @@ class ToolSelectionTests(unittest.TestCase):
         self.assertIn(".claude/commands/forge-update-context.md", files)
         self.assertNotIn(".forge/skills/forge-update-context/SKILL.md", files)
 
+    def test_update_context_canonical_templates_include_hardening_semantics(self) -> None:
+        files = iter_template_files("base")
+        skill = files["skills/forge-update-context/SKILL.md"]
+        mode = files[".forge/runtime/modes/update-context.md"]
+        command = files[".claude/commands/forge-update-context.md"]
+
+        _assert_contains_all(
+            self,
+            skill,
+            (
+                "Cross-file updates are allowed",
+                "minimal, directly related",
+                "`.forge/context/`",
+                "Do not modify application code.",
+                "`.forge/runtime/`",
+                "`.forge/generated/`",
+                "`.forge/context-archive/`",
+                "`.forge/context-patches/`",
+                "not active source of truth by default",
+                "legacy-derived or needing confirmation",
+                "This workflow is not v2-only.",
+                "manifest and index routing",
+                "No target file list",
+            ),
+        )
+        _assert_contains_all(
+            self,
+            mode,
+            (
+                "## allowed writes",
+                "`.forge/context/*.md` only.",
+                "## forbidden writes",
+                "Application code.",
+                "`.forge/runtime/`",
+                "`.forge/generated/`",
+                "`.forge/context-archive/`",
+                "`.forge/context-patches/`",
+                "Cross-file updates are allowed when required to keep active context consistent.",
+                "This is not scope creep. It is active context consistency.",
+                "Do not read `.forge/generated/` by default or treat it as active evidence by default.",
+                "Do not promote archive facts as confirmed",
+                "This workflow is not v2-only.",
+                "For v2 service layout",
+                "For workspace layout",
+                "For future layouts",
+            ),
+        )
+        _assert_contains_all(
+            self,
+            command,
+            (
+                "Use shared skill `.forge/skills/forge-update-context/SKILL.md`",
+                "Update active context only under `.forge/context/`.",
+                "Do not modify application code",
+                "`.forge/runtime/`",
+                "`.forge/generated/`",
+                "`.forge/context-archive/`",
+                "Report changed context files",
+            ),
+        )
+
     def test_build_init_files_includes_generated_readme_and_no_legacy_generated_dir(self) -> None:
         files = _build_init_files(
             target_root=Path("/tmp/example"),
@@ -144,11 +210,65 @@ class ToolSelectionTests(unittest.TestCase):
         )
         skill = files[".forge/skills/forge-update-context/SKILL.md"]
         mode = files[".forge/runtime/modes/update-context.md"]
-        self.assertIn("Do not modify application code.", skill)
-        self.assertIn("`.forge/generated/`", skill)
-        self.assertIn("## forbidden writes", mode)
-        self.assertIn("Application code.", mode)
-        self.assertIn("`.forge/context-patches/`", mode)
+        _assert_contains_all(
+            self,
+            skill,
+            (
+                "Do not modify application code.",
+                "`.forge/runtime/`",
+                "`.forge/generated/`",
+                "`.forge/context-archive/`",
+                "`.forge/context-patches/`",
+                "Cross-file updates are allowed",
+                "not active source of truth by default",
+                "This workflow is not v2-only.",
+            ),
+        )
+        _assert_contains_all(
+            self,
+            mode,
+            (
+                "## forbidden writes",
+                "Application code.",
+                "`.forge/runtime/`",
+                "`.forge/generated/`",
+                "`.forge/context-archive/`",
+                "`.forge/context-patches/`",
+                "Cross-file updates are allowed when required to keep active context consistent.",
+            ),
+        )
+
+    def test_verify_context_templates_remain_read_only_and_recommend_update_context(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex",),
+            ui_language="en",
+        )
+        skill = files[".forge/skills/forge-verify-context/SKILL.md"]
+        mode = files[".forge/runtime/modes/verify-context.md"]
+        _assert_contains_all(
+            self,
+            skill,
+            (
+                "read-only",
+                "must not modify files",
+                "Do not modify `.forge/context`.",
+                "Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth.",
+                "recommend `forge-update-context` when safe updates are needed",
+            ),
+        )
+        _assert_contains_all(
+            self,
+            mode,
+            (
+                "This workflow is read-only.",
+                "Must not modify files.",
+                "Do not modify `.forge/context`.",
+                "Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth.",
+                "Recommend running `forge-update-context` when safe active-context updates are needed.",
+            ),
+        )
 
     def test_shared_agents_entrypoint_not_preserved_when_opencode_selected(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

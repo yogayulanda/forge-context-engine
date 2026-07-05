@@ -106,6 +106,11 @@ def _seed_deprecated_runtime_paths(
     return seeded
 
 
+def _assert_contains_all(testcase: unittest.TestCase, text: str, phrases: tuple[str, ...]) -> None:
+    for phrase in phrases:
+        testcase.assertIn(phrase, text)
+
+
 class ContextProfileTests(unittest.TestCase):
     def test_detect_legacy_v1_layout(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1029,6 +1034,97 @@ class ContextProfileTests(unittest.TestCase):
             self.assertIn("Updated: 0", rendered)
             self.assertIn("Conflicts: 0", rendered)
 
+    def test_installed_context_templates_include_hardened_update_and_verify_instructions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Service Repo\n\nTemplate content checks.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "claude"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            update_skill = (target / ".forge/skills/forge-update-context/SKILL.md").read_text(encoding="utf-8")
+            update_mode = (target / ".forge/runtime/modes/update-context.md").read_text(encoding="utf-8")
+            verify_skill = (target / ".forge/skills/forge-verify-context/SKILL.md").read_text(encoding="utf-8")
+            verify_mode = (target / ".forge/runtime/modes/verify-context.md").read_text(encoding="utf-8")
+            command = (target / ".claude/commands/forge-update-context.md").read_text(encoding="utf-8")
+
+            _assert_contains_all(
+                self,
+                update_skill,
+                (
+                    "Cross-file updates are allowed",
+                    "Do not modify application code.",
+                    "`.forge/runtime/`",
+                    "`.forge/generated/`",
+                    "`.forge/context-archive/`",
+                    "`.forge/context-patches/`",
+                    "not active source of truth by default",
+                    "This workflow is not v2-only.",
+                ),
+            )
+            _assert_contains_all(
+                self,
+                update_mode,
+                (
+                    "`.forge/context/*.md` only.",
+                    "Cross-file updates are allowed when required to keep active context consistent.",
+                    "This is not scope creep. It is active context consistency.",
+                    "Do not read `.forge/generated/` by default or treat it as active evidence by default.",
+                    "Do not promote archive facts as confirmed",
+                    "For workspace layout",
+                ),
+            )
+            _assert_contains_all(
+                self,
+                verify_skill,
+                (
+                    "read-only",
+                    "must not modify files",
+                    "Do not modify `.forge/context`.",
+                    "recommend `forge-update-context` when safe updates are needed",
+                ),
+            )
+            _assert_contains_all(
+                self,
+                verify_mode,
+                (
+                    "This workflow is read-only.",
+                    "Must not modify files.",
+                    "Do not modify `.forge/context`.",
+                    "Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth.",
+                    "Recommend running `forge-update-context` when safe active-context updates are needed.",
+                ),
+            )
+            _assert_contains_all(
+                self,
+                command,
+                (
+                    "Update active context only under `.forge/context/`.",
+                    "Do not modify application code",
+                    "`.forge/runtime/`",
+                    "`.forge/generated/`",
+                    "Report changed context files",
+                ),
+            )
+
+    def test_runtime_config_still_uses_generated_output_and_context_patch_dirs(self) -> None:
+        files = _build_init_files(
+            target_root=Path("/tmp/example"),
+            profile="service",
+            selected_tools=("codex",),
+            ui_language="en",
+        )
+        config = files[".forge/forge.config.yaml"]
+        self.assertIn("output_dir: .forge/generated", config)
+        self.assertIn("patch_dir: .forge/context-patches", config)
+
     def test_update_preserves_source_when_deprecated_runtime_archive_target_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
@@ -1527,6 +1623,20 @@ class ContextProfileTests(unittest.TestCase):
                 content = path.read_text(encoding="utf-8")
                 for token in forbidden:
                     self.assertNotIn(token, content, f"stale runtime path {token} found in {path}")
+
+    def test_active_runtime_assets_do_not_reference_legacy_generated_context_path(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        roots = [
+            repo_root / "src/forge_context_engine/runtime_templates/base/skills",
+            repo_root / "src/forge_context_engine/runtime_templates/base/.forge/runtime",
+            repo_root / "src/forge_context_engine/runtime_templates/base/.claude/commands",
+        ]
+        for root in roots:
+            for path in root.rglob("*"):
+                if not path.is_file():
+                    continue
+                content = path.read_text(encoding="utf-8")
+                self.assertNotIn(".forge/context/generated", content, f"legacy generated path found in {path}")
 
 
 if __name__ == "__main__":

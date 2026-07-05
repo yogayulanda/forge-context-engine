@@ -36,13 +36,14 @@ Forge keeps the workflow inside the target repository so the assistant sees the 
 
 - `forge init` to install the runtime into a repo
 - `forge update` to refresh Forge-managed files later
+- `forge-update-context` to refresh active curated context from current repository evidence
 - `forge update --dry-run` to preview adoption or managed-file changes safely
 - `forge migrate-context --dry-run` to preview a legacy-v1 to v2 context migration safely
 - `forge migrate-context` to migrate legacy-v1 context directly into numbered v2 files
 - shared `.forge/adapter.md` entry behavior and adapter parity rules
 - curated `.forge/context` as the committed source of truth
 - tool entrypoints such as `AGENTS.md`, `CLAUDE.md`, and optional Copilot instructions
-- lifecycle modes for `init -> ask -> plan -> implementation -> execute -> review -> verify-context`
+- lifecycle modes for `init -> ask -> plan -> implementation -> execute -> review` plus `verify-context` and `update-context` for context maintenance
 - optional generated artifacts under `.forge/generated/...`
 - reviewable context promotions under `.forge/context-patches/...` for general durable context updates outside direct migration
 
@@ -77,6 +78,7 @@ flowchart LR
   Gate2 --> Execute[execute]
   Execute --> Review[review]
   Review --> Verify[verify-context]
+  Review --> UpdateContext[update-context]
 ```
 
 - `plan` is read-only.
@@ -84,6 +86,7 @@ flowchart LR
 - `execute` may edit only approved scoped files.
 - `review` is read-only assessment.
 - `verify-context` checks Forge context health only.
+- `update-context` refreshes active `.forge/context` only and does not change application code.
 
 ## Install
 
@@ -160,6 +163,9 @@ forge migrate-context
 - `--dry-run` previews changes.
 - `forge update` is the normal adoption and refresh path for existing repos.
 - `forge update` refreshes Forge-managed files only.
+- `forge update` does not mean refreshing active repo context values.
+- `forge-verify-context` is read-only and checks context drift or health only.
+- `forge-update-context` audits current repository evidence and updates active curated `.forge/context/` files only.
 - user-owned context is preserved.
 - dry-run reports detected Forge profile, detected context layout, and that migration/cleanup is not automatic.
 - `forge migrate-context --dry-run` is read-only; it previews direct migration and writes nothing.
@@ -183,7 +189,8 @@ Typical day-to-day flow:
 5. human approval.
 6. `execute` to apply the approved scope.
 7. `review` to assess the result.
-8. `verify-context` only when durable context may need refresh.
+8. `verify-context` when you want a read-only drift check.
+9. `update-context` when active `.forge/context` should be resynced to current code.
 
 ## Using Forge With AI Tools
 
