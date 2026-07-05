@@ -267,8 +267,15 @@ class ToolSelectionTests(unittest.TestCase):
                 "Do not modify `.forge/context`.",
                 "Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth.",
                 "Recommend running `forge-update-context` when safe active-context updates are needed.",
+                "This workflow is not v2-only.",
+                "Active profile context files under `.forge/context/`",
+                "For workspace layout",
             ),
         )
+        self.assertNotIn("00-meta/context-manifest.md", mode)
+        self.assertNotIn("knowledge/decisions/", mode)
+        self.assertNotIn("source_commit", mode)
+        self.assertNotIn("last_verified", mode)
 
     def test_shared_agents_entrypoint_not_preserved_when_opencode_selected(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -1100,8 +1100,15 @@ class ContextProfileTests(unittest.TestCase):
                     "Do not modify `.forge/context`.",
                     "Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth.",
                     "Recommend running `forge-update-context` when safe active-context updates are needed.",
+                    "This workflow is not v2-only.",
+                    "Active profile context files under `.forge/context/`",
+                    "For workspace layout",
                 ),
             )
+            self.assertNotIn("00-meta/context-manifest.md", verify_mode)
+            self.assertNotIn("knowledge/decisions/", verify_mode)
+            self.assertNotIn("source_commit", verify_mode)
+            self.assertNotIn("last_verified", verify_mode)
             _assert_contains_all(
                 self,
                 command,

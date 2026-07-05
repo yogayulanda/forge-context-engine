@@ -10,10 +10,10 @@ Read `.forge/forge.config.yaml` first. Apply `run.interaction` and related final
 Use when the user asks to verify context freshness, check context drift, inspect context metadata, or determine whether a reviewable context patch is needed.
 
 ## Focus
-Check source paths, metadata, stale cards, contradictions with current repo evidence, unresolved unknowns, decision freshness, and context-patch need.
+Check the active `.forge/context/` layout for contradictions with current repository evidence, stale or noisy context, unresolved unknowns, decision freshness, and whether a reviewable context patch or `forge-update-context` follow-up is needed.
 
 ## Output
 Return verify-context status: `pass`, `stale`, `incomplete`, or `blocked`, with affected context files, evidence, required decisions, and next action.
 
 ## Do NOT
-Do not verify plan readiness, ECP completeness, code diff result, MR readiness, or general validation. This workflow is read-only. It must not modify files. Do not modify `.forge/context`. Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth. Detect context drift and recommend `forge-update-context` when safe updates are needed.
+Do not verify plan readiness, ECP completeness, code diff result, MR readiness, or general validation. This workflow is read-only. It must not modify files. Do not modify `.forge/context`. Do not treat `.forge/generated/` or `.forge/context-archive/` as active source of truth. Detect context drift in the active context layout and recommend `forge-update-context` when safe updates are needed.
