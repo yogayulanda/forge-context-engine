@@ -79,6 +79,36 @@ def _convert_repo_to_legacy_layout(target: Path, profile: str) -> str:
     legacy_question.write_text("legacy question\n", encoding="utf-8")
     return manifest_text
 
+
+def _seed_legacy_archive_fixture(target: Path) -> dict[str, str]:
+    schema_rule = (
+        "Order event payloads must preserve `customer_id` as the stable schema boundary; "
+        "billing snapshots cannot infer or rewrite it during replay."
+    )
+    runtime_rule = "Retry runtime jobs must remain idempotent for duplicate invoice events."
+    adapter_rule = "Payment adapter errors must preserve the upstream transaction reference."
+    open_question = "Open question: what SLA and retention window apply to replay audit logs for backfills?"
+    mechanics_noise = ".forge/context/modes/plan.md defines old Forge mode routing."
+
+    files = {
+        ".forge/context/decisions/decision-001.md": (
+            f"# Decision\n\n- {schema_rule}\n- {runtime_rule}\n- {adapter_rule}\n"
+        ),
+        ".forge/context/unknowns/open-questions.md": f"# Open Questions\n\n- {open_question}\n",
+        ".forge/context/decisions/adapter-noise.md": f"# Legacy Adapter\n\n- {mechanics_noise}\n",
+    }
+    for rel_path, content in files.items():
+        path = target / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+    return {
+        "schema_rule": schema_rule,
+        "runtime_rule": runtime_rule,
+        "adapter_rule": adapter_rule,
+        "open_question": open_question,
+        "mechanics_noise": mechanics_noise,
+    }
+
 def _seed_deprecated_runtime_paths(
     target: Path,
     *,
@@ -596,6 +626,95 @@ class ContextProfileTests(unittest.TestCase):
             self.assertEqual(status, 0)
             for rel_path in SERVICE_V2_CONTEXT_FILES:
                 self.assertTrue((target / rel_path).exists(), rel_path)
+
+    def test_migrate_context_reports_archive_salvage_candidates_in_dry_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nArchive salvage dry-run.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+            fixture = _seed_legacy_archive_fixture(target)
+            before_context = _snapshot_tree(target / ".forge/context")
+            before_manifest = (target / ".forge/forge-install.yaml").read_text(encoding="utf-8")
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=True)
+
+            self.assertEqual(status, 0)
+            self.assertEqual(before_context, _snapshot_tree(target / ".forge/context"))
+            self.assertEqual(before_manifest, (target / ".forge/forge-install.yaml").read_text(encoding="utf-8"))
+            self.assertFalse((target / LEGACY_CONTEXT_ARCHIVE_ROOT).exists())
+            rendered = output.getvalue()
+            self.assertIn("Archive salvage review", rendered)
+            self.assertIn(fixture["schema_rule"], rendered)
+            self.assertIn(fixture["runtime_rule"], rendered)
+            self.assertIn(fixture["adapter_rule"], rendered)
+            self.assertIn(fixture["open_question"], rendered)
+            self.assertNotIn(fixture["mechanics_noise"], rendered)
+
+    def test_migrate_context_reports_archive_salvage_candidates_without_auto_promoting_them(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Repo\n\nArchive salvage apply.\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            _convert_repo_to_legacy_layout(target, profile="service")
+            fixture = _seed_legacy_archive_fixture(target)
+
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(status, 0)
+            rendered = output.getvalue()
+            self.assertIn("Archive salvage review", rendered)
+            self.assertIn(fixture["schema_rule"], rendered)
+            self.assertIn(fixture["runtime_rule"], rendered)
+            self.assertIn(fixture["adapter_rule"], rendered)
+            self.assertIn(fixture["open_question"], rendered)
+            self.assertNotIn(fixture["mechanics_noise"], rendered)
+            self.assertEqual(
+                (target / f"{LEGACY_CONTEXT_ARCHIVE_ROOT}/decisions/decision-001.md").read_text(encoding="utf-8"),
+                (
+                    "# Decision\n\n"
+                    f"- {fixture['schema_rule']}\n"
+                    f"- {fixture['runtime_rule']}\n"
+                    f"- {fixture['adapter_rule']}\n"
+                ),
+            )
+            active_context = "\n".join(_snapshot_tree(target / ".forge/context").values())
+            self.assertNotIn(fixture["schema_rule"], active_context)
+            self.assertNotIn(fixture["runtime_rule"], active_context)
+            self.assertNotIn(fixture["adapter_rule"], active_context)
+            self.assertNotIn(fixture["open_question"], active_context)
+
+            second_output = io.StringIO()
+            with redirect_stdout(second_output):
+                second_status = run_migrate_context(target=target, dry_run=False)
+
+            self.assertEqual(second_status, 0)
+            second_rendered = second_output.getvalue()
+            self.assertIn("Detected context layout: v2", second_rendered)
+            self.assertIn("Repository already uses numbered v2 context files. No migration is needed.", second_rendered)
+            self.assertNotIn("Archive salvage review", second_rendered)
 
     def test_migrate_context_on_legacy_archives_legacy_v1_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+import re
 import shutil
 
 from .context_builder import build_repo_context_seed
@@ -383,6 +384,15 @@ class Operation:
     status: str
     path: str
     detail: str = ""
+
+
+@dataclass(frozen=True)
+class ArchiveSalvageCandidate:
+    """Low-trust archive review item that may contain repo-specific knowledge."""
+
+    path: str
+    category: str
+    snippet: str
 
 
 @dataclass
@@ -829,6 +839,10 @@ def run_migrate_context(*, target: Path | None, dry_run: bool) -> int:
             target_root=paths.target_root,
             profile=profile,
         ).files
+        archive_review_notes = _build_archive_salvage_review_notes(
+            target_root=paths.target_root,
+            desired_context_files=desired_context_files,
+        )
         effective_tools = manifest.selected_tools if manifest is not None else _detect_tools(paths.target_root)
         manifest_text, manifest_write_status = _build_migrated_manifest_text(
             target_root=paths.target_root,
@@ -857,6 +871,8 @@ def run_migrate_context(*, target: Path | None, dry_run: bool) -> int:
             report.add_note(
                 f"Would write {len(desired_context_files)} numbered v2 context files into `.forge/context/`, archive legacy-v1 paths under `{LEGACY_CONTEXT_ARCHIVE_ROOT}/`, and {manifest_write_status} `.forge/forge-install.yaml`."
             )
+            for note in archive_review_notes:
+                report.add_note(note)
         else:
             _plan_context_migration(
                 target_root=paths.target_root,
@@ -871,6 +887,8 @@ def run_migrate_context(*, target: Path | None, dry_run: bool) -> int:
             report.add_note(
                 "Migration completed: numbered v2 context files were written into `.forge/context/`, legacy-v1 context was archived, and `.forge/forge-install.yaml` was updated to context profile version 2."
             )
+            for note in archive_review_notes:
+                report.add_note(note)
     elif context_layout == CONTEXT_LAYOUT_V2:
         migration_status = _migration_proposal_status(context_layout, outcome="already-current")
         report.add_note("Repository already uses numbered v2 context files. No migration is needed.")
@@ -1674,6 +1692,189 @@ def _legacy_archive_pairs(target_root: Path) -> list[tuple[str, str]]:
         if source.exists():
             pairs.append((rel_path, f"{LEGACY_CONTEXT_ARCHIVE_ROOT}/{Path(rel_path).name}"))
     return pairs
+
+
+def _build_archive_salvage_review_notes(
+    *,
+    target_root: Path,
+    desired_context_files: dict[str, str],
+) -> list[str]:
+    candidates = _collect_archive_salvage_candidates(
+        target_root=target_root,
+        active_context_files=desired_context_files,
+    )
+    if not candidates:
+        return []
+
+    notes = [
+        "Archive salvage review: `.forge/context-archive/**` is low-trust historical reference only. Review these items manually before discarding or citing archive material.",
+    ]
+    for candidate in candidates[:8]:
+        notes.append(
+            f"Review suggestion ({candidate.category}): {candidate.path} -> {candidate.snippet}"
+        )
+    return notes
+
+
+def _collect_archive_salvage_candidates(
+    *,
+    target_root: Path,
+    active_context_files: dict[str, str],
+) -> list[ArchiveSalvageCandidate]:
+    active_text = "\n".join(active_context_files.values())
+    normalized_active = _normalize_salvage_text(active_text)
+    candidates: list[ArchiveSalvageCandidate] = []
+    seen: set[tuple[str, str]] = set()
+
+    for source_rel, archive_rel in _legacy_archive_pairs(target_root):
+        if _should_ignore_archive_path(source_rel):
+            continue
+        source_path = target_root / source_rel
+        if source_path.is_file():
+            extracted = _extract_archive_salvage_candidates_from_file(
+                rel_path=archive_rel,
+                content=source_path.read_text(encoding="utf-8"),
+                normalized_active=normalized_active,
+            )
+            for candidate in extracted:
+                key = (candidate.category, candidate.snippet)
+                if key not in seen:
+                    seen.add(key)
+                    candidates.append(candidate)
+            continue
+        if not source_path.exists():
+            continue
+        for file_path in sorted(path for path in source_path.rglob("*") if path.is_file()):
+            rel_under_source = file_path.relative_to(source_path).as_posix()
+            candidate_rel_path = f"{archive_rel}/{rel_under_source}"
+            extracted = _extract_archive_salvage_candidates_from_file(
+                rel_path=candidate_rel_path,
+                content=file_path.read_text(encoding="utf-8"),
+                normalized_active=normalized_active,
+            )
+            for candidate in extracted:
+                key = (candidate.category, candidate.snippet)
+                if key not in seen:
+                    seen.add(key)
+                    candidates.append(candidate)
+
+    return candidates
+
+
+def _should_ignore_archive_path(rel_path: str) -> bool:
+    ignored_prefixes = (
+        ".forge/context/01-core",
+        ".forge/context/knowledge",
+        ".forge/context/00-meta",
+        ".forge/context/modes",
+    )
+    return rel_path.startswith(ignored_prefixes)
+
+
+def _extract_archive_salvage_candidates_from_file(
+    *,
+    rel_path: str,
+    content: str,
+    normalized_active: str,
+) -> list[ArchiveSalvageCandidate]:
+    candidates: list[ArchiveSalvageCandidate] = []
+    for raw in content.splitlines():
+        candidate = _classify_archive_candidate_line(rel_path=rel_path, raw=raw)
+        if candidate is None:
+            continue
+        normalized_candidate = _normalize_salvage_text(candidate.snippet)
+        if not normalized_candidate or normalized_candidate in normalized_active:
+            continue
+        candidates.append(candidate)
+    return candidates
+
+
+def _classify_archive_candidate_line(
+    *,
+    rel_path: str,
+    raw: str,
+) -> ArchiveSalvageCandidate | None:
+    text = raw.strip()
+    if not text or text.startswith("#"):
+        return None
+    text = re.sub(r"^[-*+]\s+", "", text)
+    text = re.sub(r"^\d+\.\s+", "", text)
+    if len(text) < 18:
+        return None
+    if _looks_like_legacy_mechanics(text):
+        return None
+
+    lowered = text.lower()
+    rel_lower = rel_path.lower()
+    if (
+        "?" in text
+        or "open question" in lowered
+        or "unknown" in lowered
+        or "unclear" in lowered
+        or "need to confirm" in lowered
+        or "should we" in lowered
+        or rel_lower.startswith(f"{LEGACY_CONTEXT_ARCHIVE_ROOT}/unknowns/")
+    ):
+        return ArchiveSalvageCandidate(rel_path, "open question", text)
+
+    rule_keywords = (
+        "schema",
+        "retention",
+        "compliance",
+        "sla",
+        "must ",
+        "must not",
+        "cannot ",
+        "required",
+        "constraint",
+        "boundary",
+        "foreign key",
+        "unique",
+        "idempotent",
+    )
+    if any(keyword in lowered for keyword in rule_keywords):
+        return ArchiveSalvageCandidate(rel_path, "rule/constraint", text)
+
+    decision_keywords = (
+        "decision",
+        "decided",
+        "assumption",
+        "assume",
+        "business rule",
+        "policy",
+    )
+    if any(keyword in lowered for keyword in decision_keywords):
+        return ArchiveSalvageCandidate(rel_path, "decision/assumption", text)
+    return None
+
+
+def _looks_like_legacy_mechanics(text: str) -> bool:
+    lowered = text.lower()
+    legacy_markers = (
+        ".forge/context/00-meta",
+        ".forge/context/modes",
+        ".forge/runtime/modes",
+        "01-core",
+        "knowledge/inferred.md",
+        "knowledge/confirmations.md",
+        "claude.md",
+        ".claude/",
+        ".github/prompts",
+        "copilot-instructions.md",
+        "agents.md",
+        "begin forge managed block",
+        "end forge managed block",
+        "/forge-",
+        "invoke shared skill:",
+        "old forge mode routing",
+        "old forge lifecycle",
+        "thin wrapper",
+    )
+    return any(marker in lowered for marker in legacy_markers)
+
+
+def _normalize_salvage_text(text: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", text.lower()))
 
 
 def _apply_context_migration_file(
