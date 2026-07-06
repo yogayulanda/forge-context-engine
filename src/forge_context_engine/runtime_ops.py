@@ -1002,7 +1002,6 @@ def _update_from_manifest(
     )
     _cleanup_legacy_copilot_prompt_files(
         target_root=target_root,
-        selected_tools=selected_tools,
         report=report,
         dry_run=dry_run,
     )
@@ -2190,13 +2189,9 @@ def _cleanup_obsolete_managed_paths(
 def _cleanup_legacy_copilot_prompt_files(
     *,
     target_root: Path,
-    selected_tools: tuple[str, ...],
     report: OperationReport,
     dry_run: bool,
 ) -> None:
-    if "copilot" not in selected_tools:
-        return
-
     removed_any = False
     for rel_path in LEGACY_COPILOT_PROMPT_FILES:
         path = target_root / rel_path

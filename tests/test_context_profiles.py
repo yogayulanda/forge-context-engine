@@ -1331,6 +1331,53 @@ class ContextProfileTests(unittest.TestCase):
             self.assertTrue((target / unknown_rel_path).exists())
             self.assertTrue((target / ".github/prompts").exists())
 
+    def test_update_cleans_known_legacy_copilot_prompts_even_when_copilot_is_not_selected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Prompt Residue Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex",),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            known_rel_paths, unknown_rel_path = _seed_legacy_copilot_prompts(target, include_unknown=True)
+            self.assertIsNotNone(unknown_rel_path)
+
+            preview = io.StringIO()
+            with redirect_stdout(preview):
+                dry_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=("codex",),
+                )
+
+            self.assertEqual(dry_status, 0)
+            rendered = preview.getvalue()
+            for rel_path in known_rel_paths:
+                self.assertIn(rel_path, rendered)
+                self.assertTrue((target / rel_path).exists())
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=("codex",),
+                )
+
+            self.assertEqual(update_status, 0)
+            for rel_path in known_rel_paths:
+                self.assertFalse((target / rel_path).exists())
+            self.assertTrue((target / unknown_rel_path).exists())
+            self.assertTrue((target / ".github/prompts").exists())
+
     def test_explicit_tool_replacement_removes_managed_claude_files_and_preserves_user_edited_claude_content(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)

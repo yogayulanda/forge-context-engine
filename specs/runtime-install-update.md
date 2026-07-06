@@ -448,7 +448,27 @@ Dry-run behavior:
 
 ---
 
-## 10. Safety Boundaries
+## 10. Forge v2 Migration and Update Acceptance Matrix
+
+| Invariant | Expected behavior | Evidence / source | Current test coverage | Gap if any | Recommended minimal fix |
+| --- | --- | --- | --- | --- | --- |
+| Active v2 context stays under `.forge/context/**` | Treat numbered v2 context files as user-owned source of truth; update refreshes runtime around them but does not overwrite them | `specs/artifact-lifecycle.md`, `install_manifest.py`, `runtime_ops.py`, real state in `transaction-history-service/.forge/context/` and `go-core/.forge/context/` | `tests/test_context_profiles.py` covers v2 detection, migration, and preservation | None confirmed | None |
+| Runtime lives under `.forge/runtime/**`, not `.forge/context/00-meta` or `.forge/context/modes` | Update should use `.forge/runtime/meta/**` and `.forge/runtime/modes/**`; legacy runtime under `.forge/context/00-meta` and `.forge/context/modes` is deprecated residue to report or archive/clean safely | `runtime_ops.py` deprecated runtime constants and cleanup logic; real archive state in `go-core/.forge/context-archive/deprecated-runtime/` | Deprecated runtime dry-run/apply and idempotence tests in `tests/test_context_profiles.py` | None confirmed | None |
+| Copilot support uses `.github/skills/**/SKILL.md` plus `.github/copilot-instructions.md` | Current output exports Copilot skills from canonical Forge skills; Copilot wrappers stay thin | `docs/adapters/github-copilot.md`, `runtime_ops.py`, real state in both repos under `.github/skills/` | `tests/test_tool_selection.py`, `tests/test_context_profiles.py` Copilot init/update coverage | None confirmed | None |
+| Forge no longer generates `.github/prompts/**` | Init/update must not materialize legacy prompt wrappers | `runtime_templates/` excludes prompt wrappers; `build_managed_paths()` excludes `.github/prompts/` | `tests/test_tool_selection.py` asserts no prompt templates/output; update tests assert `.github/prompts` absent after clean convergence | None confirmed | None |
+| Known legacy `.github/prompts/forge-*.prompt.md` are obsolete managed output | Dry-run reports them; apply removes only the known Forge-managed prompt files; unknown prompt files remain | `LEGACY_COPILOT_PROMPT_FILES` in `runtime_ops.py`; real residue in `transaction-history-service/.github/prompts/` | Existing dry-run/apply preservation tests in `tests/test_context_profiles.py` | Confirmed before this change: cleanup/reporting was gated on Copilot still being selected | Remove tool-selection gate; keep cleanup list explicit and preserve unknown prompt files |
+| Claude files exist only when Claude is selected | `CLAUDE.md`, `.claude/.gitignore`, and `.claude/commands/**` are managed only for Claude-enabled repos; explicit tool replacement removes obsolete managed Claude files safely | `build_managed_paths()`, `_build_init_files()`, obsolete managed cleanup in `runtime_ops.py` | `tests/test_context_profiles.py` and `tests/test_tool_selection.py` cover Claude init/update/removal | None confirmed | None |
+| OpenCode is opt-in and not tracked as shared tool-neutral output | Canonical shared skills stay under `.forge/skills/**`; OpenCode adds only `.opencode/opencode.json` and `.opencode/skills/**` when selected, while sharing `AGENTS.md` | `install_manifest.py`, `runtime_ops.py`, `docs/adapters/opencode.md` | `tests/test_tool_selection.py` covers managed paths, init files, detection, and migration to canonical Forge skills | None confirmed | None |
+| `.forge/context-archive/**`, `.forge/context-patches/**`, and `.forge/generated/**` are not active source of truth | Archive is low-trust historical reference, patches are reviewable proposals, generated is working output only | `specs/artifact-lifecycle.md`, `docs/workflow.md`, update-context skill/mode templates | `tests/test_tool_selection.py` asserts update-context instructions forbid treating these as active truth | No install/update matrix row previously captured this convergence rule explicitly | Add this matrix row for acceptance clarity only |
+| Archive directories are preserved as ignored/low-trust user-owned paths | Update should keep `.forge/context-archive/README.md` managed, archive contents local by default, and never promote archive facts automatically | `FORGE_LOCAL_GITIGNORE`, `build_user_owned_paths()`, real archive state in both repos | Archive and migration tests in `tests/test_context_profiles.py` | None confirmed | None |
+| Unknown user files are preserved | Safe cleanup applies only to known managed files/paths; ambiguous or user-owned content is reported or left untouched | Obsolete managed cleanup logic, entrypoint conflict handling, real unknown prompt preservation requirement | Unknown prompt preservation and user-edited wrapper preservation tests in `tests/test_context_profiles.py` | None confirmed | None |
+| Dry-run reports cleanup without writing files | Preview must list safe cleanup candidates, including known legacy prompt residue and deprecated runtime paths, without modifying the repo | `run_update(..., dry_run=True)` behavior in `runtime_ops.py` | Dry-run tests for prompts, migration, adoption, and deprecated runtime paths | None confirmed | None |
+| Apply mode performs only safe known managed cleanup | Apply may remove known obsolete managed files, archive deprecated managed runtime, and stop on ambiguous ownership | `runtime_ops.py` cleanup and conflict paths | Existing apply tests for obsolete managed files, runtime archive, and prompt cleanup | None confirmed after prompt-gate fix | None |
+| Repeated `forge update` is idempotent | After safe convergence, a repeat dry-run should show `Created: 0`, `Updated: 0`, `Conflicts: 0` | `run_update()` refresh flow and manifest hashing | Existing idempotence tests for deprecated runtime cleanup and Copilot convergence | None confirmed | None |
+
+---
+
+## 11. Safety Boundaries
 
 Forge install/update must not:
 - copy target source code into Forge
@@ -460,7 +480,7 @@ Forge install/update must not:
 
 ---
 
-## 11. Validation Expectations
+## 12. Validation Expectations
 
 Validation for the CLI install/update layer should cover:
 - package metadata and console-script wiring
@@ -474,6 +494,11 @@ Validation for the CLI install/update layer should cover:
 - update reports conflict for modified managed files
 - manifest-less adoption dry-run writes nothing
 - manifest-less adoption with `--yes` writes `.forge/forge-install.yaml`
+- known legacy `.github/prompts/forge-*.prompt.md` files are reported in dry-run
+- known legacy `.github/prompts/forge-*.prompt.md` files are removed in apply mode
+- unknown `.github/prompts/*.prompt.md` files are preserved
+- current Copilot support does not generate `.github/prompts/**`
+- repeated `forge update --tools codex,copilot` converges cleanly
 - packaged runtime templates contain no `__pycache__` or `*.pyc`
 - packaged runtime templates include `.forge/runtime/meta/*` and `.forge/runtime/modes/*`
 - manifest schema documentation completeness
