@@ -60,6 +60,7 @@ CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
 CLAUDE_GITIGNORE_PATH = ".claude/.gitignore"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 COPILOT_SKILLS_PREFIX = ".github/skills/"
+LEGACY_COPILOT_PROMPTS_PREFIX = ".github/prompts/"
 TEMPLATE_SKILLS_PREFIX = "skills/"
 CANONICAL_SKILLS_PREFIX = ".forge/skills/"
 OPENCODE_SKILLS_PREFIX = ".opencode/skills/"
@@ -157,6 +158,21 @@ ENTRYPOINT_TEMPLATE_MAP = {
     "CLAUDE.md": ("base", "CLAUDE.md"),
     COPILOT_TEMPLATE_PATH: ("base", ".github/copilot-instructions.md"),
 }
+LEGACY_COPILOT_PROMPT_FILES = (
+    ".github/prompts/forge-init.prompt.md",
+    ".github/prompts/forge-ask.prompt.md",
+    ".github/prompts/forge-plan.prompt.md",
+    ".github/prompts/forge-implement.prompt.md",
+    ".github/prompts/forge-implementation.prompt.md",
+    ".github/prompts/forge-execute.prompt.md",
+    ".github/prompts/forge-review.prompt.md",
+    ".github/prompts/forge-ai-readiness.prompt.md",
+    ".github/prompts/forge-verify-context.prompt.md",
+    ".github/prompts/forge-incident.prompt.md",
+    ".github/prompts/forge-refactor.prompt.md",
+    ".github/prompts/forge-test.prompt.md",
+    ".github/prompts/forge-update-context.prompt.md",
+)
 REGULAR_MANAGED_HASH_EXCLUDES = {
     ".forge/forge-install.yaml",
     "AGENTS.md",
@@ -980,6 +996,12 @@ def _update_from_manifest(
     _cleanup_obsolete_managed_paths(
         target_root=target_root,
         manifest=manifest,
+        selected_tools=selected_tools,
+        report=report,
+        dry_run=dry_run,
+    )
+    _cleanup_legacy_copilot_prompt_files(
+        target_root=target_root,
         selected_tools=selected_tools,
         report=report,
         dry_run=dry_run,
@@ -2164,6 +2186,34 @@ def _cleanup_obsolete_managed_paths(
             report=report,
             dry_run=dry_run,
         )
+
+def _cleanup_legacy_copilot_prompt_files(
+    *,
+    target_root: Path,
+    selected_tools: tuple[str, ...],
+    report: OperationReport,
+    dry_run: bool,
+) -> None:
+    if "copilot" not in selected_tools:
+        return
+
+    removed_any = False
+    for rel_path in LEGACY_COPILOT_PROMPT_FILES:
+        path = target_root / rel_path
+        if not path.exists():
+            continue
+        report.add("updated", rel_path, DETAIL_OBSOLETE_MANAGED_CLEANUP)
+        if dry_run:
+            continue
+        path.unlink()
+        removed_any = True
+
+    prompts_dir = target_root / LEGACY_COPILOT_PROMPTS_PREFIX.rstrip("/")
+    if removed_any and prompts_dir.exists():
+        try:
+            prompts_dir.rmdir()
+        except OSError:
+            pass
 
 def _cleanup_obsolete_managed_file(
     *,

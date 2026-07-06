@@ -135,6 +135,35 @@ def _seed_deprecated_runtime_paths(
         seeded.add(deprecated_path)
     return seeded
 
+def _seed_legacy_copilot_prompts(
+    target: Path,
+    *,
+    include_unknown: bool = False,
+) -> tuple[list[str], str | None]:
+    known_rel_paths = [
+        ".github/prompts/forge-ask.prompt.md",
+        ".github/prompts/forge-execute.prompt.md",
+        ".github/prompts/forge-implement.prompt.md",
+        ".github/prompts/forge-incident.prompt.md",
+        ".github/prompts/forge-plan.prompt.md",
+        ".github/prompts/forge-refactor.prompt.md",
+        ".github/prompts/forge-review.prompt.md",
+        ".github/prompts/forge-test.prompt.md",
+    ]
+    for rel_path in known_rel_paths:
+        path = target / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"legacy managed prompt: {Path(rel_path).name}\n", encoding="utf-8")
+
+    unknown_rel_path: str | None = None
+    if include_unknown:
+        unknown_rel_path = ".github/prompts/custom-user-workflow.prompt.md"
+        unknown_path = target / unknown_rel_path
+        unknown_path.parent.mkdir(parents=True, exist_ok=True)
+        unknown_path.write_text("user-defined prompt\n", encoding="utf-8")
+
+    return known_rel_paths, unknown_rel_path
+
 
 def _assert_contains_all(testcase: unittest.TestCase, text: str, phrases: tuple[str, ...]) -> None:
     for phrase in phrases:
@@ -1218,6 +1247,7 @@ class ContextProfileTests(unittest.TestCase):
             self.assertTrue((target / ".github/copilot-instructions.md").exists())
             self.assertTrue((target / ".github/skills/forge-update-context/SKILL.md").exists())
             self.assertTrue((target / ".github/skills/forge-verify-context/SKILL.md").exists())
+            self.assertFalse((target / ".github/prompts").exists())
             self.assertFalse((target / "CLAUDE.md").exists())
             self.assertFalse((target / ".claude").exists())
 
@@ -1235,6 +1265,71 @@ class ContextProfileTests(unittest.TestCase):
             self.assertIn("Created: 0", second_rendered)
             self.assertIn("Updated: 0", second_rendered)
             self.assertIn("Conflicts: 0", second_rendered)
+
+    def test_update_dry_run_reports_known_legacy_copilot_prompts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Copilot Prompt Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "copilot"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            known_rel_paths, _ = _seed_legacy_copilot_prompts(target)
+
+            preview = io.StringIO()
+            with redirect_stdout(preview):
+                dry_status = run_update(
+                    target=target,
+                    dry_run=True,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(dry_status, 0)
+            rendered = preview.getvalue()
+            for rel_path in known_rel_paths:
+                self.assertIn(rel_path, rendered)
+            for rel_path in known_rel_paths:
+                self.assertTrue((target / rel_path).exists())
+
+    def test_update_removes_known_legacy_copilot_prompts_and_preserves_unknown_prompts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir)
+            (target / "README.md").write_text("# Legacy Copilot Prompt Cleanup Repo\n", encoding="utf-8")
+
+            with redirect_stdout(io.StringIO()):
+                status = run_init(
+                    target=target,
+                    profile="service",
+                    selected_tools=("codex", "copilot"),
+                    dry_run=False,
+                    assume_yes=True,
+                )
+
+            self.assertEqual(status, 0)
+            known_rel_paths, unknown_rel_path = _seed_legacy_copilot_prompts(target, include_unknown=True)
+            self.assertIsNotNone(unknown_rel_path)
+
+            with redirect_stdout(io.StringIO()):
+                update_status = run_update(
+                    target=target,
+                    dry_run=False,
+                    assume_yes=True,
+                    selected_tools=("codex", "copilot"),
+                )
+
+            self.assertEqual(update_status, 0)
+            for rel_path in known_rel_paths:
+                self.assertFalse((target / rel_path).exists())
+            self.assertTrue((target / unknown_rel_path).exists())
+            self.assertTrue((target / ".github/prompts").exists())
 
     def test_explicit_tool_replacement_removes_managed_claude_files_and_preserves_user_edited_claude_content(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
