@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-05
+updated: 2026-10-15
 ---
 
 # Mode: Implementation
@@ -45,6 +45,8 @@ Convert an approved plan into an Execution Context Package (ECP).
 - If the user references a saved plan artifact, read it first and verify it is a plan artifact before continuing.
 - Check whether the saved plan still has enough evidence and whether current repository/context evidence materially contradicts it; if so, stop with `needs_more_evidence` or `blocked_by_decision`.
 - Produce a bounded, tool-ready ECP.
+- When the approved plan is split into batches, produce one ECP per remaining batch in the same response, in execution order, so the human can approve them with one signal. Each batch ECP keeps its own scope, files, validation, and stop conditions.
+- Put recurring execution rules (decided conventions, tool versions, details execute may decide itself) into the ECP so execute does not need to stop and ask.
 - Convert the approved plan into a readiness package only; do not execute it.
 - Keep mode boundaries separate from assumptions carried into the ECP.
 - Resolve only execution packaging details that are safe and evidenced.
@@ -72,6 +74,8 @@ Execution Context Package (ECP) with:
 - Stop conditions.
 - Expected execution report format.
 - Status.
+- Batch id and order, when the plan is split into batches.
+- Non-blocking details execute may decide itself (for example unexported names, helper structure, test layout, comment wording).
 - Step-by-step implementation guidance only inside the approved file/scope boundary.
 - Risk notes.
 - Target Tool Instructions:
@@ -97,5 +101,5 @@ Execution Context Package (ECP) with:
 - Do not produce execution instructions while critical blockers remain.
 
 ## next mode transitions
-- Use `execute` only after human approval of the ECP.
+- Use `execute` only after human approval of the ECP, or of a named set of batch ECPs.
 - Return to `plan` when the approved plan is insufficient or contradicted by evidence.

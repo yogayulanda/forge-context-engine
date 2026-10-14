@@ -46,6 +46,7 @@ forge-implementation invoked with approved plan
 - ECP output includes exact likely files, task sequence, acceptance criteria, validation commands, stop conditions, and expected execution report format.
 - ECP output gives universal target-tool guidance in tool-aware form, then adds Codex/Claude Code/Copilot specifics only as sub-guidance.
 - `forge-execute` is not invoked until the human explicitly approves the ECP or a named bounded ECP subset.
+- For a plan split into batches, implementation may produce all remaining batch ECPs in one response; one explicit approval naming those batches covers them.
 - If `forge-execute` is invoked without a human approval signal, the assistant should request an explicit approval signal before proceeding.
 
 ---
@@ -58,6 +59,7 @@ forge-implementation invoked with approved plan
 - Transitioning from `forge-implementation` output directly to code changes without Gate 2 approval.
 - Treating `READY_FOR_EXECUTION` in the implementation output as autonomous permission to execute.
 - Treating task card production as implicit execution approval.
+- Treating approval of named batch ECPs as approval of later batches that were not yet produced or not named.
 
 ---
 

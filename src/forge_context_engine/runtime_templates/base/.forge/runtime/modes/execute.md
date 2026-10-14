@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-04
+updated: 2026-10-15
 ---
 
 # Mode: Execute
@@ -34,7 +34,7 @@ updated: 2026-06-04
 Apply an approved ECP into code within explicit boundaries.
 
 ## inputs
-- Approved ECP.
+- Approved ECP, or a named set of approved batch ECPs.
 - Allowed files and scope.
 - Task sequence.
 - Coding rules.
@@ -46,6 +46,8 @@ Apply an approved ECP into code within explicit boundaries.
 - If the user references a saved ECP artifact, read it first and verify it is an ECP artifact before continuing.
 - Check whether the saved ECP still has enough evidence and whether current repository/context evidence materially contradicts it; if so, stop with `blocked`, `blocked_by_environment`, or `not_validated` instead of guessing.
 - Execute task by task with minimal diffs and repository-native style.
+- With a named set of approved batch ECPs, run the batches in the approved order in one session and report per batch. Stop at a batch boundary only when a stop condition is hit or the approval says to stop there.
+- Decide non-blocking details the ECP leaves open (unexported names, helper structure, test layout, comment wording) and list them as decisions taken instead of stopping.
 - Run scoped validation after each task for the changed area.
 - Fix ordinary in-scope failures such as typos, formatting issues, missing imports, small logic bugs, or assertion mismatches.
 - Stop on scope, domain, security, contract, migration, infra, evidence, or environment blockers.
@@ -62,6 +64,8 @@ Apply an approved ECP into code within explicit boundaries.
 - Validation results.
 - Fixes made during execute.
 - Deviations from ECP.
+- Decisions taken (non-blocking).
+- Per-batch results, when running several batch ECPs.
 - Blocked items.
 - Risks.
 - Next mode: `review`.

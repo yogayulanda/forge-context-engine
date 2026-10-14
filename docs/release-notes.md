@@ -1,5 +1,14 @@
 # Release Notes
 
+## Unreleased
+
+Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.
+
+- `plan`: an SDD is closed against the code before `ready_for_implementation`, with all decisions needed in one list; Implementation Split groups work into the fewest reviewable batches.
+- `implementation`: may produce one ECP per remaining batch in one response, with recurring rules and the non-blocking details execute may decide.
+- `execute`: may run a named set of approved batch ECPs in order, reporting per batch; decides non-blocking details and reports them instead of stopping.
+- Gate 2 (`docs/workflow.md`): one explicit approval may cover a named set of batch ECPs, never batches not yet produced or not named.
+
 ## 1.1.0rc1
 
 Forge `1.1.0rc1` is the release-candidate hardening milestone for daily repo usage. This RC keeps the product simple:

@@ -123,8 +123,13 @@ Approved. Use Forge execute mode for ECP ecp.retry-plan.r1.
 Approved. Execute the confirmed ECP from the last forge-implementation output.
 ```
 
+```text
+Approved. Execute batch ECPs B, C, D in order; stop after D for review.
+```
+
 Rules:
 - The human must explicitly approve the ECP or a named bounded ECP subset.
+- One approval may cover a named set of batch ECPs produced together. It does not cover batches that are not yet produced or not named.
 - A proposed ECP is not sufficient for execution without human confirmation.
 - The assistant must not execute immediately after producing an ECP.
 - ECP readiness in implementation output is a readiness signal, not autonomous permission to execute.

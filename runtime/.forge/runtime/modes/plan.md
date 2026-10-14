@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/mode-invocation.md }]
 owner: forge-context-engine
-updated: 2026-06-05
+updated: 2026-10-15
 ---
 
 # Mode: Plan
@@ -50,6 +50,8 @@ Convert developer intent into a reviewable Quick Plan or SDD.
 - Prefer the smallest relevant code surface and evidence set that can support the plan.
 - For changes to existing behavior, first map the affected surface area before locking scope: inspect all discoverable call sites, references, entry points, handlers, routes, tests, and configuration touchpoints that materially affect the change.
 - Treat scope as incomplete when only a subset of known usages has been inspected and there is evidence of additional references.
+- For an SDD, close the plan before `ready_for_implementation`: verify Current Evidence against the code and collect every decision needed in one Unknowns / Decisions Needed list, so the human can answer in one round.
+- In Implementation Split, group workstreams into the fewest reviewable batches. Merge work that shares files, validation, or outcome; split only when risk, boundary, or review need differs.
 - Default to chat output; save a plan artifact only when the user explicitly asks or approves persistence.
 - When saving, use `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md` and avoid overwriting an existing artifact without explicit approval.
 - Saved plans are working artifacts only; they are not approved by creation alone and are not durable context.
