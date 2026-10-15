@@ -351,6 +351,8 @@ Rules:
 - if the file does not exist, Forge may create the full file
 - if the file exists and already contains a Forge-managed block, Forge may update only that block
 - if the file exists and has user content but no managed block, Forge must not overwrite blindly
+- user content outside an existing managed block is preserved; only the block is refreshed
+- a previous-generation Forge thin wrapper without markers is archived under `.forge/context-archive/deprecated-root-wrappers/` and replaced, never appended to
 - when safe in-place block insertion is not possible, Forge must stop with an explicit conflict or preview result
 - shared adapter behavior remains centralized in `.forge/adapter.md`
 - root entrypoints remain thin wrappers and must not become duplicate lifecycle or policy stores

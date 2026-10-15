@@ -153,6 +153,10 @@ LEGACY_WRAPPER_MARKERS = (
     "source_commit",
     "last_verified",
 )
+FORGE_THIN_WRAPPER_MARKERS = (
+    "`.forge/adapter.md`",
+    "repository cognition, lifecycle logic, validation policy, or artifact policy in this file",
+)
 ENTRYPOINT_TEMPLATE_MAP = {
     "AGENTS.md": ("base", "AGENTS.md"),
     "CLAUDE.md": ("base", "CLAUDE.md"),
@@ -1188,6 +1192,10 @@ def _apply_entrypoint_file(
             report.add("unchanged", rel_path, DETAIL_ENTRYPOINT_ADOPTED)
             return False
         updated, action = upsert_managed_block(existing, content)
+        if has_managed_block(existing) and _has_content_outside_managed_block(existing):
+            report.add_note(
+                f"Wrapper {rel_path}: only the Forge-managed block is managed; content outside it was preserved."
+            )
         if normalize_text(updated) == normalize_text(existing):
             report.add("unchanged", rel_path, DETAIL_CURRENT)
             return False
@@ -1993,7 +2001,12 @@ def _plan_legacy_entrypoint_cleanup(
     existing: str,
 ) -> tuple[str, str, str | None] | None:
     if not has_managed_block(existing):
-        return None
+        if not _looks_like_unmanaged_forge_thin_wrapper(existing):
+            return None
+        archive_rel_path = _deprecated_root_wrapper_archive_path(rel_path)
+        if (target_root / archive_rel_path).exists():
+            return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, archive_rel_path)
+        return ("updated", DETAIL_ENTRYPOINT_LEGACY_REPLACED, archive_rel_path)
 
     start_marker = "<!-- BEGIN FORGE MANAGED BLOCK -->"
     end_marker = "<!-- END FORGE MANAGED BLOCK -->"
@@ -2004,14 +2017,18 @@ def _plan_legacy_entrypoint_cleanup(
     if not prefix and not suffix:
         return None
 
+    unmanaged = "\n".join(part for part in (prefix, suffix) if part)
+    if not (
+        _looks_like_known_legacy_wrapper_content(unmanaged)
+        or _looks_like_unmanaged_forge_thin_wrapper(unmanaged)
+    ):
+        # User-owned content around the managed block: update only the block (spec section 6).
+        return None
+
     archive_rel_path = _deprecated_root_wrapper_archive_path(rel_path)
     if (target_root / archive_rel_path).exists():
         return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, archive_rel_path)
-
-    unmanaged = "\n".join(part for part in (prefix, suffix) if part)
-    if _looks_like_known_legacy_wrapper_content(unmanaged):
-        return ("updated", DETAIL_ENTRYPOINT_LEGACY_REPLACED, archive_rel_path)
-    return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, None)
+    return ("updated", DETAIL_ENTRYPOINT_LEGACY_REPLACED, archive_rel_path)
 
 def _plan_obsolete_entrypoint_cleanup(
     *,
@@ -2033,8 +2050,20 @@ def _plan_obsolete_entrypoint_cleanup(
         return ("updated", DETAIL_OBSOLETE_MANAGED_CLEANUP, None)
     return ("conflict", DETAIL_ENTRYPOINT_MANUAL_REVIEW, None)
 
+def _has_content_outside_managed_block(existing: str) -> bool:
+    start = existing.index("<!-- BEGIN FORGE MANAGED BLOCK -->")
+    end = existing.index("<!-- END FORGE MANAGED BLOCK -->") + len("<!-- END FORGE MANAGED BLOCK -->")
+    return bool(existing[:start].strip() or existing[end:].strip())
+
+
 def _deprecated_root_wrapper_archive_path(rel_path: str) -> str:
     return f"{DEPRECATED_ROOT_WRAPPERS_ARCHIVE_ROOT}/{Path(rel_path).name}"
+
+def _looks_like_unmanaged_forge_thin_wrapper(content: str) -> bool:
+    """Detect a previous-generation Forge thin wrapper written without managed block markers."""
+
+    return all(marker in content for marker in FORGE_THIN_WRAPPER_MARKERS)
+
 
 def _looks_like_known_legacy_wrapper_content(content: str) -> bool:
     normalized = content.strip()

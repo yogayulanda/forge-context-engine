@@ -4,6 +4,12 @@
 
 Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.
 
+Fixed:
+
+- `forge update` no longer stops with a conflict when a wrapper (`AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`) has user content outside the Forge-managed block; only the block is refreshed, as specified.
+- Adopting a previous-generation Forge wrapper without managed-block markers now archives and replaces it instead of appending a second copy, so the next `forge update` stays conflict-free.
+- `scripts/validate_forge_cli.py` realigned with the current CLI: version read from `version.py`, v2 numbered context, `.forge/runtime/` paths, `codex,copilot` default tools, `.github/skills/`, and replace semantics for `--tools`.
+
 - `plan`: an SDD is closed against the code before `ready_for_implementation`, with all decisions needed in one list; Implementation Split groups work into the fewest reviewable batches.
 - `implementation`: may produce one ECP per remaining batch in one response, with recurring rules and the non-blocking details execute may decide.
 - `execute`: may run a named set of approved batch ECPs in order, reporting per batch; decides non-blocking details and reports them instead of stopping.

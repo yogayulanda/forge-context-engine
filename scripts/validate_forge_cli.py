@@ -14,6 +14,8 @@ os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION_FILE = ROOT / "src" / "forge_context_engine" / "version.py"
+VERSION = VERSION_FILE.read_text(encoding="utf-8").split('__version__ = "', 1)[1].split('"', 1)[0]
 CLI = [sys.executable, "-B", "-m", "forge_context_engine.cli"]
 ENV = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "PYTHONDONTWRITEBYTECODE": "1"}
 ENGINE_ONLY_MARKERS = (
@@ -70,7 +72,7 @@ def main() -> int:
             run_case("wrapper adoption avoids duplicate managed block", lambda: case_wrapper_adoption_avoids_duplicate_managed_block(scratch / "wrapper-adopt"))
             run_case("update tools adds codex to adopted claude repo", lambda: case_update_tools_adds_codex_to_adopted_repo(scratch / "adopt-tools"))
             run_case("update tools all adds copilot", lambda: case_update_tools_all_adds_copilot(scratch / "tools-update-all"))
-            run_case("update tools is additive", lambda: case_update_tools_is_additive(scratch / "tools-update-additive"))
+            run_case("update tools replaces selection", lambda: case_update_tools_is_additive(scratch / "tools-update-additive"))
             run_case("init guidance on initialized repo", lambda: case_init_guidance_on_initialized_repo(scratch / "init-guidance"))
             run_case("update tools dry-run writes nothing", lambda: case_update_tools_dry_run_writes_nothing(scratch / "update-tools-dry"))
             run_case("update summary reporting", lambda: case_update_summary_reporting(scratch / "update-summary"))
@@ -99,7 +101,7 @@ def run_case(name: str, fn) -> None:
 def case_version() -> None:
     result = run_cli(["--version"])
     assert_ok(result)
-    assert_contains(result.stdout, "forge 1.0.0rc1")
+    assert_contains(result.stdout, f"forge {VERSION}")
 
 
 def case_readme_release_surface() -> None:
@@ -121,7 +123,7 @@ def case_readme_release_surface() -> None:
     assert_contains(getting_started, "## Release Checklist")
     assert_contains(readme, "forge update --tools codex,claude")
     assert_contains(readme, "docs/release-notes.md")
-    assert_contains(release_notes, "## 1.0.0rc1")
+    assert_contains(release_notes, f"## {VERSION}")
     assert_contains(release_notes, "fresh repo -> `forge init`")
     assert_contains(release_notes, "existing or legacy repo -> `forge update`")
 
@@ -130,9 +132,9 @@ def case_readme_release_surface() -> None:
 
 
 def case_plan_contract_coverage() -> None:
-    runtime_plan = (ROOT / "runtime" / ".forge" / "context" / "modes" / "plan.md").read_text(encoding="utf-8")
+    runtime_plan = (ROOT / "runtime" / ".forge" / "runtime" / "modes" / "plan.md").read_text(encoding="utf-8")
     template_plan = (
-        ROOT / "src" / "forge_context_engine" / "runtime_templates" / "base" / ".forge" / "context" / "modes" / "plan.md"
+        ROOT / "src" / "forge_context_engine" / "runtime_templates" / "base" / ".forge" / "runtime" / "modes" / "plan.md"
     ).read_text(encoding="utf-8")
     runtime_skill = (ROOT / "runtime" / "skills" / "forge-plan" / "SKILL.md").read_text(encoding="utf-8")
     template_skill = (
@@ -158,7 +160,8 @@ def case_service_init(target: Path) -> None:
     result = run_cli(["init", "--yes", "--target", str(target)])
     assert_ok(result)
     assert_exists(target / "AGENTS.md")
-    assert_exists(target / "CLAUDE.md")
+    assert_exists(target / ".github" / "copilot-instructions.md")
+    assert_not_exists(target / "CLAUDE.md")
     assert_exists(target / ".forge" / "forge-install.yaml")
     assert_contains((target / ".forge" / "forge.config.yaml").read_text(encoding="utf-8"), "profile: service")
     for rel in REQUIRED_META_FILES + REQUIRED_MODE_FILES:
@@ -180,21 +183,20 @@ def case_service_init_seeds_repo_context(target: Path) -> None:
     result = run_cli(["init", "--yes", "--target", str(target)])
     assert_ok(result)
 
-    product = (target / ".forge" / "context" / "01-core" / "product.md").read_text(encoding="utf-8")
-    architecture = (target / ".forge" / "context" / "01-core" / "architecture.md").read_text(encoding="utf-8")
-    inferred = (target / ".forge" / "context" / "knowledge" / "inferred.md").read_text(encoding="utf-8")
-    unknowns = (target / ".forge" / "context" / "knowledge" / "unknowns.md").read_text(encoding="utf-8")
-    repo_map = (target / ".forge" / "context" / "repo-map" / "overview.md").read_text(encoding="utf-8")
-    system = (target / ".forge" / "context" / "systems" / "service-context" / "system.md").read_text(encoding="utf-8")
+    context = target / ".forge" / "context"
+    overview = (context / "01-service-overview.md").read_text(encoding="utf-8")
+    architecture = (context / "02-architecture.md").read_text(encoding="utf-8")
+    open_questions = (context / "99-open-questions.md").read_text(encoding="utf-8")
+    index = (context / "00-index.md").read_text(encoding="utf-8")
 
-    assert_contains(product, "status: inferred")
-    assert_contains(product, "Processes invoice events for downstream systems.")
-    assert_not_contains(product, "TBD")
+    assert_contains(overview, "Processes invoice events for downstream systems.")
+    assert_not_contains(overview, "TBD")
     assert_contains(architecture, "single-service application layout")
-    assert_contains(inferred, "single-service application layout")
-    assert_contains(unknowns, "Repository owner and confirmation authority")
-    assert_contains(repo_map, "`src/`")
-    assert_contains(system, "system_type: service")
+    assert_contains(architecture, "`src/`")
+    assert_contains(open_questions, "Repository owner and confirmation authority")
+    assert_contains(index, "Profile: service")
+    assert_contains(index, "Context profile version: 2")
+
 
 def case_workspace_init(target: Path) -> None:
     result = run_cli(["init", "--workspace", "--yes", "--target", str(target)])
@@ -271,7 +273,7 @@ def case_tools_repeatable_flag(target: Path) -> None:
     assert_exists(target / "AGENTS.md")
     assert_not_exists(target / "CLAUDE.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
-    assert_exists(target / ".github" / "prompts" / "forge-plan.prompt.md")
+    assert_exists(target / ".github" / "skills" / "forge-plan" / "SKILL.md")
 
 
 def case_tools_numeric_aliases(target: Path) -> None:
@@ -290,7 +292,7 @@ def case_tools_all(target: Path) -> None:
     assert_exists(target / "CLAUDE.md")
     assert_exists(target / ".claude" / "commands" / "forge-plan.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
-    assert_exists(target / ".github" / "prompts" / "forge-plan.prompt.md")
+    assert_exists(target / ".github" / "skills" / "forge-plan" / "SKILL.md")
     assert_exists(target / ".opencode" / "skills" / "forge-plan" / "SKILL.md")
 
 
@@ -309,7 +311,7 @@ def case_update_no_runtime(target: Path) -> None:
 
 def case_update_preserves_user_owned(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
-    product = target / ".forge" / "context" / "01-core" / "product.md"
+    product = target / ".forge" / "context" / "01-service-overview.md"
     product.write_text(product.read_text(encoding="utf-8") + "\nuser-owned context\n", encoding="utf-8")
     result = run_cli(["update", "--yes", "--target", str(target)])
     assert_ok(result)
@@ -318,22 +320,16 @@ def case_update_preserves_user_owned(target: Path) -> None:
 
 def case_update_preserves_repo_meta_seed(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
-    glossary = target / ".forge" / "context" / "00-meta" / "glossary.md"
-    manifest = target / ".forge" / "context" / "00-meta" / "context-manifest.md"
-    glossary.write_text(
-        glossary.read_text(encoding="utf-8").replace("| — | — | — |", "| repo-term | local meaning | alias |"),
-        encoding="utf-8",
-    )
-    manifest.write_text(
-        manifest.read_text(encoding="utf-8").replace("owner: unresolved", "owner: squad.repo"),
-        encoding="utf-8",
-    )
+    glossary = target / ".forge" / "context" / "98-glossary.md"
+    index = target / ".forge" / "context" / "00-index.md"
+    glossary.write_text(glossary.read_text(encoding="utf-8") + "\n- repo-term: local meaning\n", encoding="utf-8")
+    index.write_text(index.read_text(encoding="utf-8") + "\n- Owner: squad.repo\n", encoding="utf-8")
     result = run_cli(["update", "--yes", "--target", str(target)])
     assert_ok(result)
     assert_contains(glossary.read_text(encoding="utf-8"), "repo-term")
-    assert_contains(manifest.read_text(encoding="utf-8"), "owner: squad.repo")
-    assert_not_contains(result.stdout, ".forge/runtime/meta/glossary.md - managed file modified locally")
-    assert_not_contains(result.stdout, ".forge/runtime/meta/context-manifest.md - managed file modified locally")
+    assert_contains(index.read_text(encoding="utf-8"), "Owner: squad.repo")
+    assert_not_contains(result.stdout, ".forge/context/98-glossary.md - managed file modified locally")
+    assert_not_contains(result.stdout, ".forge/context/00-index.md - managed file modified locally")
 
 
 def case_workspace_update_preserves_links(target: Path) -> None:
@@ -360,16 +356,18 @@ def case_workspace_update_preserves_links(target: Path) -> None:
 
 def case_update_preserves_entrypoint_user_content(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
-    claude = target / "CLAUDE.md"
-    claude.write_text("User intro\n\n" + claude.read_text(encoding="utf-8"), encoding="utf-8")
+    agents = target / "AGENTS.md"
+    agents.write_text("User intro\n\n" + agents.read_text(encoding="utf-8"), encoding="utf-8")
     result = run_cli(["update", "--yes", "--target", str(target)])
     assert_ok(result)
-    assert_contains(claude.read_text(encoding="utf-8"), "User intro")
+    assert_contains(agents.read_text(encoding="utf-8"), "User intro")
+    assert_contains(result.stdout, "Conflicts: 0")
+    assert_contains(result.stdout, "content outside it was preserved")
 
 
 def case_update_conflict(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
-    managed = target / ".forge" / "context" / "00-meta" / "conventions.md"
+    managed = target / ".forge" / "runtime" / "meta" / "conventions.md"
     managed.write_text("LOCAL MOD\n", encoding="utf-8")
     result = run_cli(["update", "--yes", "--target", str(target)], check=False)
     assert_nonzero(result)
@@ -404,6 +402,10 @@ def case_adoption_idempotent_second_dry_run(target: Path) -> None:
     assert_contains(result.stdout, "Updated: 0")
     assert_contains(result.stdout, "Conflicts: 0")
     assert_equal((target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8"), manifest_before)
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        wrapper = (target / name).read_text(encoding="utf-8")
+        assert_equal(wrapper.count("Read `.forge/adapter.md` and follow it."), 1)
+        assert_exists(target / ".forge" / "context-archive" / "deprecated-root-wrappers" / name)
 
 
 def case_legacy_config_migration_backup(target: Path) -> None:
@@ -477,7 +479,7 @@ def case_update_tools_all_adds_copilot(target: Path) -> None:
     assert_exists(target / "CLAUDE.md")
     assert_exists(target / ".claude" / "commands" / "forge-review.md")
     assert_exists(target / ".github" / "copilot-instructions.md")
-    assert_exists(target / ".github" / "prompts" / "forge-review.prompt.md")
+    assert_exists(target / ".github" / "skills" / "forge-review" / "SKILL.md")
     assert_exists(target / "AGENTS.md")
     manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
     assert_contains(manifest, "  - codex")
@@ -486,22 +488,17 @@ def case_update_tools_all_adds_copilot(target: Path) -> None:
 
 
 def case_update_tools_is_additive(target: Path) -> None:
+    # Spec: explicit `--tools` replaces the selected tool set (specs/runtime-install-update.md).
     run_cli(["init", "--yes", "--tools", "codex,claude,copilot", "--target", str(target)])
     result = run_cli(["update", "--yes", "--tools", "opencode", "--target", str(target)])
     assert_ok(result)
     config = (target / ".forge" / "forge.config.yaml").read_text(encoding="utf-8")
     manifest = (target / ".forge" / "forge-install.yaml").read_text(encoding="utf-8")
-    assert_contains(config, "    - codex")
-    assert_contains(config, "    - claude")
-    assert_contains(config, "    - copilot")
     assert_contains(config, "    - opencode")
-    assert_contains(config, "default_adapter: codex")
-    assert_contains(manifest, "  - codex")
-    assert_contains(manifest, "  - claude")
-    assert_contains(manifest, "  - copilot")
-    assert_contains(manifest, "  - opencode")
+    assert_not_contains(config, "    - claude")
+    assert_contains(config, "default_adapter: opencode")
+    assert_contains(manifest, "selected_tools:\n  - opencode")
     assert_exists(target / ".opencode" / "opencode.json")
-
 
 def case_init_guidance_on_initialized_repo(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
@@ -535,12 +532,12 @@ def case_update_checks_context_contract_files(target: Path) -> None:
     assert_ok(result)
     assert_contains(result.stdout, ".forge/runtime/meta/conventions.md")
     assert_contains(result.stdout, ".forge/runtime/modes/ask.md")
-    plan = (target / ".forge" / "context" / "modes" / "plan.md").read_text(encoding="utf-8")
-    implementation = (target / ".forge" / "context" / "modes" / "implementation.md").read_text(encoding="utf-8")
-    review = (target / ".forge" / "context" / "modes" / "review.md").read_text(encoding="utf-8")
+    plan = (target / ".forge" / "runtime" / "modes" / "plan.md").read_text(encoding="utf-8")
+    implementation = (target / ".forge" / "runtime" / "modes" / "implementation.md").read_text(encoding="utf-8")
+    review = (target / ".forge" / "runtime" / "modes" / "review.md").read_text(encoding="utf-8")
     adapter = (target / ".forge" / "adapter.md").read_text(encoding="utf-8")
-    planning = (target / ".forge" / "context" / "modes" / "planning.md").read_text(encoding="utf-8")
-    testing = (target / ".forge" / "context" / "modes" / "testing.md").read_text(encoding="utf-8")
+    planning = (target / ".forge" / "runtime" / "modes" / "planning.md").read_text(encoding="utf-8")
+    testing = (target / ".forge" / "runtime" / "modes" / "testing.md").read_text(encoding="utf-8")
     assert_contains(plan, "Acceptance Criteria.")
     assert_contains(plan, "Validation Commands.")
     assert_contains(plan, "State assumptions explicitly when the request is ambiguous")
@@ -570,22 +567,24 @@ def case_entrypoints_preserve_adapter_parity(target: Path) -> None:
     copilot = (target / ".github" / "copilot-instructions.md").read_text(encoding="utf-8")
     adapter = (target / ".forge" / "adapter.md").read_text(encoding="utf-8")
 
-    for body in (agents, claude, copilot):
+    for body in (agents, claude):
         assert_contains(body, "Read `.forge/adapter.md` and follow it.")
         assert_contains(body, ".forge/context")
+    assert_contains(copilot, "`.forge/adapter.md`")
+    assert_contains(copilot, "AGENTS.md")
+    for body in (agents, claude, copilot):
         assert_not_contains(body, "## Core lifecycle")
         assert_not_contains(body, "## Cross-tool output expectations")
         assert_not_contains(body, "apply_patch")
 
     assert_contains(agents, "Target Tool Notes")
     assert_contains(claude, "Target Tool Notes")
-    assert_contains(copilot, "approved file and scope boundary")
     assert_contains(adapter, "Commit, push, merge, and similar repository publication actions remain human-controlled unless explicitly requested.")
 
 
 def case_newline_only_managed_drift_stays_unchanged(target: Path) -> None:
     run_cli(["init", "--yes", "--target", str(target)])
-    managed = target / ".forge" / "context" / "modes" / "verify-context.md"
+    managed = target / ".forge" / "runtime" / "modes" / "verify-context.md"
     managed.write_text(managed.read_text(encoding="utf-8").rstrip("\n"), encoding="utf-8")
     result = run_cli(["update", "--dry-run", "--target", str(target)])
     assert_ok(result)
@@ -637,7 +636,7 @@ def case_template_hygiene() -> None:
         raise ValidationError(f"template payload contains Python cache artifacts: {pycache or pyc}")
     for rel in REQUIRED_META_FILES + REQUIRED_MODE_FILES:
         assert_exists(templates / "base" / rel)
-    manifest = (templates / "base" / ".forge" / "context" / "00-meta" / "context-manifest.md").read_text(encoding="utf-8")
+    manifest = (templates / "base" / ".forge" / "runtime" / "meta" / "context-manifest.md").read_text(encoding="utf-8")
     assert_contains(manifest, "## Daily Default Load")
     assert_contains(manifest, ".forge/adapter.md")
     assert_contains(manifest, "only as a routing index")
