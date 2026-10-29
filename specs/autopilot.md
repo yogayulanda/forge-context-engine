@@ -52,6 +52,11 @@ The human tells the orchestrator one thing, through its normal surface:
 /forge-autopilot specs/payments-retry.md
 ```
 
+Free text works the same way. The human may write a normal request instead of a path, for example "fix the duplicate transfer on retry in transaction-history-service and open a PR". The orchestrator then:
+1. Writes the request as a spec item (section 3 shape) and starts the run with `forge run start text:<file>`.
+2. Asks the human only for blocking unknowns: no target repository, no acceptance criterion it can derive, or a decision the request leaves open. Otherwise it proceeds without confirmation.
+3. Includes the generated spec in the PR body, so the reviewer sees what the request was interpreted as.
+
 The `forge-autopilot` shared skill instructs the orchestrator to drive `forge run` commands until the run reaches `pr_open` for every batch or a terminal status. Adapter wrappers for Claude, Codex, and Copilot point to that skill. Hermes invokes the same CLI through its shell tool.
 
 ---
@@ -61,6 +66,7 @@ The `forge-autopilot` shared skill instructs the orchestrator to drive `forge ru
 | Source | Form | Accepted by |
 |---|---|---|
 | File | `md:<path>` | Human (they wrote it) |
+| Free text | `text:<path>`, written by the orchestrator from the human's request | Human (their request); the interpreted spec is shown in the PR |
 | PAOS backlog | `paos:<path>` inside a configured paos-context checkout, read-only | Human (they wrote it) |
 | Self audit | `self:<kind>`, kind in `security`, `code-standards`, `test-gaps`, `ai-readiness` | Human: audit output is a candidate list in `.forge/runs/<run-id>/candidates.md`; the run stops at `awaiting_selection` |
 
@@ -214,7 +220,7 @@ One active run per repository. Worktrees live outside the main checkout.
 
 | Version | Adds |
 |---|---|
-| v0.1 | `md:` source, one batch, `self` and one external role agent, GitHub, G1 to G5, report |
+| v0.1 | `md:` and `text:` sources, one batch, `self` and one external role agent, GitHub, G1 to G5, report |
 | v0.2 | Multiple batches with stacked PRs, `reviewer` on a second service, GitLab |
 | v0.3 | `paos:` and `self:` sources |
 
