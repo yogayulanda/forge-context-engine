@@ -37,7 +37,7 @@ This document does NOT:
 |---|---|---|---|
 | Human | Maintainer | Writes or selects the spec; reviews the PR; decides merge | Approve stages inside a run |
 | Orchestrator | Any LLM tool: Claude Code, Codex, Copilot, Hermes | Reads the spec, decides what to dispatch, writes stage prompts, reads reports, retries within limits | Edit files, commit, push, open PRs, or bypass a gate directly |
-| Role agent | Configured per role: `planner`, `dev`, `reviewer` | Does one stage's work under the matching Forge mode | Choose its own next stage |
+| Role agent | Configured per role: `planner`, `dev`, `reviewer`, `security`, `tester` | Does one stage's work under the matching Forge mode | Choose its own next stage |
 | Forge | `forge run` CLI | Run state, gates, worktree and branch, dispatch, validation commands, PR, report | Make judgment calls the orchestrator or agents own |
 
 A role may be set to `self`: the orchestrator does that stage in its own session and submits the artifact with `forge run submit`. This covers "Claude orchestrates and plans, Copilot implements".
@@ -92,7 +92,7 @@ One spec item shape for all sources:
 ## 4. Run Lifecycle
 
 ```text
-created -> spec_ready -> planned -> ecp_ready -> [per batch: executing -> reviewing -> validating -> pr_open] -> done
+created -> spec_ready -> planned -> ecp_ready -> [per batch: executing -> reviewing -> security_review? -> testing -> validating -> pr_open] -> done
 ```
 
 | Stage | Forge mode | Default role | Gate before next stage |
@@ -102,7 +102,9 @@ created -> spec_ready -> planned -> ecp_ready -> [per batch: executing -> review
 | ecp | `implementation` | `planner` | G2 |
 | execute | `execute` | `dev` | G3 scope |
 | review | `review` | `reviewer` | G4 review |
-| validate | none; Forge runs `tools.validation_commands` | Forge | G5 validation |
+| security | `review` (security focus) | `security` | G4s security; runs only when the batch is high-risk (6.2) or `autopilot.security.always: true` |
+| test | `execute` limited to test paths | `tester` | G5 tests |
+| validate | none; Forge runs `tools.validation_commands` and `autopilot.e2e.command` | Forge | G6 validation |
 | pr | none | Forge | none; human reviews |
 
 Terminal statuses: `done`, `blocked`, `failed`, `cancelled`, `awaiting_selection`.
@@ -123,7 +125,7 @@ All commands accept `--json` and return machine-readable output with `run_id`, `
 | `forge run dispatch <run-id> --stage <stage> [--batch <id>] --prompt-file <path>` | Spawn the role agent configured for that stage with the orchestrator's prompt plus the Forge mode contract; capture output to the run directory |
 | `forge run submit <run-id> --stage <stage> --file <path>` | Record an artifact produced by the orchestrator itself (`self` role) |
 | `forge run gate <run-id> --stage <stage>` | Evaluate the gate; advance on pass; return reasons on fail |
-| `forge run pr <run-id> --batch <id>` | Push the batch branch and open the PR; only allowed after G5 |
+| `forge run pr <run-id> --batch <id>` | Push the batch branch and open the PR; only allowed after G6 |
 | `forge run report <run-id>` | Write the run report |
 | `forge run stop <run-id>` | Cancel; keep worktree and state for inspection |
 | `forge run resume <run-id>` | Continue from the last passed gate |
@@ -143,7 +145,9 @@ Gates are computed by Forge from artifacts, the diff, and config. Agent statemen
 | G2 ECP | Every batch ECP has status `ecp_ready`, allowed files, validation commands, stop conditions | Same as G1 |
 | G3 scope | Diff touches only the batch's allowed files; no hard-blocked path (6.1); changed files and lines under limits | `blocked`; nothing is pushed |
 | G4 review | Reviewer verdict has no blocking finding | Back to execute, up to `limits.review_rounds`, then `blocked` |
-| G5 validation | Forge ran every validation command; record each result | Never blocks the PR; failures and unrun commands mark the PR `not_validated` |
+| G4s security | Security agent reports no blocking finding (auth/authz, input validation, injection, IDOR, SSRF, secrets, sensitive data exposure) | Back to execute; counts toward `limits.review_rounds`, then `blocked` |
+| G5 tests | Tester changed only test paths (`autopilot.e2e.test_paths`); every new or changed endpoint has at least one e2e test | Back to test, up to `limits.test_rounds`, then `blocked` |
+| G6 validation | Forge ran every validation command and the e2e suite; record each result | A failing e2e test caused by the change sends the batch back to execute once; after that, failures and unrun commands mark the PR `not_validated` |
 
 ### 6.1 Hard blocks
 
@@ -169,6 +173,8 @@ autopilot:
     planner: self
     dev: copilot
     reviewer: codex
+    security: claude
+    tester: claude
   agents:
     claude:  { command: ["claude", "-p", "@{prompt_file}"] }
     codex:   { command: ["codex", "exec", "--cd", "{workdir}", "@{prompt_file}"] }
@@ -177,10 +183,17 @@ autopilot:
   limits:
     plan_rounds: 2
     review_rounds: 2
+    test_rounds: 2
     stage_timeout_minutes: 30
     max_changed_files: 30
     max_changed_lines: 1500
   hard_block_paths: []
+  security:
+    always: false           # true: run the security stage on every batch
+  e2e:
+    command: ""             # e.g. make e2e; empty means e2e is not_run
+    setup: ""               # e.g. docker compose up -d; runs before command
+    test_paths: ["test/e2e/**"]
   vcs:
     provider: github        # github | gitlab
     base: main
@@ -195,6 +208,13 @@ policy:
 The agent command templates above are placeholders. Exact headless flags for each CLI must be verified against that tool's current documentation before they ship as defaults. `{prompt_file}`, `{workdir}`, and `{run_dir}` are the only substitutions.
 
 A reviewer from a different service than `dev` is recommended, not required.
+
+### 7.1 Security and Tester Roles
+
+- `reviewer` always checks security at the level of the existing `review` mode. `security` is a second, focused review for high-risk batches, ideally on a different service than `dev`.
+- `tester` writes e2e tests only; it never edits production code. For each batch it adds or updates e2e tests for every new or changed endpoint, then Forge runs the whole e2e suite, so all existing endpoints are regression-tested on every batch.
+- Existing endpoints without e2e coverage are not backfilled inside a feature PR, to keep the PR reviewable. Backfill runs as its own spec (`self:test-gaps`, one PR per group of endpoints).
+- e2e needs a running environment. If `autopilot.e2e.setup` or `command` is missing or fails to start, e2e is `not_run: environment`, never `passed`.
 
 ---
 
