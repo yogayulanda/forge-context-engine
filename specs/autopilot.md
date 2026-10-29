@@ -52,10 +52,19 @@ The human tells the orchestrator one thing, through its normal surface:
 /forge-autopilot specs/payments-retry.md
 ```
 
-Free text works the same way. The human may write a normal request instead of a path, for example "fix the duplicate transfer on retry in transaction-history-service and open a PR". The orchestrator then:
-1. Writes the request as a spec item (section 3 shape) and starts the run with `forge run start text:<file>`.
-2. Asks the human only for blocking unknowns: no target repository, no acceptance criterion it can derive, or a decision the request leaves open. Otherwise it proceeds without confirmation.
-3. Includes the generated spec in the PR body, so the reviewer sees what the request was interpreted as.
+Free text works the same way: the human may write a normal request instead of a path, for example "fix the duplicate transfer on retry in transaction-history-service and open a PR".
+
+### 2.1 Spec Resolution
+
+Every run starts with a `spec` stage that turns the request into one checked spec:
+
+1. **Find a spec.** If the request names a spec, or a matching spec exists under `autopilot.spec_dir`, use it.
+2. **No spec found.** The orchestrator writes one from the request in the section 3 shape and saves it to `autopilot.spec_dir/YYYY-MM-DD-<slug>.md`.
+3. **Check the spec against the repository.** Verify that files, symbols, contracts, and behavior the spec relies on exist as described. List every ambiguity and every gap between spec and code.
+4. **Resolve ambiguity with a recommendation.** For each ambiguity, pick the recommended option, record it in the spec under `## Decisions taken by autopilot` with the alternatives and the reason, and continue. Do not wait for the human.
+5. **Stop only when no reasonable recommendation exists**: no target repository can be identified, the spec contradicts the code in a way that changes the goal, or the request conflicts with a hard block (section 6.1). The run ends `blocked` with the questions.
+
+The spec file, including the decisions section, is committed as the first commit of the run branch, so it ships in the PR. The PR body lists the decisions taken first, so the reviewer can reject an interpretation before reading the diff.
 
 The `forge-autopilot` shared skill instructs the orchestrator to drive `forge run` commands until the run reaches `pr_open` for every batch or a terminal status. Adapter wrappers for Claude, Codex, and Copilot point to that skill. Hermes invokes the same CLI through its shell tool.
 
@@ -66,7 +75,7 @@ The `forge-autopilot` shared skill instructs the orchestrator to drive `forge ru
 | Source | Form | Accepted by |
 |---|---|---|
 | File | `md:<path>` | Human (they wrote it) |
-| Free text | `text:<path>`, written by the orchestrator from the human's request | Human (their request); the interpreted spec is shown in the PR |
+| Free text | `text:<path>`, written by the orchestrator from the human's request into `autopilot.spec_dir` (2.1) | Human (their request); the interpreted spec is shown in the PR |
 | PAOS backlog | `paos:<path>` inside a configured paos-context checkout, read-only | Human (they wrote it) |
 | Self audit | `self:<kind>`, kind in `security`, `code-standards`, `test-gaps`, `ai-readiness` | Human: audit output is a candidate list in `.forge/runs/<run-id>/candidates.md`; the run stops at `awaiting_selection` |
 
@@ -83,11 +92,12 @@ One spec item shape for all sources:
 ## 4. Run Lifecycle
 
 ```text
-created -> planned -> ecp_ready -> [per batch: executing -> reviewing -> validating -> pr_open] -> done
+created -> spec_ready -> planned -> ecp_ready -> [per batch: executing -> reviewing -> validating -> pr_open] -> done
 ```
 
 | Stage | Forge mode | Default role | Gate before next stage |
 |---|---|---|---|
+| spec | `plan` (spec check only) | `planner` | G0 |
 | plan | `plan` | `planner` | G1 |
 | ecp | `implementation` | `planner` | G2 |
 | execute | `execute` | `dev` | G3 scope |
@@ -127,6 +137,7 @@ Gates are computed by Forge from artifacts, the diff, and config. Agent statemen
 
 | Gate | Passes when | On fail |
 |---|---|---|
+| G0 spec | Spec file exists and is committed; every listed ambiguity has a recorded decision or the run is `blocked` | `blocked` with the open questions |
 | G1 plan | Plan artifact exists; status `ready_for_implementation`; no open decision marked blocking | Orchestrator may revise up to `limits.plan_rounds`, then `blocked` |
 | G2 ECP | Every batch ECP has status `ecp_ready`, allowed files, validation commands, stop conditions | Same as G1 |
 | G3 scope | Diff touches only the batch's allowed files; no hard-blocked path (6.1); changed files and lines under limits | `blocked`; nothing is pushed |
@@ -162,6 +173,7 @@ autopilot:
     codex:   { command: ["codex", "exec", "--cd", "{workdir}", "@{prompt_file}"] }
     copilot: { command: ["copilot", "-p", "@{prompt_file}"] }
     hermes:  { command: ["hermes", "-z", "@{prompt_file}"] }
+  spec_dir: docs/specs
   limits:
     plan_rounds: 2
     review_rounds: 2
