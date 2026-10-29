@@ -25,6 +25,8 @@ This phase is NOT about:
 - plugin marketplaces
 - autonomous chaining
 
+Scoped exception: the opt-in autopilot control plane (`forge run`) defined in `specs/autopilot.md` and `docs/decisions/ADR-0001-autopilot-control-plane.md`. Core modes, other skills, and adapters stay free of orchestration.
+
 Canonical invocation chain:
 
 ```text
@@ -60,7 +62,7 @@ When modifying Forge:
 - Keep mode files compact and machine-resolvable.
 - Keep skills useful but thin.
 - Keep adapters as pointers to shared skills and `.forge/context`, not alternate cognition stores.
-- Do not add orchestration, schedulers, workflow DAGs, runtime executors, deploy/CI behavior, persistent memory systems, plugin marketplaces, or autonomous chaining.
+- Do not add orchestration, schedulers, workflow DAGs, runtime executors, deploy/CI behavior, persistent memory systems, plugin marketplaces, or autonomous chaining outside the scoped autopilot exception above. Autopilot itself never adds schedulers, triggers, CI/CD, deploy, or auto-merge.
 
 Output style:
 - structured

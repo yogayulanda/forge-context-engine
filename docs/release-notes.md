@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+Added (v0.1, opt-in): autopilot control plane, `forge run`, that lets any AI tool orchestrate a spec through plan, ECP, execute, review, and validation to one pull/merge request per spec or batch, with deterministic gates and human merge. See `docs/decisions/ADR-0001-autopilot-control-plane.md` and `specs/autopilot.md`.
+
 Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.
 
 Fixed:
