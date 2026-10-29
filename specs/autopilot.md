@@ -64,7 +64,7 @@ Every run starts with a `spec` stage that turns the request into one checked spe
 4. **Resolve ambiguity with a recommendation.** For each ambiguity, pick the recommended option, record it in the spec under `## Decisions taken by autopilot` with the alternatives and the reason, and continue. Do not wait for the human.
 5. **Stop only when no reasonable recommendation exists**: no target repository can be identified, the spec contradicts the code in a way that changes the goal, or the request conflicts with a hard block (section 6.1). The run ends `blocked` with the questions.
 
-The spec file, including the decisions section, is committed as the first commit of the run branch, so it ships in the PR. The PR body lists the decisions taken first, so the reviewer can reject an interpretation before reading the diff.
+The spec stage reports `status: ready` or `status: blocked`. After G1, Forge commits the spec and the plan, including the decisions section, as one plan artifact at `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md`; it is the first commit of the run branch, so it ships in the PR. The PR body lists the decisions taken first, so the reviewer can reject an interpretation before reading the diff.
 
 The `forge-autopilot` shared skill instructs the orchestrator to drive `forge run` commands until the run reaches `pr_open` for every batch or a terminal status. Adapter wrappers for Claude, Codex, and Copilot point to that skill. Hermes invokes the same CLI through its shell tool.
 
@@ -115,7 +115,7 @@ Batches run in ECP order. Batch N+1 branches from batch N's branch, so PRs stack
 
 ## 5. CLI Contract
 
-All commands accept `--json` and return machine-readable output with `run_id`, `stage`, `status`, and `next`.
+All `forge run` subcommands accept `--json` and `--target <repo>` and return machine-readable output with `run_id`, `stage`, `status`, and `next`.
 
 | Command | Effect |
 |---|---|
@@ -159,7 +159,9 @@ Regardless of plan or ECP, a diff that touches these stops the batch at G3:
 
 ### 6.2 Risk
 
-`high_risk = agent_declared_high_risk OR any changed path matches policy.high_risk_paths OR the ECP names a category in policy.require_human_confirmation_for`
+`high_risk = any changed path matches high_risk_paths OR the spec, plan, or ECP declares risk: high`
+
+The planner should declare `risk: high` whenever the work touches a category in `policy.high_risk_areas` or `policy.require_human_confirmation_for`.
 
 High-risk batches still run to a PR. The PR gets the configured high-risk labels and a risk section in the body.
 
@@ -167,14 +169,18 @@ High-risk batches still run to a PR. The PR gets the configured high-risk labels
 
 ## 7. Configuration
 
+Autopilot config lives in `.forge/autopilot.json` (JSON, so the stdlib CLI can read nested values). Every key is optional; missing keys use the defaults below, shown here as YAML for readability.
+
 ```yaml
-autopilot:
   roles:
     planner: self
     dev: copilot
     reviewer: codex
     security: claude
     tester: claude
+  worktree_root: ""           # default: ../.forge-worktrees/<repo-name>/
+  validation_commands: []
+  high_risk_paths: []         # globs; any match marks the batch high-risk
   agents:
     claude:  { command: ["claude", "-p", "@{prompt_file}"] }
     codex:   { command: ["codex", "exec", "--cd", "{workdir}", "@{prompt_file}"] }
@@ -195,14 +201,13 @@ autopilot:
     setup: ""               # e.g. docker compose up -d; runs before command
     test_paths: ["test/e2e/**"]
   vcs:
-    provider: github        # github | gitlab
+    provider: github        # github | gitlab | none (push and PR skipped; local testing)
+    remote: origin
     base: main
     branch_prefix: forge/auto/
     draft: true
     high_risk_labels: [high-risk]
-
-policy:
-  high_risk_paths: []       # glob list, added beside existing high_risk_areas
+    not_validated_labels: [not-validated]
 ```
 
 The agent command templates above are placeholders. Exact headless flags for each CLI must be verified against that tool's current documentation before they ship as defaults. `{prompt_file}`, `{workdir}`, and `{run_dir}` are the only substitutions.
