@@ -118,6 +118,7 @@ All commands accept `--json` and return machine-readable output with `run_id`, `
 | Command | Effect |
 |---|---|
 | `forge run start <source>` | Create run, worktree, and branch; parse spec; return `run_id` |
+| `forge run list` | All runs with stage, status, and PR links |
 | `forge run status [<run-id>]` | Current stage, batch, gate results, allowed next commands |
 | `forge run dispatch <run-id> --stage <stage> [--batch <id>] --prompt-file <path>` | Spawn the role agent configured for that stage with the orchestrator's prompt plus the Forge mode contract; capture output to the run directory |
 | `forge run submit <run-id> --stage <stage> --file <path>` | Record an artifact produced by the orchestrator itself (`self` role) |
@@ -224,6 +225,23 @@ One active run per repository. Worktrees live outside the main checkout.
 - Forge, not the agent, runs validation commands and records their exit codes.
 - A command that could not run is `not_run: <reason>`, never `passed`.
 - The report and PR state `not_validated` whenever any command failed or did not run.
+
+---
+
+## 10a. Run Presentation
+
+Autopilot is terminal-first: the active orchestrator session is the place the human talks to, in the style of a coordinator with one thread per run. No separate UI, chat bot, or hub is required.
+
+| Concept | Surface |
+|---|---|
+| Coordinator | The orchestrator session the human is chatting with (free text) |
+| Thread | One run; `forge run list` shows all runs with stage and status |
+| Checklist | `forge run status <run-id>` renders stages and batches as `done` / `in progress` / `not started` lines |
+| Decisions | The spec's `Decisions taken by autopilot` section; `forge run status` lists them |
+| Blocker | A run in `blocked` shows its open questions; the orchestrator asks the human in the session |
+| Result | PR link per batch in `forge run status` and the run report |
+
+The orchestrator reports to the human only on a PR opened, a blocked run, or a direct question. Other surfaces (PR comments, Telegram, Teams) may render the same `state.json` later; they are optional and out of scope for v0.1.
 
 ---
 
