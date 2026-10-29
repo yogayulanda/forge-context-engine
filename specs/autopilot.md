@@ -269,7 +269,7 @@ The orchestrator reports to the human only on a PR opened, a blocked run, or a d
 
 | Version | Adds |
 |---|---|
-| v0.1 | `md:` and `text:` sources, one batch, `self` and one external role agent, GitHub, G1 to G5, report |
+| v0.1 | `md:` and `text:` sources, one batch, `self` and one external role agent, GitHub, G0 to G6, `tester` with e2e, `security` on high-risk, report |
 | v0.2 | Multiple batches with stacked PRs, `reviewer` on a second service, GitLab |
 | v0.3 | `paos:` and `self:` sources |
 
