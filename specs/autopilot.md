@@ -1,0 +1,229 @@
+# Forge Autopilot Specification
+
+| Field | Value |
+|---|---|
+| Document | Forge Autopilot Control Plane |
+| Version | 0.1 |
+| Date | 2026-10-29 |
+| Status | `draft` |
+| Scope | `forge run` command group, run state, deterministic gates, role-agent dispatch, pull/merge request output |
+| Dependency | `docs/decisions/ADR-0001-autopilot-control-plane.md`, `specs/mode-invocation.md`, `specs/artifact-lifecycle.md`, `docs/workflow.md` |
+
+---
+
+## 0. Purpose
+
+Autopilot takes one spec from a human and produces one reviewable pull/merge request (PR) per spec, or one per batch ECP for large specs, without a human writing prompts between stages.
+
+It standardizes:
+- who does what: human, orchestrator, role agents, Forge
+- the `forge run` CLI contract the orchestrator calls
+- run state and stage transitions
+- deterministic gates that replace human Gate 1 and Gate 2 inside a run
+- role-agent dispatch through configured command templates
+- PR policy and the run report
+
+This document does NOT:
+- change mode files, mode statuses, or mode boundaries
+- add schedulers, triggers, daemons, CI/CD, deploy, or auto-merge
+- add persistent AI memory or cross-run learning
+- make agent-declared risk the only safety signal
+
+---
+
+## 1. Roles
+
+| Role | Who | Owns | Never does |
+|---|---|---|---|
+| Human | Maintainer | Writes or selects the spec; reviews the PR; decides merge | Approve stages inside a run |
+| Orchestrator | Any LLM tool: Claude Code, Codex, Copilot, Hermes | Reads the spec, decides what to dispatch, writes stage prompts, reads reports, retries within limits | Edit files, commit, push, open PRs, or bypass a gate directly |
+| Role agent | Configured per role: `planner`, `dev`, `reviewer` | Does one stage's work under the matching Forge mode | Choose its own next stage |
+| Forge | `forge run` CLI | Run state, gates, worktree and branch, dispatch, validation commands, PR, report | Make judgment calls the orchestrator or agents own |
+
+A role may be set to `self`: the orchestrator does that stage in its own session and submits the artifact with `forge run submit`. This covers "Claude orchestrates and plans, Copilot implements".
+
+---
+
+## 2. Invocation
+
+The human tells the orchestrator one thing, through its normal surface:
+
+```text
+/forge-autopilot specs/payments-retry.md
+```
+
+The `forge-autopilot` shared skill instructs the orchestrator to drive `forge run` commands until the run reaches `pr_open` for every batch or a terminal status. Adapter wrappers for Claude, Codex, and Copilot point to that skill. Hermes invokes the same CLI through its shell tool.
+
+---
+
+## 3. Spec Sources
+
+| Source | Form | Accepted by |
+|---|---|---|
+| File | `md:<path>` | Human (they wrote it) |
+| PAOS backlog | `paos:<path>` inside a configured paos-context checkout, read-only | Human (they wrote it) |
+| Self audit | `self:<kind>`, kind in `security`, `code-standards`, `test-gaps`, `ai-readiness` | Human: audit output is a candidate list in `.forge/runs/<run-id>/candidates.md`; the run stops at `awaiting_selection` |
+
+One spec item shape for all sources:
+
+```markdown
+- [ ] Add idempotency key to transfer handler
+  repo: transaction-history-service
+  accept: retry with the same key creates no second record; unit tests pass
+```
+
+---
+
+## 4. Run Lifecycle
+
+```text
+created -> planned -> ecp_ready -> [per batch: executing -> reviewing -> validating -> pr_open] -> done
+```
+
+| Stage | Forge mode | Default role | Gate before next stage |
+|---|---|---|---|
+| plan | `plan` | `planner` | G1 |
+| ecp | `implementation` | `planner` | G2 |
+| execute | `execute` | `dev` | G3 scope |
+| review | `review` | `reviewer` | G4 review |
+| validate | none; Forge runs `tools.validation_commands` | Forge | G5 validation |
+| pr | none | Forge | none; human reviews |
+
+Terminal statuses: `done`, `blocked`, `failed`, `cancelled`, `awaiting_selection`.
+
+Batches run in ECP order. Batch N+1 branches from batch N's branch, so PRs stack. One spec with one batch gives one PR.
+
+---
+
+## 5. CLI Contract
+
+All commands accept `--json` and return machine-readable output with `run_id`, `stage`, `status`, and `next`.
+
+| Command | Effect |
+|---|---|
+| `forge run start <source>` | Create run, worktree, and branch; parse spec; return `run_id` |
+| `forge run status [<run-id>]` | Current stage, batch, gate results, allowed next commands |
+| `forge run dispatch <run-id> --stage <stage> [--batch <id>] --prompt-file <path>` | Spawn the role agent configured for that stage with the orchestrator's prompt plus the Forge mode contract; capture output to the run directory |
+| `forge run submit <run-id> --stage <stage> --file <path>` | Record an artifact produced by the orchestrator itself (`self` role) |
+| `forge run gate <run-id> --stage <stage>` | Evaluate the gate; advance on pass; return reasons on fail |
+| `forge run pr <run-id> --batch <id>` | Push the batch branch and open the PR; only allowed after G5 |
+| `forge run report <run-id>` | Write the run report |
+| `forge run stop <run-id>` | Cancel; keep worktree and state for inspection |
+| `forge run resume <run-id>` | Continue from the last passed gate |
+
+`dispatch` and `gate` refuse out-of-order stages. There is no command that advances a stage without its gate.
+
+---
+
+## 6. Gates
+
+Gates are computed by Forge from artifacts, the diff, and config. Agent statements are inputs, not verdicts.
+
+| Gate | Passes when | On fail |
+|---|---|---|
+| G1 plan | Plan artifact exists; status `ready_for_implementation`; no open decision marked blocking | Orchestrator may revise up to `limits.plan_rounds`, then `blocked` |
+| G2 ECP | Every batch ECP has status `ecp_ready`, allowed files, validation commands, stop conditions | Same as G1 |
+| G3 scope | Diff touches only the batch's allowed files; no hard-blocked path (6.1); changed files and lines under limits | `blocked`; nothing is pushed |
+| G4 review | Reviewer verdict has no blocking finding | Back to execute, up to `limits.review_rounds`, then `blocked` |
+| G5 validation | Forge ran every validation command; record each result | Never blocks the PR; failures and unrun commands mark the PR `not_validated` |
+
+### 6.1 Hard blocks
+
+Regardless of plan or ECP, a diff that touches these stops the batch at G3:
+- `.github/workflows/**`, `.gitlab-ci.yml`, and other CI definitions
+- files matching `autopilot.hard_block_paths`
+- secret-like files (`.env*`, `*.pem`, `*.key`) or added content matching secret patterns
+- deletion of test files, unless the ECP lists them explicitly
+
+### 6.2 Risk
+
+`high_risk = agent_declared_high_risk OR any changed path matches policy.high_risk_paths OR the ECP names a category in policy.require_human_confirmation_for`
+
+High-risk batches still run to a PR. The PR gets the configured high-risk labels and a risk section in the body.
+
+---
+
+## 7. Configuration
+
+```yaml
+autopilot:
+  roles:
+    planner: self
+    dev: copilot
+    reviewer: codex
+  agents:
+    claude:  { command: ["claude", "-p", "@{prompt_file}"] }
+    codex:   { command: ["codex", "exec", "--cd", "{workdir}", "@{prompt_file}"] }
+    copilot: { command: ["copilot", "-p", "@{prompt_file}"] }
+    hermes:  { command: ["hermes", "-z", "@{prompt_file}"] }
+  limits:
+    plan_rounds: 2
+    review_rounds: 2
+    stage_timeout_minutes: 30
+    max_changed_files: 30
+    max_changed_lines: 1500
+  hard_block_paths: []
+  vcs:
+    provider: github        # github | gitlab
+    base: main
+    branch_prefix: forge/auto/
+    draft: true
+    high_risk_labels: [high-risk]
+
+policy:
+  high_risk_paths: []       # glob list, added beside existing high_risk_areas
+```
+
+The agent command templates above are placeholders. Exact headless flags for each CLI must be verified against that tool's current documentation before they ship as defaults. `{prompt_file}`, `{workdir}`, and `{run_dir}` are the only substitutions.
+
+A reviewer from a different service than `dev` is recommended, not required.
+
+---
+
+## 8. State and Artifacts
+
+| Path | Content | Committed |
+|---|---|---|
+| `.forge/runs/<run-id>/state.json` | Stage, batch, gate results, agent invocations | No (gitignored) |
+| `.forge/runs/<run-id>/<stage>/` | Prompts, agent stdout, artifacts | No |
+| `.forge/runs/STOP` | Kill switch: every `forge run` command refuses while present | No |
+| `.forge/generated/reports/YYYY-MM-DD-<slug>-autopilot-report.md` | Run report | Only if the human keeps it |
+
+One active run per repository. Worktrees live outside the main checkout.
+
+---
+
+## 9. Pull/Merge Request
+
+- One spec gives one PR; a spec split into N batch ECPs gives N stacked PRs.
+- Opened as draft by default, through `gh` (GitHub) or `glab` (GitLab).
+- The body is the batch section of the run report: goal, spec link, changed files, decisions taken, review rounds and findings, validation table, risk, and deviations.
+- Forge never merges, approves, or enables auto-merge.
+
+---
+
+## 10. Validation Honesty
+
+- Forge, not the agent, runs validation commands and records their exit codes.
+- A command that could not run is `not_run: <reason>`, never `passed`.
+- The report and PR state `not_validated` whenever any command failed or did not run.
+
+---
+
+## 11. Rollout
+
+| Version | Adds |
+|---|---|
+| v0.1 | `md:` source, one batch, `self` and one external role agent, GitHub, G1 to G5, report |
+| v0.2 | Multiple batches with stacked PRs, `reviewer` on a second service, GitLab |
+| v0.3 | `paos:` and `self:` sources |
+
+Each version ships with a validation case under `validation-cases/` and tests on a throwaway repository before any real repository.
+
+---
+
+## 12. Open Items
+
+- Verify headless invocation and permission flags for `copilot`, `codex exec`, `claude -p`, and `hermes -z`.
+- Decide whether `forge run` is also exposed as an MCP server so orchestrators call it as tools instead of shell commands.
+- Decide where worktrees live by default.
