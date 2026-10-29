@@ -241,7 +241,7 @@ Autopilot is terminal-first: the active orchestrator session is the place the hu
 | Blocker | A run in `blocked` shows its open questions; the orchestrator asks the human in the session |
 | Result | PR link per batch in `forge run status` and the run report |
 
-The orchestrator reports to the human only on a PR opened, a blocked run, or a direct question. Other surfaces (PR comments, Telegram, Teams) may render the same `state.json` later; they are optional and out of scope for v0.1.
+The orchestrator reports to the human only on a PR opened, a blocked run, or a direct question. Remote or mobile access is used only for repositories reachable from a cloud session; repositories on internal networks run from a local terminal. Other surfaces (PR comments, Telegram, Teams) may render the same `state.json` later; they are optional and out of scope for v0.1.
 
 ---
 
