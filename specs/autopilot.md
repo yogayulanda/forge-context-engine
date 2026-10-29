@@ -58,8 +58,8 @@ Free text works the same way: the human may write a normal request instead of a 
 
 Every run starts with a `spec` stage that turns the request into one checked spec:
 
-1. **Find a spec.** If the request names a spec, or a matching spec exists under `autopilot.spec_dir`, use it.
-2. **No spec found.** The orchestrator writes one from the request in the section 3 shape and saves it to `autopilot.spec_dir/YYYY-MM-DD-<slug>.md`.
+1. **Find a spec.** If the request names a spec, or a matching plan artifact exists under `.forge/generated/plans/`, use it. A spec is a Forge plan artifact (`specs/artifact-lifecycle.md`); autopilot adds no new artifact location.
+2. **No spec found.** The orchestrator writes one from the request and saves it as `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md`.
 3. **Check the spec against the repository.** Verify that files, symbols, contracts, and behavior the spec relies on exist as described. List every ambiguity and every gap between spec and code.
 4. **Resolve ambiguity with a recommendation.** For each ambiguity, pick the recommended option, record it in the spec under `## Decisions taken by autopilot` with the alternatives and the reason, and continue. Do not wait for the human.
 5. **Stop only when no reasonable recommendation exists**: no target repository can be identified, the spec contradicts the code in a way that changes the goal, or the request conflicts with a hard block (section 6.1). The run ends `blocked` with the questions.
@@ -75,7 +75,7 @@ The `forge-autopilot` shared skill instructs the orchestrator to drive `forge ru
 | Source | Form | Accepted by |
 |---|---|---|
 | File | `md:<path>` | Human (they wrote it) |
-| Free text | `text:<path>`, written by the orchestrator from the human's request into `autopilot.spec_dir` (2.1) | Human (their request); the interpreted spec is shown in the PR |
+| Free text | `text:<path>`, written by the orchestrator from the human's request as a plan artifact (2.1) | Human (their request); the interpreted spec is shown in the PR |
 | PAOS backlog | `paos:<path>` inside a configured paos-context checkout, read-only | Human (they wrote it) |
 | Self audit | `self:<kind>`, kind in `security`, `code-standards`, `test-gaps`, `ai-readiness` | Human: audit output is a candidate list in `.forge/runs/<run-id>/candidates.md`; the run stops at `awaiting_selection` |
 
@@ -173,7 +173,6 @@ autopilot:
     codex:   { command: ["codex", "exec", "--cd", "{workdir}", "@{prompt_file}"] }
     copilot: { command: ["copilot", "-p", "@{prompt_file}"] }
     hermes:  { command: ["hermes", "-z", "@{prompt_file}"] }
-  spec_dir: docs/specs
   limits:
     plan_rounds: 2
     review_rounds: 2
