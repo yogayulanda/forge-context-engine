@@ -80,6 +80,8 @@ class OrchestrateContractTests(unittest.TestCase):
             "reviewers must not modify files",
             "leave changes uncommitted",
             "this run's artifacts",
+            "awaiting_clarification",
+            "clarify miss",
         ):
             self.assertIn(phrase, self.mode)
 
@@ -95,6 +97,19 @@ class OrchestrateContractTests(unittest.TestCase):
             prompt = self.templates[f".forge/runtime/agents/{role}.md"]
             self.assertIn("## Quality bar", prompt)
             self.assertIn(f"`As {role.split('-')[1]}` section", prompt)
+
+    def test_planner_clarifies_before_sdd_in_one_batch(self) -> None:
+        planner = self.templates[".forge/runtime/agents/forge-planner.md"]
+        self.assertLess(planner.index("Clarify step"), planner.index("SDD step"))
+        for phrase in (
+            "one batch",
+            "Recommendation:",
+            "Do not ask what the repo already answers",
+            "contradicts the code",
+            "`ui.language`",
+            "Never \"the system\"",
+        ):
+            self.assertIn(phrase, planner)
 
     def test_reviewer_wrapper_has_no_edit_tools(self) -> None:
         wrapper = self.templates[".claude/agents/forge-reviewer.md"]

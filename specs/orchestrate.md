@@ -53,6 +53,10 @@ Roles say which step a worker does. Specialties say which expertise it brings. A
 - High-risk SDDs get an extra `security` reviewer; both reviewers must `accept`.
 - Overlays point to `.forge/context` layers instead of copying repository knowledge, and they cannot relax gates, stop conditions, or tool limits.
 
+## 4b. Clarification first
+
+Before writing the SDD, the planner reads the request against the repository (context, ADRs, and the code in the touched area) and lists every ambiguity, contradiction (request vs code, request vs context/ADR, context vs code), and missing value that changes the outcome. All questions go to the human in one batch, each with options, consequences, and a recommendation, in `ui.language` and in plain, repo-specific wording. The run stops with `awaiting_clarification` until the human answers once. A new blocking ambiguity found later is a `clarify miss`: the run stops and the miss is reported so the checks can be improved.
+
 ## 5. Gates (G2 Hybrid)
 
 | Gate | Manual flow | Under `forge-orchestrate` |
@@ -97,7 +101,7 @@ The orchestrator writes `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestratio
 
 ## 10. Statuses
 
-`mr_opened`, `awaiting_sdd_approval`, `stopped`, `review_unresolved`, `blocked_by_environment`.
+`mr_opened`, `awaiting_clarification`, `awaiting_sdd_approval`, `stopped`, `review_unresolved`, `blocked_by_environment`.
 
 ## 11. Validation
 

@@ -63,7 +63,8 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 
 ## behavior
 1. Preflight: confirm the working tree is clean, the current branch is not the default/protected branch, and create a feature branch `forge/<YYYY-MM-DD>-<slug>` when not already on one.
-2. Plan: planner worker produces the SDD and saves it to `.forge/generated/plans/`.
+2. Clarify, then plan: the planner reads the request against the repository (step list in `forge-planner.md`) before writing the SDD. If it finds any ambiguity, contradiction, or missing value that changes the outcome, it saves the plan with status `blocked_by_decision` and a `Clarification Questions` section. Stop with `awaiting_clarification` and show all questions at once, in `ui.language`. Do not continue on guesses.
+2b. Resume after answers: the human answers in one reply (accepting recommendations is allowed, for example `ok all recommendations, except Q2: B`). The planner records the answers in the plan under `Confirmed Decisions` and writes the SDD. Ask again only if an answer itself creates a new blocking question.
 3. Gate 1 (risk-gated): classify the SDD against `policy.high_risk_areas` and `policy.require_human_confirmation_for`. If any area matches, or the classification is uncertain, stop with `awaiting_sdd_approval`. Otherwise record `Gate 1: auto (no high-risk area)` with the evidence and continue.
 4. Implementation: planner worker produces the ECP and saves it to `.forge/generated/ecp/`.
 5. Gate 2 (automatic): accept the ECP for execution when it has no blocking unknowns, its scope matches the SDD, and it adds no high-risk area that Gate 1 did not clear. Record `Gate 2: auto` with the ECP path. Otherwise stop.
@@ -81,6 +82,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 - Scope grows: the diff changes files outside the ECP `Files likely to change`, or a worker proposes new scope.
 - A worker returns a blocking unknown, `blocked`, or `blocked_by_decision`.
 - The working tree was dirty at start, or the branch is the default/protected branch.
+- A worker finds a new blocking ambiguity after clarification. Report it as a `clarify miss` so the planner's checks can be improved; do not guess.
 - `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.
 - The diff touches a high-risk area the SDD did not list (step 6a).
 - A reviewer changed the working tree (step 7).
@@ -107,6 +109,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 
 ## Steps
 ✓ Preflight (clean tree, feature branch)
+✓ Clarify: 0 questions | ✱ Clarify: awaiting answers (<n> questions)
 ✓ SDD -> .forge/generated/plans/<file>
 ✓ Gate 1: auto (no high-risk area) | ✱ Gate 1: awaiting human (<areas>)
 ○ ECP
@@ -138,6 +141,7 @@ Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗`
 
 ## status values
 - `mr_opened`
+- `awaiting_clarification`
 - `awaiting_sdd_approval`
 - `stopped`
 - `review_unresolved`
@@ -152,6 +156,7 @@ Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗`
 - One request = one feature branch = one MR/PR. Do not chain into another request.
 
 ## next mode transitions
+- `awaiting_clarification` -> human answers the questions in one reply, then re-invoke `forge-orchestrate` with the plan path; it resumes at step 2b.
 - `awaiting_sdd_approval` -> human approves the SDD by path, then re-invoke `forge-orchestrate` with that SDD; it resumes at step 4.
 - `stopped` or `review_unresolved` -> human decides: fix manually, re-scope with `plan`, or discard the branch.
 - `mr_opened` -> human reviews and merges outside Forge.

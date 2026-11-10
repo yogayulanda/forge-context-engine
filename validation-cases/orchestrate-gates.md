@@ -31,6 +31,8 @@
 | 10 | `.forge/agents/backend.md` exists | Overlay from `.forge/agents/` is used instead of the Forge example; report lists it |
 | 11 | SDD lists no high-risk area, but the diff changes an authentication file | `stopped` at the diff risk check; nothing committed |
 | 12 | Reviewer modifies a file during review | `stopped` by the reviewer write guard; nothing committed |
+| 13 | Request names a field that the contract or code does not have | `awaiting_clarification`; one batch of questions with file references and a recommendation each; no SDD, no code |
+| 14 | Request is clear and the repo answers every value | No questions; report shows `Clarify: 0 questions` |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -42,6 +44,8 @@
 - Merging, tagging, deploying, force-pushing, or pushing to the default branch.
 - Orchestrating from any skill, mode, or adapter other than `forge-orchestrate`.
 - Letting a specialty overlay relax a gate, stop condition, or tool limit.
+- Asking clarification questions one at a time, asking what the repo already answers, or asking without options and a recommendation.
+- Writing questions with generic wording instead of real file, field, or endpoint names.
 
 ## 4. Evidence Shape Required
 
