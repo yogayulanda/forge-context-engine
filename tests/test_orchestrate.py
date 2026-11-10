@@ -73,6 +73,9 @@ class OrchestrateContractTests(unittest.TestCase):
             "Validation is red",
             "Never merge, tag, release, deploy",
             "fresh context",
+            "orchestration-report.md",
+            "| Target tool |",
+            "## Steps",
         ):
             self.assertIn(phrase, self.mode)
 

@@ -74,8 +74,54 @@ Stop immediately, keep work local, and report when any of these happens:
 - `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.
 
 ## outputs
-- Orchestration Report: `Request`, `Branch`, `Gate trace`, `Artifacts`, `Rounds`, `Validation`, `Review verdict`, `MR/PR`, `Stop reason` (when stopped), `Status`.
+- Orchestration Report at `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md`, in the report format below. Update it after every step so the human can open it mid-run; print the same content in chat at the end.
 - Saved artifacts under `.forge/generated/plans/`, `ecp/`, `reports/`, and `reviews/`. Orchestrate saves by default because workers continue from them.
+
+## report format
+```markdown
+# Orchestration Report: <short goal>
+
+| Field | Value |
+|---|---|
+| Artifact | orchestration_report |
+| Repo | <repo name> @ <base commit short sha> |
+| Date | YYYY-MM-DD |
+| Target tool | orchestrator=<tool>; planner=<worker>; executor=<worker>; reviewer=<worker> |
+| Status | <status value> |
+| Run | <slug> on branch `forge/<YYYY-MM-DD>-<slug>` |
+| Goal | <one sentence, from the request> |
+| Note | <stop reason, human action needed, or `none`> |
+
+## Steps
+✓ Preflight (clean tree, feature branch)
+✓ SDD -> .forge/generated/plans/<file>
+✓ Gate 1: auto (no high-risk area) | ✱ Gate 1: awaiting human (<areas>)
+○ ECP
+○ Gate 2
+○ Execute
+○ Review round 1
+○ Publish (push + MR/PR)
+
+## Artifacts
+| Type | Path | Status |
+|---|---|---|
+
+## Gate trace
+- Gate 1: <auto|human|stopped> - <evidence>
+- Gate 2: <auto|stopped> - <evidence>
+
+## Validation
+| Command | Result |
+|---|---|
+
+## Review rounds
+| Round | Verdict | Open findings |
+|---|---|---|
+
+## MR/PR
+<link, or `not opened` with reason>
+```
+Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗` stopped here. The report is a human-readable trace, not resumable workflow state; resume always starts from the named SDD or ECP artifact.
 
 ## status values
 - `mr_opened`

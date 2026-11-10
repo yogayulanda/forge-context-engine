@@ -79,15 +79,19 @@ run:
 - `subagent`: the host tool's own subagents. Verified target: Claude Code subagents via `.claude/agents/`.
 - `cli`: any external agent CLI that accepts a prompt file non-interactively. **GitHub Copilot CLI support is unverified**: Forge does not define or test its flags. Users must confirm the command on their own machine before relying on it.
 
-## 9. Statuses
+## 9. Report
+
+The orchestrator writes `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md` and updates it after every step. Header fields: `Artifact`, `Repo`, `Date`, `Target tool`, `Status`, `Run`, `Goal`, `Note`. Body: a step checklist (`✓` done, `✱` in progress/waiting, `○` not started, `✗` stopped), artifacts, gate trace, validation, review rounds, and the MR/PR link. Exact shape lives in the mode file. The report is a trace for humans, not resumable state.
+
+## 10. Statuses
 
 `mr_opened`, `awaiting_sdd_approval`, `stopped`, `review_unresolved`, `blocked_by_environment`.
 
-## 10. Validation
+## 11. Validation
 
 See `validation-cases/orchestrate-gates.md`. A trial is considered stable only when every stop scenario stops correctly and real low-risk runs reach an MR without intervention at an agreed rate.
 
-## 11. Open items
+## 12. Open items
 
 - Specialty overlays (backend, frontend, security, tech-lead persona) on top of the three roles: proposed, pending decision.
 - Parallel requests via one git worktree per request: later stage, after single-request runs prove stable.
