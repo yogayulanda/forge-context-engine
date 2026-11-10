@@ -14,7 +14,7 @@ updated: 2026-11-10
 
 ## include
 - `.forge/forge.config.yaml` (`run.worker`, `run.worker_command`, `policy.*`)
-- `.forge/runtime/agents/forge-planner.md`, `forge-executor.md`, `forge-reviewer.md` (passed to workers by path, not inlined)
+- `.forge/runtime/agents/forge-planner.md`, `forge-executor.md`, `forge-tester.md`, `forge-reviewer.md` (passed to workers by path, not inlined)
 
 ## on_demand
 - `.forge/runtime/meta/conventions-risk.md`
@@ -30,7 +30,7 @@ updated: 2026-11-10
 6000
 
 ## purpose
-Run one request through `plan -> implementation -> execute -> review` by delegating each step to a worker agent, and finish at a pushed feature branch and an open MR/PR for human review.
+Run one request through `plan -> implementation -> execute -> test -> review` by delegating each step to a worker agent, and finish at a pushed feature branch and an open MR/PR for human review.
 
 ## inputs
 - One request: free text, an issue reference, or a saved plan artifact path.
@@ -67,7 +67,7 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 ## worker dispatch
 - `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`, whose `maxTurns` caps each worker; a worker that hits the cap without a complete report counts as `blocked`. The tester and reviewer are always new subagents, never resumed ones.
 - `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
-- The orchestrator may run the planner and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
+- The orchestrator may run the planner, tester, and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
 ## behavior
 1. Preflight: when the host is Claude Code, confirm `.claude/settings.json` registers `.forge/runtime/hooks/forge_git_guard.py orchestrator` as a `PreToolUse` Bash hook; if it does not, continue but put `git guard hook missing` in the report `Note`. Confirm the working tree is clean, the current branch is not the default/protected branch, and create a feature branch `forge/<YYYY-MM-DD>-<slug>` when not already on one.
@@ -81,7 +81,7 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 6b. Test: record `git status --porcelain`, then run the tester worker in a fresh context with the SDD, ECP, and diff. Afterwards, every file the tester added or changed must match the test paths in the `testing` overlay; otherwise stop. Tester verdict `fail` goes into the fix loop like review findings; `blocked_by_environment` for e2e is reported and continues only when unit, integration, and full-suite runs are green.
 7. Review: record `git status --porcelain` and `git diff` hash, then run the reviewer worker in a fresh context with the test report as an extra input, plus a security reviewer when the SDD lists a high-risk area. If the working tree changed during review, stop: reviewers must not modify files.
 8. Fix loop: on tester `fail` or review `request_changes`, pass only the failing scenarios, the review findings, and the ECP to the execute worker as the fix scope, then run a new tester and a new reviewer. Tester failures and review findings share the same counter: maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
-9. Publish: on `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution, test, and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace.
+9. Publish: on `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution, test, and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, test report, review, and the gate trace, and states any e2e run that was `blocked_by_environment`.
 10. Report: return the orchestration report.
 
 ## stop conditions

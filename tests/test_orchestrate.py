@@ -68,7 +68,7 @@ class OrchestrateContractTests(unittest.TestCase):
             "policy.high_risk_areas",
             "awaiting_sdd_approval",
             "Gate 2: auto",
-            "Maximum 2 fix rounds",
+            "maximum 2 fix rounds",
             "review_unresolved",
             "Validation is red",
             "Never merge, tag, release, deploy",
