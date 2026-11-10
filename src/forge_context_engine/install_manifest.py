@@ -75,6 +75,7 @@ WORKSPACE_USER_OWNED_PATHS_V2 = (
 )
 
 SHARED_USER_OWNED_PATHS_V2 = (
+    ".forge/agents/",
     ".forge/context-patches/",
     ".forge/generated/",
 )

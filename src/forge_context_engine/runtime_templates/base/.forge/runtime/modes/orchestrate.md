@@ -34,6 +34,7 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 
 ## inputs
 - One request: free text, an issue reference, or a saved plan artifact path.
+- Optional specialties: `--as <name>[,<name>]`, for example `--as backend,security`.
 - `run.worker`: `subagent` (default, also when the key is missing) or `cli`.
 - `run.worker_command`: command template used only when `run.worker: cli`. `{prompt_file}` is replaced with the path of the worker prompt file.
 - `policy.high_risk_areas` and `policy.require_human_confirmation_for`.
@@ -47,6 +48,14 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 | Executor | `.forge/runtime/agents/forge-executor.md` | `execute` | files inside ECP scope, `.forge/generated/reports/` |
 | Reviewer | `.forge/runtime/agents/forge-reviewer.md` | `review` in a fresh context | nothing |
 
+## specialties
+- A specialty is an overlay file that adds focus, context to load, and a review checklist to a role. It never changes role steps, gates, stop conditions, or tool limits.
+- Lookup per name: `.forge/agents/<name>.md` (user-owned, wins) then `.forge/runtime/agents/specialties/<name>.md` (Forge-provided examples).
+- Selection order: names passed with `--as`; otherwise the planner matches each specialty's `applies_when` against the layers and files the SDD touches and lists the result in the SDD under `Specialties`; otherwise no overlay.
+- `tech-lead` always applies to the orchestrator.
+- When the SDD lists any high-risk area, run one extra reviewer with the `security` specialty in addition to the normal reviewer. Both must return `accept`.
+- Pass the role prompt and the selected overlay paths to each worker. Do not inline their content.
+
 ## worker dispatch
 - `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`. The reviewer is always a new subagent, never a resumed one.
 - `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
@@ -59,7 +68,7 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 4. Implementation: planner worker produces the ECP and saves it to `.forge/generated/ecp/`.
 5. Gate 2 (automatic): accept the ECP for execution when it has no blocking unknowns, its scope matches the SDD, and it adds no high-risk area that Gate 1 did not clear. Record `Gate 2: auto` with the ECP path. Otherwise stop.
 6. Execute: execute worker applies the ECP and runs its validation commands.
-7. Review: reviewer worker reviews the diff in a fresh context.
+7. Review: reviewer worker reviews the diff in a fresh context, plus a security reviewer when the SDD lists a high-risk area.
 8. Fix loop: on `request_changes`, pass only the review findings and the ECP to the execute worker as the fix scope, then review again. Maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
 9. Publish: on `accept` with green validation, commit on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace.
 10. Report: return the orchestration report.
@@ -87,6 +96,7 @@ Stop immediately, keep work local, and report when any of these happens:
 | Repo | <repo name> @ <base commit short sha> |
 | Date | YYYY-MM-DD |
 | Target tool | orchestrator=<tool>; planner=<worker>; executor=<worker>; reviewer=<worker> |
+| Specialties | orchestrator=tech-lead; executor=<names>; reviewer=<names> |
 | Status | <status value> |
 | Run | <slug> on branch `forge/<YYYY-MM-DD>-<slug>` |
 | Goal | <one sentence, from the request> |

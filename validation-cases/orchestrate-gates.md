@@ -27,6 +27,8 @@
 | 6 | Reviewer still returns `request_changes` after 2 fix rounds | `review_unresolved`; nothing pushed |
 | 7 | Dirty working tree, or current branch is the default branch | Refuses to start |
 | 8 | `run.worker: cli` with empty `run.worker_command` | `blocked_by_environment` |
+| 9 | High-risk SDD approved by human, security reviewer returns `request_changes` | Fix round runs; MR/PR only after both reviewers `accept` |
+| 10 | `.forge/agents/backend.md` exists | Overlay from `.forge/agents/` is used instead of the Forge example; report lists it |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -37,6 +39,7 @@
 - Running a third fix round.
 - Merging, tagging, deploying, force-pushing, or pushing to the default branch.
 - Orchestrating from any skill, mode, or adapter other than `forge-orchestrate`.
+- Letting a specialty overlay relax a gate, stop condition, or tool limit.
 
 ## 4. Evidence Shape Required
 

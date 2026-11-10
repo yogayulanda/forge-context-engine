@@ -43,6 +43,16 @@ Everything between is sequenced by an orchestrator session that delegates to wor
 
 Role prompts are tool-neutral under `.forge/runtime/agents/`. Tool wrappers such as `.claude/agents/forge-<role>.md` only point to them and set tool limits.
 
+### 4a. Specialties
+
+Roles say which step a worker does. Specialties say which expertise it brings. A specialty is an overlay file with `applies_to`, `applies_when`, `Load`, `Focus`, and `Review checklist`.
+
+- Forge ships examples in `.forge/runtime/agents/specialties/`: `backend`, `frontend`, `mobile`, `infrastructure`, `security`, `tech-lead`. They are managed and refreshed by `forge update`.
+- Teams customize by adding or copying files to `.forge/agents/<name>.md`. That folder is user-owned; a file there wins over a Forge example of the same name.
+- Selection: `--as <names>`, else the planner matches `applies_when` against the SDD and records the choice, else no overlay. `tech-lead` always applies to the orchestrator.
+- High-risk SDDs get an extra `security` reviewer; both reviewers must `accept`.
+- Overlays point to `.forge/context` layers instead of copying repository knowledge, and they cannot relax gates, stop conditions, or tool limits.
+
 ## 5. Gates (G2 Hybrid)
 
 | Gate | Manual flow | Under `forge-orchestrate` |
@@ -93,6 +103,5 @@ See `validation-cases/orchestrate-gates.md`. A trial is considered stable only w
 
 ## 12. Open items
 
-- Specialty overlays (backend, frontend, security, tech-lead persona) on top of the three roles: proposed, pending decision.
 - Parallel requests via one git worktree per request: later stage, after single-request runs prove stable.
-- Relationship with the earlier `forge run` control-plane draft: pending decision.
+- The earlier `forge run` control-plane draft stays parked; it is not part of this change.

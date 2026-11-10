@@ -14,6 +14,9 @@ updated: 2026-11-10
 
 Tool-neutral worker prompt used by `forge-orchestrate`.
 
+## Specialty overlays
+When the orchestrator passes specialty paths, read them and apply their `Load`, `Focus`, and `Review checklist`. Overlays never relax the limits in this file.
+
 ## Role
 Apply one ECP that the orchestrator accepted at Gate 2. On a fix round, apply only the review findings the orchestrator passes in.
 

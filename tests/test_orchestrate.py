@@ -110,6 +110,42 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("only inside `forge-orchestrate`", conventions)
 
 
+SPECIALTIES = ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead")
+
+
+class OrchestrateSpecialtyTests(unittest.TestCase):
+    def test_specialty_examples_ship_and_are_managed(self) -> None:
+        files = _files(("codex",))
+        for name in SPECIALTIES:
+            rel = f".forge/runtime/agents/specialties/{name}.md"
+            self.assertIn(rel, files)
+            self.assertTrue(_is_managed_file(rel, "service", ("codex",)))
+
+    def test_specialty_files_declare_overlay_fields(self) -> None:
+        templates = iter_template_files("base")
+        for name in SPECIALTIES:
+            text = templates[f".forge/runtime/agents/specialties/{name}.md"]
+            for field in ("applies_to:", "applies_when:", "## Load", "## Focus", "## Review checklist"):
+                self.assertIn(field, text, name)
+            self.assertIn("never changes the role's steps, gates, stop conditions, or limits", text)
+            self.assertIn(f".forge/agents/{name}.md", text)
+
+    def test_user_specialty_folder_is_user_owned_and_not_seeded(self) -> None:
+        from forge_context_engine.install_manifest import build_user_owned_paths, CONTEXT_PROFILE_VERSION_CURRENT
+
+        self.assertIn(
+            ".forge/agents/",
+            build_user_owned_paths(profile="service", context_profile_version=CONTEXT_PROFILE_VERSION_CURRENT),
+        )
+        self.assertFalse(any(rel.startswith(".forge/agents/") for rel in _files(("claude",))))
+
+    def test_mode_defines_lookup_and_security_reviewer(self) -> None:
+        mode = iter_template_files("base")[MODE]
+        self.assertIn("`.forge/agents/<name>.md` (user-owned, wins)", mode)
+        self.assertIn("extra reviewer with the `security` specialty", mode)
+        self.assertIn("| Specialties |", mode)
+
+
 class OrchestrateSourceSyncTests(unittest.TestCase):
     """runtime/ engine copies must match packaged templates for orchestrate files."""
 
@@ -119,6 +155,10 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
         ("runtime/adapters/claude/commands/forge-orchestrate.md", ".claude/commands/forge-orchestrate.md"),
         *((f"runtime/.forge/runtime/agents/{r}.md", f".forge/runtime/agents/{r}.md") for r in ROLES),
         *((f"runtime/adapters/claude/agents/{r}.md", f".claude/agents/{r}.md") for r in ROLES),
+        *(
+            (f"runtime/.forge/runtime/agents/specialties/{n}.md", f".forge/runtime/agents/specialties/{n}.md")
+            for n in ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead")
+        ),
     )
 
     def test_runtime_copies_match_templates(self) -> None:

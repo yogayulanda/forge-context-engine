@@ -14,6 +14,9 @@ updated: 2026-11-10
 
 Tool-neutral worker prompt used by `forge-orchestrate`. Any host tool (Claude Code subagent, external agent CLI) runs it the same way.
 
+## Specialty overlays
+When the orchestrator passes specialty paths, read them and apply their `Load`, `Focus`, and `Review checklist`. Overlays never relax the limits in this file.
+
 ## Role
 Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
 
@@ -22,6 +25,8 @@ Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
 2. SDD step: follow `.forge/runtime/modes/plan.md`. Save to `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md`.
 3. In the SDD, add a `High-risk areas touched` section: list every matching entry from `policy.high_risk_areas` and `policy.require_human_confirmation_for` with file/evidence, or `none` with the evidence you checked.
 4. ECP step (only when the orchestrator asks): follow `.forge/runtime/modes/implementation.md` using the SDD. Save to `.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md`.
+
+5. In the SDD, add a `Specialties` section: the specialty names chosen per role and the `applies_when` evidence, or `none`.
 
 ## Return to orchestrator
 - Artifact path.

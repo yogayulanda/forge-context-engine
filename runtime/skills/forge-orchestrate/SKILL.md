@@ -4,7 +4,7 @@
 Run one request through plan -> implementation -> execute -> review with worker agents, ending at a pushed feature branch and an open MR/PR for human review.
 
 ## Load
-Read `.forge/forge.config.yaml` first. Apply `run.interaction`, `run.worker`, `run.worker_command`, and `policy.*`. Read `.forge/runtime/modes/orchestrate.md`. Pass `.forge/runtime/agents/forge-<role>.md` to workers by path. Do not broad-load `.forge/context` in the orchestrator session.
+Read `.forge/forge.config.yaml` first. Apply `run.interaction`, `run.worker`, `run.worker_command`, and `policy.*`. Read `.forge/runtime/modes/orchestrate.md`. Pass `.forge/runtime/agents/forge-<role>.md` and selected specialty overlays (`.forge/agents/<name>.md`, else `.forge/runtime/agents/specialties/<name>.md`) to workers by path. Do not broad-load `.forge/context` in the orchestrator session.
 
 ## Invocation
 Use only when the human explicitly asks to orchestrate a named request or a saved plan path. The invocation is the human's approval for Gate 2, and for Gate 1 only when the SDD touches no high-risk area. It covers this one request only.
