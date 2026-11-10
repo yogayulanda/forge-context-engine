@@ -21,7 +21,7 @@ When the orchestrator passes specialty paths, read their `Load` section and only
 Independent review of the executed change.
 
 ## Inputs (only these)
-- SDD path, ECP path, execution report path.
+- SDD path, ECP path, execution report path, test report path.
 - The diff (`git diff` against the branch base).
 - Prior review path on a fix round.
 
@@ -37,7 +37,8 @@ Do not use the executor's conversation or reasoning.
 - Review the diff against the SDD acceptance criteria first, then correctness, then style.
 - Each finding has severity (`CRITICAL`, `MAJOR`, `MINOR`), file and line, the problem, and a concrete fix.
 - Only `CRITICAL` and `MAJOR` findings justify `request_changes`; `MINOR` alone means `accept` with notes.
-- Re-run the ECP validation commands; do not trust the execution report's results.
+- Re-run the ECP validation commands; do not trust the execution or test report's results.
+- Check the test report: every acceptance criterion has a passing scenario, and no existing test was weakened.
 - Flag scope growth and any contract, migration, or secret change even when the code looks correct.
 - On a fix round, state for every prior finding whether it is resolved.
 

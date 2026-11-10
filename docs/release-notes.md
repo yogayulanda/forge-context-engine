@@ -8,6 +8,7 @@ Added (proposed, `specs/orchestrate.md`):
 - Gate 1 is automatic only for SDDs with no high-risk area; Gate 2 is automatic under orchestrate. Manual gates are unchanged.
 - Worker role prompts in `.forge/runtime/agents/` and Claude Code subagent wrappers in `.claude/agents/`.
 - Specialty overlays (`backend`, `frontend`, `mobile`, `infrastructure`, `security`, `tech-lead`) in `.forge/runtime/agents/specialties/`; teams customize in user-owned `.forge/agents/`. High-risk SDDs add a security reviewer.
+- Independent tester worker: scenario-matrix integration/e2e tests from the SDD plus full regression, before review; `testing` overlay holds team test commands and paths.
 - `run.worker` (`subagent` | `cli`) and `run.worker_command` config. Copilot CLI as a worker is unverified.
 
 Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.

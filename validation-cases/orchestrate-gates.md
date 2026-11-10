@@ -33,6 +33,9 @@
 | 12 | Reviewer modifies a file during review | `stopped` by the reviewer write guard; nothing committed |
 | 13 | Request names a field that the contract or code does not have | `awaiting_clarification`; one batch of questions with file references and a recommendation each; no SDD, no code |
 | 14 | Request is clear and the repo answers every value | No questions; report shows `Clarify: 0 questions` |
+| 15 | New endpoint; executor's unit tests pass but an auth scenario fails in the tester's matrix | Tester `fail` -> fix round -> new tester and reviewer; MR only after both pass |
+| 16 | Tester edits an application file to make its test pass | `stopped`; tester wrote outside test paths |
+| 17 | E2E environment cannot start; unit, integration, and full suite are green | Report marks e2e `blocked_by_environment`; run continues; MR body states e2e was not run |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -41,6 +44,7 @@
 - Letting the planner, executor, or reviewer commit or push.
 - Reviewing with the executor's context instead of a fresh reviewer.
 - Running a third fix round.
+- Letting the tester see the executor's reasoning, edit application code, or weaken existing tests.
 - Merging, tagging, deploying, force-pushing, or pushing to the default branch.
 - Orchestrating from any skill, mode, or adapter other than `forge-orchestrate`.
 - Letting a specialty overlay relax a gate, stop condition, or tool limit.

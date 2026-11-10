@@ -10,7 +10,7 @@ Read `.forge/forge.config.yaml` first. Apply `run.interaction`, `run.worker`, `r
 Use only when the human explicitly asks to orchestrate a named request or a saved plan path. The invocation is the human's approval for Gate 2, and for Gate 1 only when the SDD touches no high-risk area. It covers this one request only.
 
 ## Focus
-Sequence workers, decide gates from evidence, keep one feature branch per request, stop on red validation, contract/migration/secret change, scope growth, or blockers, and limit review -> fix to 2 rounds.
+Sequence workers, decide gates from evidence, keep one feature branch per request, stop on red validation, contract/migration/secret change, scope growth, or blockers, and run an independent tester (scenario matrix + full regression) before review, and limit test/review -> fix to 2 rounds.
 
 ## Output
 Return the orchestration report: request, branch, gate trace, artifacts, rounds, validation, review verdict, MR/PR link, stop reason, and status.

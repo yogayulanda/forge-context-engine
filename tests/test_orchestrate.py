@@ -9,7 +9,7 @@ from forge_context_engine.runtime_ops import _build_init_files, _is_managed_file
 from forge_context_engine.runtime_templates import iter_template_files
 
 ROOT = Path(__file__).resolve().parents[1]
-ROLES = ("forge-planner", "forge-executor", "forge-reviewer")
+ROLES = ("forge-planner", "forge-executor", "forge-tester", "forge-reviewer")
 MODE = ".forge/runtime/modes/orchestrate.md"
 
 
@@ -128,6 +128,23 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn(".forge/runtime/hooks/forge_git_guard.py", files)
         self.assertTrue(_is_managed_file(".forge/runtime/hooks/forge_git_guard.py", "service", ("codex",)))
 
+    def test_tester_is_independent_and_scenario_driven(self) -> None:
+        tester = self.templates[".forge/runtime/agents/forge-tester.md"]
+        for phrase in (
+            "Do not use the executor's conversation, reasoning, or unit tests",
+            "| Auth and permission |",
+            "| Idempotency and duplicates |",
+            "| Dependency failure |",
+            "full test suite",
+            "Never weaken, skip, or delete an existing test",
+            "Add or edit only files under the test paths",
+        ):
+            self.assertIn(phrase, tester)
+        self.assertIn("6b. Test:", self.mode)
+        self.assertLess(self.mode.index("6b. Test:"), self.mode.index("7. Review:"))
+        self.assertIn("share the same counter: maximum 2 fix rounds", self.mode)
+        self.assertIn("The tester changed a file outside the test paths", self.mode)
+
     def test_reviewer_wrapper_has_no_edit_tools(self) -> None:
         wrapper = self.templates[".claude/agents/forge-reviewer.md"]
         tools_line = next(line for line in wrapper.splitlines() if line.startswith("tools:"))
@@ -152,7 +169,7 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("only inside `forge-orchestrate`", conventions)
 
 
-SPECIALTIES = ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead")
+SPECIALTIES = ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead", "testing")
 
 
 class OrchestrateSpecialtyTests(unittest.TestCase):
@@ -203,7 +220,7 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
         ("runtime/.forge/runtime/hooks/forge_git_guard.py", ".forge/runtime/hooks/forge_git_guard.py"),
         *(
             (f"runtime/.forge/runtime/agents/specialties/{n}.md", f".forge/runtime/agents/specialties/{n}.md")
-            for n in ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead")
+            for n in ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead", "testing")
         ),
     )
 

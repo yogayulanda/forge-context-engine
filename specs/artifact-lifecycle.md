@@ -101,7 +101,7 @@ Generated artifact types:
 - `ecp`
 - `execution_report`
 - `review_report`
-- `orchestration_report` (only from `forge-orchestrate`, see `specs/orchestrate.md`)
+- `orchestration_report` and `test_report` (only from `forge-orchestrate`, see `specs/orchestrate.md`)
 
 Recommended naming pattern:
 
@@ -111,6 +111,7 @@ Recommended naming pattern:
 .forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md
 .forge/generated/reviews/YYYY-MM-DD-<slug>-review.md
 .forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md
+.forge/generated/reports/YYYY-MM-DD-<slug>-test-report.md
 ```
 
 Naming rules:

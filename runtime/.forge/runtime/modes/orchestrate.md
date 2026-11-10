@@ -46,24 +46,26 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 | Orchestrator | this file | sequencing, gates, git, MR/PR, report | `.forge/generated/` only; never application code |
 | Planner | `.forge/runtime/agents/forge-planner.md` | `plan`, then `implementation` | `.forge/generated/plans/`, `ecp/` |
 | Executor | `.forge/runtime/agents/forge-executor.md` | `execute` | files inside ECP scope, `.forge/generated/reports/` |
+| Tester | `.forge/runtime/agents/forge-tester.md` | integration/e2e scenarios + full regression, fresh context | test paths only, `.forge/generated/reports/` |
 | Reviewer | `.forge/runtime/agents/forge-reviewer.md` | `review` in a fresh context | nothing |
 
 ## specialties
 - A specialty is an overlay file with a `Load` section and one `As <role>` section per role it applies to. It never changes role steps, gates, stop conditions, or tool limits.
 - Lookup per name: `.forge/agents/<name>.md` (user-owned, wins) then `.forge/runtime/agents/specialties/<name>.md` (Forge-provided examples).
 - Selection order: names passed with `--as`; otherwise the planner matches each specialty's `applies_when` against the layers and files the SDD touches and lists the result in the SDD under `Specialties`; otherwise no overlay.
-- `tech-lead` always applies to the orchestrator.
+- `tech-lead` always applies to the orchestrator; `testing` always applies to the tester.
 - When the SDD lists any high-risk area, run one extra reviewer with the `security` specialty in addition to the normal reviewer. Both must return `accept`.
 - Pass the role prompt and the selected overlay paths to each worker. Do not inline their content.
 
 ## git guard
 - `.forge/runtime/hooks/forge_git_guard.py` is a deterministic check, not an AI judgment. Exit code 2 blocks the command.
 - `worker` role (registered in each `.claude/agents/forge-<role>.md`): blocks `git commit`, `push`, `merge`, `rebase`, `tag`, `reset`, `checkout`, `switch`, and MR/PR merge commands.
+- The tester uses the `worker` role too.
 - `orchestrator` role (registered by the human in `.claude/settings.json`): blocks pushes to `main`, `master`, or the remote default branch, force pushes, tag pushes, branch deletes, `git tag`, `git merge`, and MR/PR merge commands.
 - A blocked command is a stop condition; report the guard message.
 
 ## worker dispatch
-- `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`, whose `maxTurns` caps each worker; a worker that hits the cap without a complete report counts as `blocked`. The reviewer is always a new subagent, never a resumed one.
+- `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`, whose `maxTurns` caps each worker; a worker that hits the cap without a complete report counts as `blocked`. The tester and reviewer are always new subagents, never resumed ones.
 - `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
 - The orchestrator may run the planner and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
@@ -76,9 +78,10 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 5. Gate 2 (automatic): accept the ECP for execution when it has no blocking unknowns, its scope matches the SDD, and it adds no high-risk area that Gate 1 did not clear. Record `Gate 2: auto` with the ECP path. Otherwise stop.
 6. Execute: execute worker applies the ECP and runs its validation commands.
 6a. Diff risk check: map every changed file to `policy.high_risk_areas`. If the diff touches a high-risk area that the SDD did not list, stop; Gate 1 was decided on incomplete evidence.
-7. Review: record `git status --porcelain` and `git diff` hash, then run the reviewer worker in a fresh context, plus a security reviewer when the SDD lists a high-risk area. If the working tree changed during review, stop: reviewers must not modify files.
-8. Fix loop: on `request_changes`, pass only the review findings and the ECP to the execute worker as the fix scope, then review again. Maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
-9. Publish: on `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace.
+6b. Test: record `git status --porcelain`, then run the tester worker in a fresh context with the SDD, ECP, and diff. Afterwards, every file the tester added or changed must match the test paths in the `testing` overlay; otherwise stop. Tester verdict `fail` goes into the fix loop like review findings; `blocked_by_environment` for e2e is reported and continues only when unit, integration, and full-suite runs are green.
+7. Review: record `git status --porcelain` and `git diff` hash, then run the reviewer worker in a fresh context with the test report as an extra input, plus a security reviewer when the SDD lists a high-risk area. If the working tree changed during review, stop: reviewers must not modify files.
+8. Fix loop: on tester `fail` or review `request_changes`, pass only the failing scenarios, the review findings, and the ECP to the execute worker as the fix scope, then run a new tester and a new reviewer. Tester failures and review findings share the same counter: maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
+9. Publish: on `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution, test, and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace.
 10. Report: return the orchestration report.
 
 ## stop conditions
@@ -92,6 +95,8 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 - `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.
 - The diff touches a high-risk area the SDD did not list (step 6a).
 - A reviewer changed the working tree (step 7).
+- The tester changed a file outside the test paths (step 6b).
+- The full test suite is red after the fix rounds.
 
 ## outputs
 - Orchestration Report at `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md`, in the report format below. Update it after every step so the human can open it mid-run; print the same content in chat at the end.
@@ -106,8 +111,8 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 | Artifact | orchestration_report |
 | Repo | <repo name> @ <base commit short sha> |
 | Date | YYYY-MM-DD |
-| Target tool | orchestrator=<tool>; planner=<worker>; executor=<worker>; reviewer=<worker> |
-| Specialties | orchestrator=tech-lead; executor=<names>; reviewer=<names> |
+| Target tool | orchestrator=<tool>; planner=<worker>; executor=<worker>; tester=<worker>; reviewer=<worker> |
+| Specialties | orchestrator=tech-lead; executor=<names>; tester=testing,<names>; reviewer=<names> |
 | Status | <status value> |
 | Run | <slug> on branch `forge/<YYYY-MM-DD>-<slug>` |
 | Goal | <one sentence, from the request> |
@@ -121,6 +126,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 ○ ECP
 ○ Gate 2
 ○ Execute
+○ Test (scenarios: <n>, full suite)
 ○ Review round 1
 ○ Publish (push + MR/PR)
 
@@ -136,9 +142,13 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 | Command | Result |
 |---|---|
 
+## Test scenarios
+| Entry point | Category | Scenario | Result |
+|---|---|---|---|
+
 ## Review rounds
-| Round | Verdict | Open findings |
-|---|---|---|
+| Round | Tester | Reviewer | Open findings |
+|---|---|---|---|
 
 ## MR/PR
 <link, or `not opened` with reason>

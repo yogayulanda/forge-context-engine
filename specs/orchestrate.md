@@ -39,9 +39,14 @@ Everything between is sequenced by an orchestrator session that delegates to wor
 | Orchestrator | `modes/orchestrate.md` | sequencing, gates, git, MR/PR | `.forge/generated/` only |
 | Planner | `agents/forge-planner.md` | `plan`, `implementation` | plans, ECPs |
 | Executor | `agents/forge-executor.md` | `execute` | ECP-scoped files, execution report |
+| Tester | `agents/forge-tester.md` | scenario tests + full regression, fresh context | test paths only, test report |
 | Reviewer | `agents/forge-reviewer.md` | `review`, fresh context | nothing (returns text) |
 
 Role prompts are tool-neutral under `.forge/runtime/agents/`. Tool wrappers such as `.claude/agents/forge-<role>.md` only point to them and set tool limits.
+
+### 4-test. Independent testing
+
+The executor writes unit tests next to its code. A separate tester then writes integration and end-to-end tests from the SDD only, without the executor's reasoning, so tests do not share the executor's blind spots. It builds a scenario matrix per changed entry point (happy path, input validation, boundaries, auth and permission, dependency failure, idempotency and duplicates, concurrency, data state, contract, regression), runs the e2e/integration command, then the full suite. It may only write under the test paths from the `testing` overlay. Failing scenarios go back to the executor through the same 2-round fix loop as review findings. Teams set their test commands, e2e environment, and test paths in `.forge/agents/testing.md`.
 
 ### 4a. Specialties
 
@@ -74,7 +79,8 @@ The orchestrator stops, does not commit or push, leaves changes uncommitted on t
 - the diff changes an external contract, a migration, or a secret not named in a human-approved SDD;
 - the diff changes files outside the ECP scope, or a worker proposes new scope;
 - a worker returns a blocking unknown or a blocked status;
-- the review verdict is not `accept` after 2 fix rounds;
+- the review verdict is not `accept`, or the tester verdict is `fail`, after 2 fix rounds;
+- the tester changed a file outside the test paths;
 - the working tree is dirty at start, or the branch is the default/protected branch;
 - `run.worker: cli` is set without a working `run.worker_command`;
 - the diff touches a high-risk area the SDD did not list (Gate 1 cross-check);

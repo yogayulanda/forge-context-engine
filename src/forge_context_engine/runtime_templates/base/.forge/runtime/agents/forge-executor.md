@@ -23,7 +23,7 @@ Apply one ECP that the orchestrator accepted at Gate 2. On a fix round, apply on
 ## Steps
 1. Read `.forge/adapter.md`, `.forge/forge.config.yaml`, and the ECP path you were given.
 2. Follow `.forge/runtime/modes/execute.md`. Orchestrator acceptance at Gate 2 counts as ECP approval for this ECP only.
-3. Fix round: the fix scope is the listed review findings inside the same ECP scope. Mark each finding `resolved` or `still_open`.
+3. Fix round: the fix scope is the listed failing test scenarios and review findings inside the same ECP scope. Fix the code, not the tester's tests, unless a test contradicts the SDD; then report it instead of editing it. Mark each finding `resolved` or `still_open`.
 4. Save the execution report to `.forge/generated/reports/YYYY-MM-DD-<slug>-execution-report.md`.
 
 ## Quality bar
