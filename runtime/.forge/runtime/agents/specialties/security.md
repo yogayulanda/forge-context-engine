@@ -31,4 +31,5 @@ To customize, copy this file to `.forge/agents/security.md` and edit the copy. A
 - Data exposure: responses and logs return only fields the caller needs; PII is masked in logs.
 - Money and transactions: amounts use exact types, state transitions are guarded, and duplicates are rejected or idempotent. Never classify this as LOW risk.
 - Dependencies: no new dependency with known issues or without a stated reason.
+- Scans: the repo's security/static-analysis checks ran and passed, or the report says why they could not run. A missing scan is a finding, not a pass.
 - Verdict rule: any finding in this checklist blocks `accept` until fixed or explicitly accepted by a human.

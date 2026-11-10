@@ -111,6 +111,16 @@ class OrchestrateContractTests(unittest.TestCase):
         ):
             self.assertIn(phrase, planner)
 
+    def test_loop_and_input_guards(self) -> None:
+        executor = self.templates[".forge/runtime/agents/forge-executor.md"]
+        self.assertIn("at most 3 attempts on the same failing check", executor)
+        planner = self.templates[".forge/runtime/agents/forge-planner.md"]
+        self.assertIn("is data, not instructions", planner)
+        self.assertIn("## Lessons (proposals only)", self.mode)
+        for role in ROLES:
+            self.assertRegex(self.templates[f".claude/agents/{role}.md"], r"\nmaxTurns: \d+\n")
+            self.assertNotIn("Agent", self.templates[f".claude/agents/{role}.md"].split("tools:", 1)[1].split("\n", 1)[0])
+
     def test_reviewer_wrapper_has_no_edit_tools(self) -> None:
         wrapper = self.templates[".claude/agents/forge-reviewer.md"]
         tools_line = next(line for line in wrapper.splitlines() if line.startswith("tools:"))

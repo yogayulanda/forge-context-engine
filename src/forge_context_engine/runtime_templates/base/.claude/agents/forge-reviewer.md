@@ -2,6 +2,7 @@
 name: forge-reviewer
 description: Forge reviewer worker. Reviews the diff in a fresh context and returns a verdict. Never edits code.
 tools: Read, Grep, Glob, Bash
+maxTurns: 40
 ---
 
 Claude Code subagent wrapper for Forge orchestrate.

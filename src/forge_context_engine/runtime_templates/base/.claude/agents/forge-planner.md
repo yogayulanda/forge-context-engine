@@ -2,6 +2,7 @@
 name: forge-planner
 description: Forge planner worker. Writes SDD and ECP artifacts for forge-orchestrate. Never edits application code.
 tools: Read, Grep, Glob, Write, Bash
+maxTurns: 40
 ---
 
 Claude Code subagent wrapper for Forge orchestrate.

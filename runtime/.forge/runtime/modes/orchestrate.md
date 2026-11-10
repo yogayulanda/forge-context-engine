@@ -57,7 +57,7 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 - Pass the role prompt and the selected overlay paths to each worker. Do not inline their content.
 
 ## worker dispatch
-- `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`. The reviewer is always a new subagent, never a resumed one.
+- `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`, whose `maxTurns` caps each worker; a worker that hits the cap without a complete report counts as `blocked`. The reviewer is always a new subagent, never a resumed one.
 - `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
 - The orchestrator may run the planner and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
@@ -136,6 +136,9 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 
 ## MR/PR
 <link, or `not opened` with reason>
+
+## Lessons (proposals only)
+- Clarify misses, repeated review findings, or retries, each with a proposed one-line edit to `.forge/agents/<name>.md` or a `.forge/context-patches/` entry. The human decides; workers never edit these files.
 ```
 Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗` stopped here. The report is a human-readable trace, not resumable workflow state; resume always starts from the named SDD or ECP artifact.
 

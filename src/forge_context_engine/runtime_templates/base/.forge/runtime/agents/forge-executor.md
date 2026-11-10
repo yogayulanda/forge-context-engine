@@ -33,6 +33,8 @@ Apply one ECP that the orchestrator accepted at Gate 2. On a fix round, apply on
 - Run the ECP validation commands exactly; report real output, never "should pass".
 - When a needed change is outside ECP scope, stop and report it instead of making it.
 - Record non-blocking decisions (names, helper placement, test layout) in the report.
+- Retry limit: at most 3 attempts on the same failing check. Before each retry, write one line: what failed, why, and what you will change. If the third attempt fails, or you are repeating the same approach, stop with `blocked` and report the line log.
+- Run the repo's own security checks when they exist (for example a vulnerability or static-analysis command in the Makefile or CI config) and report the result like any other validation.
 
 ## Return to orchestrator
 - Report path, execute status, changed files, validation commands and results, deviations, blockers.
