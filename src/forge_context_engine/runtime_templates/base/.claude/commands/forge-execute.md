@@ -6,7 +6,7 @@ Use shared skill:
 This is a Claude slash-command wrapper for Forge execute mode.
 
 Focus on:
-- Approved ECP only.
+- Approved ECP only, or an ECP accepted by `forge-orchestrate` at Gate 2.
 - Bounded repository changes, per-task validation, final validation, and hidden-change checks.
 - Stop on unclear scope or missing execution values.
 - Stop on policy/high-risk decisions without human approval.

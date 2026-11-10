@@ -14,7 +14,7 @@ updated: 2026-11-10
 
 ## include
 - `.forge/forge.config.yaml` (`run.worker`, `run.worker_command`, `policy.*`)
-- `.forge/runtime/modes/plan.md`, `implementation.md`, `execute.md`, `review.md` (passed to workers by path, not inlined)
+- `.forge/runtime/agents/forge-planner.md`, `forge-executor.md`, `forge-reviewer.md` (passed to workers by path, not inlined)
 
 ## on_demand
 - `.forge/runtime/meta/conventions-risk.md`
@@ -34,16 +34,23 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 
 ## inputs
 - One request: free text, an issue reference, or a saved plan artifact path.
-- `run.worker`: `subagent` (default; the host tool's own subagent, such as a Claude Code subagent) or `cli` (an external agent CLI started through `run.worker_command`).
+- `run.worker`: `subagent` (default, also when the key is missing) or `cli`.
 - `run.worker_command`: command template used only when `run.worker: cli`. `{prompt_file}` is replaced with the path of the worker prompt file.
 - `policy.high_risk_areas` and `policy.require_human_confirmation_for`.
 - Validation commands from the ECP or `tools.validation_commands`.
 
 ## roles
-- Orchestrator: the invoking session. Owns sequencing, gate decisions, branch, commit, push, MR/PR, and the final report. Does not write application code.
-- Planner worker: runs `plan` and then `implementation`; returns SDD and ECP artifacts.
-- Execute worker: runs `execute` for the ECP; may edit files only inside ECP scope.
-- Reviewer worker: runs `review` in a fresh context that did not see the execute worker's reasoning; inputs are the SDD, ECP, diff, and validation output only.
+| Role | Prompt | Runs mode | May edit |
+|---|---|---|---|
+| Orchestrator | this file | sequencing, gates, git, MR/PR, report | `.forge/generated/` only; never application code |
+| Planner | `.forge/runtime/agents/forge-planner.md` | `plan`, then `implementation` | `.forge/generated/plans/`, `ecp/` |
+| Executor | `.forge/runtime/agents/forge-executor.md` | `execute` | files inside ECP scope, `.forge/generated/reports/` |
+| Reviewer | `.forge/runtime/agents/forge-reviewer.md` | `review` in a fresh context | nothing |
+
+## worker dispatch
+- `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`. The reviewer is always a new subagent, never a resumed one.
+- `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
+- The orchestrator may run the planner and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
 ## behavior
 1. Preflight: confirm the working tree is clean, the current branch is not the default/protected branch, and create a feature branch `forge/<YYYY-MM-DD>-<slug>` when not already on one.

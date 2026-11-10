@@ -57,6 +57,7 @@ FORGE_LOCAL_GITIGNORE = """# Forge local cache/scratch
 /forge.local.yaml
 """
 CLAUDE_COMMANDS_PREFIX = ".claude/commands/"
+CLAUDE_AGENTS_PREFIX = ".claude/agents/"
 CLAUDE_GITIGNORE_PATH = ".claude/.gitignore"
 COPILOT_TEMPLATE_PATH = ".github/copilot-instructions.md"
 COPILOT_SKILLS_PREFIX = ".github/skills/"
@@ -69,7 +70,7 @@ OPENCODE_SIGNAL_PATHS = (
     OPENCODE_CONFIG_PATH,
     OPENCODE_SKILLS_PREFIX.rstrip("/"),
 )
-OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, ".github/prompts/", TEMPLATE_SKILLS_PREFIX)
+OPTIONAL_TEMPLATE_PREFIXES = (CLAUDE_COMMANDS_PREFIX, CLAUDE_AGENTS_PREFIX, ".github/prompts/", TEMPLATE_SKILLS_PREFIX)
 LEGACY_CONTEXT_TEMPLATE_PREFIXES = (
     ".forge/context/01-core/",
     ".forge/context/knowledge/",
@@ -1101,7 +1102,7 @@ def _build_init_files(
     if "claude" in selected_tools:
         files["CLAUDE.md"] = read_template("base", "CLAUDE.md")
         files[CLAUDE_GITIGNORE_PATH] = read_template("base", CLAUDE_GITIGNORE_PATH)
-        files.update({rel: content for rel, content in template_files.items() if rel.startswith(CLAUDE_COMMANDS_PREFIX)})
+        files.update({rel: content for rel, content in template_files.items() if rel.startswith((CLAUDE_COMMANDS_PREFIX, CLAUDE_AGENTS_PREFIX))})
     if "copilot" in selected_tools:
         files[COPILOT_TEMPLATE_PATH] = read_template("base", COPILOT_TEMPLATE_PATH)
         files.update(
@@ -1413,7 +1414,11 @@ def _render_forge_config(
         "  output: human\n"
         "  output_detail: standard\n"
         "  write_behavior: draft\n"
-        "  failure_behavior: stop\n\n"
+        "  failure_behavior: stop\n"
+        "  # forge-orchestrate worker: subagent (host tool subagents) or cli (external agent CLI).\n"
+        "  worker: subagent\n"
+        "  # Used only when worker: cli. {prompt_file} is replaced with the worker prompt path.\n"
+        '  worker_command: ""\n\n'
         "workflow:\n"
         "  default_mode: ask\n"
         "  disabled_modes: []\n\n"
@@ -2108,7 +2113,7 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return "claude" in selected_tools
     if rel_path == CLAUDE_GITIGNORE_PATH:
         return "claude" in selected_tools
-    if rel_path.startswith(CLAUDE_COMMANDS_PREFIX):
+    if rel_path.startswith((CLAUDE_COMMANDS_PREFIX, CLAUDE_AGENTS_PREFIX)):
         return "claude" in selected_tools
     if rel_path == COPILOT_TEMPLATE_PATH:
         return "copilot" in selected_tools
@@ -2120,7 +2125,7 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return True
     if rel_path == ".forge/workspace.yaml":
         return profile == PROFILE_WORKSPACE
-    return rel_path.startswith(".forge/runtime/meta/") or rel_path.startswith(".forge/runtime/modes/")
+    return rel_path.startswith((".forge/runtime/meta/", ".forge/runtime/modes/", ".forge/runtime/agents/"))
 
 
 def _looks_like_legacy_forge_config(content: str) -> bool:

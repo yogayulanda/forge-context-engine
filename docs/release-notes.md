@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Added (proposed, `specs/orchestrate.md`):
+
+- `forge-orchestrate` skill and `orchestrate` mode: one request runs `plan -> implementation -> execute -> review` with worker agents and ends at a pushed feature branch and MR/PR. Never merges, tags, or deploys.
+- Gate 1 is automatic only for SDDs with no high-risk area; Gate 2 is automatic under orchestrate. Manual gates are unchanged.
+- Worker role prompts in `.forge/runtime/agents/` and Claude Code subagent wrappers in `.claude/agents/`.
+- `run.worker` (`subagent` | `cli`) and `run.worker_command` config. Copilot CLI as a worker is unverified.
+
 Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.
 
 Fixed:

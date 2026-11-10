@@ -1,0 +1,128 @@
+from __future__ import annotations
+
+import re
+import unittest
+from pathlib import Path
+
+from forge_context_engine.install_manifest import build_managed_paths
+from forge_context_engine.runtime_ops import _build_init_files, _is_managed_file
+from forge_context_engine.runtime_templates import iter_template_files
+
+ROOT = Path(__file__).resolve().parents[1]
+ROLES = ("forge-planner", "forge-executor", "forge-reviewer")
+MODE = ".forge/runtime/modes/orchestrate.md"
+
+
+def _files(tools: tuple[str, ...]) -> dict[str, str]:
+    return _build_init_files(
+        target_root=Path("/tmp/example"),
+        profile="service",
+        selected_tools=tools,
+        ui_language="en",
+    )
+
+
+class OrchestrateInstallTests(unittest.TestCase):
+    def test_claude_install_ships_mode_skill_roles_and_wrappers(self) -> None:
+        files = _files(("claude",))
+        self.assertIn(MODE, files)
+        self.assertIn(".forge/skills/forge-orchestrate/SKILL.md", files)
+        self.assertIn(".claude/commands/forge-orchestrate.md", files)
+        for role in ROLES:
+            self.assertIn(f".forge/runtime/agents/{role}.md", files)
+            self.assertIn(f".claude/agents/{role}.md", files)
+
+    def test_claude_agent_wrappers_are_claude_only(self) -> None:
+        files = _files(("codex",))
+        self.assertIn(".forge/runtime/agents/forge-executor.md", files)
+        self.assertFalse(any(rel.startswith(".claude/agents/") for rel in files))
+        self.assertFalse(_is_managed_file(".claude/agents/forge-executor.md", "service", ("codex",)))
+        self.assertTrue(_is_managed_file(".claude/agents/forge-executor.md", "service", ("claude",)))
+
+    def test_role_prompts_are_managed_for_every_tool(self) -> None:
+        self.assertTrue(_is_managed_file(".forge/runtime/agents/forge-planner.md", "service", ("codex",)))
+        self.assertIn(".forge/runtime/agents/", build_managed_paths("service", ("codex",)))
+        self.assertIn(".claude/agents/", build_managed_paths("service", ("claude",)))
+
+    def test_config_defaults_worker_to_subagent(self) -> None:
+        config = _files(("codex",))[".forge/forge.config.yaml"]
+        self.assertIn("  worker: subagent\n", config)
+        self.assertIn('  worker_command: ""\n', config)
+        template = iter_template_files("base")[".forge/forge.config.yaml"]
+        self.assertIn("  worker: subagent\n", template)
+
+
+class OrchestrateContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.templates = iter_template_files("base")
+        self.mode = self.templates[MODE]
+
+    def test_mode_keeps_schema_prefix(self) -> None:
+        headings = re.findall(r"^## (\S.*)$", self.mode, flags=re.MULTILINE)
+        self.assertEqual(headings[:4], ["include", "on_demand", "exclude", "token_budget"])
+        budget = self.mode.split("## token_budget", 1)[1].split("##", 1)[0].strip()
+        self.assertTrue(budget.isdigit())
+
+    def test_mode_states_gates_stops_and_publication_boundary(self) -> None:
+        for phrase in (
+            "policy.high_risk_areas",
+            "awaiting_sdd_approval",
+            "Gate 2: auto",
+            "Maximum 2 fix rounds",
+            "review_unresolved",
+            "Validation is red",
+            "Never merge, tag, release, deploy",
+            "fresh context",
+        ):
+            self.assertIn(phrase, self.mode)
+
+    def test_workers_never_commit_or_push(self) -> None:
+        for role in ROLES:
+            prompt = self.templates[f".forge/runtime/agents/{role}.md"]
+            do_not = prompt.split("## Do NOT", 1)[1]
+            self.assertIn("commit", do_not)
+            self.assertIn("push", do_not)
+
+    def test_reviewer_wrapper_has_no_edit_tools(self) -> None:
+        wrapper = self.templates[".claude/agents/forge-reviewer.md"]
+        tools_line = next(line for line in wrapper.splitlines() if line.startswith("tools:"))
+        self.assertNotIn("Edit", tools_line)
+        self.assertNotIn("Write", tools_line)
+
+    def test_claude_wrappers_point_to_neutral_role_prompts(self) -> None:
+        for role in ROLES:
+            wrapper = self.templates[f".claude/agents/{role}.md"]
+            self.assertIn(f"name: {role}\n", wrapper)
+            self.assertIn(f".forge/runtime/agents/{role}.md", wrapper)
+
+    def test_gate_exceptions_are_scoped_to_orchestrate(self) -> None:
+        adapter = self.templates[".forge/adapter.md"]
+        self.assertIn("Under `forge-orchestrate`, Gate 1 is automatic only when", adapter)
+        self.assertIn("Under `forge-orchestrate`, Gate 2 is automatic", adapter)
+        execute_skill = self.templates["skills/forge-execute/SKILL.md"]
+        self.assertIn("accepted the ECP at Gate 2", execute_skill)
+        self.assertIn("commit and push belong to the orchestrator", execute_skill)
+        conventions = self.templates[".forge/runtime/meta/conventions.md"]
+        self.assertIn("never auto-approves HIGH-risk decisions", conventions)
+        self.assertIn("only inside `forge-orchestrate`", conventions)
+
+
+class OrchestrateSourceSyncTests(unittest.TestCase):
+    """runtime/ engine copies must match packaged templates for orchestrate files."""
+
+    PAIRS = (
+        ("runtime/.forge/runtime/modes/orchestrate.md", MODE),
+        ("runtime/skills/forge-orchestrate/SKILL.md", "skills/forge-orchestrate/SKILL.md"),
+        ("runtime/adapters/claude/commands/forge-orchestrate.md", ".claude/commands/forge-orchestrate.md"),
+        *((f"runtime/.forge/runtime/agents/{r}.md", f".forge/runtime/agents/{r}.md") for r in ROLES),
+        *((f"runtime/adapters/claude/agents/{r}.md", f".claude/agents/{r}.md") for r in ROLES),
+    )
+
+    def test_runtime_copies_match_templates(self) -> None:
+        templates = iter_template_files("base")
+        for engine_rel, template_rel in self.PAIRS:
+            self.assertEqual((ROOT / engine_rel).read_text(encoding="utf-8"), templates[template_rel], engine_rel)
+
+
+if __name__ == "__main__":
+    unittest.main()
