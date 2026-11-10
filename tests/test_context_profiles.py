@@ -1596,7 +1596,7 @@ class ContextProfileTests(unittest.TestCase):
             self.assertNotIn("last_verified", updated)
             self.assertTrue((target / ".forge/context-archive/deprecated-root-wrappers/CLAUDE.md").exists())
 
-    def test_update_preserves_unknown_unmanaged_wrapper_content_for_manual_review(self) -> None:
+    def test_update_preserves_user_content_outside_managed_wrapper_block(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir)
             (target / "README.md").write_text("# Review Repo\n", encoding="utf-8")
@@ -1623,9 +1623,11 @@ class ContextProfileTests(unittest.TestCase):
                     selected_tools=None,
                 )
 
-            self.assertEqual(status, 1)
+            # Since b3cef0f, update refreshes only the managed block and keeps user content (spec 6).
+            self.assertEqual(status, 0)
             self.assertEqual(agents_path.read_text(encoding="utf-8"), "Project-specific operator notes.\n\n" + original)
-            self.assertIn("manual review required", output.getvalue())
+            self.assertIn("Conflicts: 0", output.getvalue())
+            self.assertNotIn("manual review required", output.getvalue())
 
     def test_installed_context_templates_include_hardened_update_and_verify_instructions(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
