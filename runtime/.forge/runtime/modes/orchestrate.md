@@ -77,7 +77,7 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 4. Implementation: planner worker produces the ECP and saves it to `.forge/generated/ecp/`.
 5. Gate 2 (automatic): accept the ECP for execution when it has no blocking unknowns, its scope matches the SDD, and it adds no high-risk area that Gate 1 did not clear. Record `Gate 2: auto` with the ECP path. Otherwise stop.
 6. Execute: execute worker applies the ECP and runs its validation commands.
-6a. Diff risk check: map every changed file to `policy.high_risk_areas`. If the diff touches a high-risk area that the SDD did not list, stop; Gate 1 was decided on incomplete evidence.
+6a. Diff risk check: changed files are every path in `git status --porcelain`, including untracked new files; `git diff` alone misses them. Map every changed file to `policy.high_risk_areas`. If the diff touches a high-risk area that the SDD did not list, stop; Gate 1 was decided on incomplete evidence.
 6b. Test: record `git status --porcelain`, then run the tester worker in a fresh context with the SDD, ECP, and diff. Afterwards, every file the tester added or changed must match the test paths in the `testing` overlay; otherwise stop. Tester verdict `fail` goes into the fix loop like review findings; `blocked_by_environment` for e2e is reported and continues only when unit, integration, and full-suite runs are green.
 7. Review: record `git status --porcelain` and `git diff` hash, then run the reviewer worker in a fresh context with the test report as an extra input, plus a security reviewer when the SDD lists a high-risk area. If the working tree changed during review, stop: reviewers must not modify files.
 8. Fix loop: on tester `fail` or review `request_changes`, pass only the failing scenarios, the review findings, and the ECP to the execute worker as the fix scope, then run a new tester and a new reviewer. Tester failures and review findings share the same counter: maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
@@ -88,7 +88,7 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 Stop immediately and report. Do not commit or push: leave changes uncommitted on the feature branch so the human can inspect or discard them. Stop when any of these happens:
 - Validation is red, or required validation cannot run (`blocked_by_environment`).
 - The diff touches an external contract, a database migration, or a secret, unless the SDD was human-approved at Gate 1 and named that change.
-- Scope grows: the diff changes files outside the ECP `Files likely to change`, or a worker proposes new scope.
+- Scope grows: a changed or new file (from `git status --porcelain`) is outside the ECP `Files likely to change`, or a worker proposes new scope.
 - A worker returns a blocking unknown, `blocked`, or `blocked_by_decision`.
 - The working tree was dirty at start, or the branch is the default/protected branch.
 - A worker finds a new blocking ambiguity after clarification. Report it as a `clarify miss` so the planner's checks can be improved; do not guess.

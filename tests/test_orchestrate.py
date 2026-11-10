@@ -82,6 +82,7 @@ class OrchestrateContractTests(unittest.TestCase):
             "this run's artifacts",
             "awaiting_clarification",
             "clarify miss",
+            "including untracked new files",
         ):
             self.assertIn(phrase, self.mode)
 
