@@ -90,6 +90,12 @@ class OrchestrateContractTests(unittest.TestCase):
             self.assertIn("commit", do_not)
             self.assertIn("push", do_not)
 
+    def test_role_prompts_have_quality_bar_and_role_overlay(self) -> None:
+        for role in ROLES:
+            prompt = self.templates[f".forge/runtime/agents/{role}.md"]
+            self.assertIn("## Quality bar", prompt)
+            self.assertIn(f"`As {role.split('-')[1]}` section", prompt)
+
     def test_reviewer_wrapper_has_no_edit_tools(self) -> None:
         wrapper = self.templates[".claude/agents/forge-reviewer.md"]
         tools_line = next(line for line in wrapper.splitlines() if line.startswith("tools:"))
@@ -129,9 +135,12 @@ class OrchestrateSpecialtyTests(unittest.TestCase):
         templates = iter_template_files("base")
         for name in SPECIALTIES:
             text = templates[f".forge/runtime/agents/specialties/{name}.md"]
-            for field in ("applies_to:", "applies_when:", "## Load", "## Focus", "## Review checklist"):
+            for field in ("applies_to:", "applies_when:", "## Load"):
                 self.assertIn(field, text, name)
-            self.assertIn("never changes the role's steps, gates, stop conditions, or limits", text)
+            applies_to = text.split("applies_to: [", 1)[1].split("]", 1)[0]
+            for role in (r.strip() for r in applies_to.split(",")):
+                self.assertIn(f"## As {role}", text, name)
+            self.assertIn("It never changes the role's steps, gates, stop conditions, or limits", text)
             self.assertIn(f".forge/agents/{name}.md", text)
 
     def test_user_specialty_folder_is_user_owned_and_not_seeded(self) -> None:

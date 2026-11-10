@@ -49,7 +49,7 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 | Reviewer | `.forge/runtime/agents/forge-reviewer.md` | `review` in a fresh context | nothing |
 
 ## specialties
-- A specialty is an overlay file that adds focus, context to load, and a review checklist to a role. It never changes role steps, gates, stop conditions, or tool limits.
+- A specialty is an overlay file with a `Load` section and one `As <role>` section per role it applies to. It never changes role steps, gates, stop conditions, or tool limits.
 - Lookup per name: `.forge/agents/<name>.md` (user-owned, wins) then `.forge/runtime/agents/specialties/<name>.md` (Forge-provided examples).
 - Selection order: names passed with `--as`; otherwise the planner matches each specialty's `applies_when` against the layers and files the SDD touches and lists the result in the SDD under `Specialties`; otherwise no overlay.
 - `tech-lead` always applies to the orchestrator.

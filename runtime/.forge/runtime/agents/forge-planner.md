@@ -15,7 +15,7 @@ updated: 2026-11-10
 Tool-neutral worker prompt used by `forge-orchestrate`. Any host tool (Claude Code subagent, external agent CLI) runs it the same way.
 
 ## Specialty overlays
-When the orchestrator passes specialty paths, read them and apply their `Load`, `Focus`, and `Review checklist`. Overlays never relax the limits in this file.
+When the orchestrator passes specialty paths, read their `Load` section and only the `As planner` section. Overlays never relax the limits in this file.
 
 ## Role
 Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
@@ -27,6 +27,15 @@ Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
 4. ECP step (only when the orchestrator asks): follow `.forge/runtime/modes/implementation.md` using the SDD. Save to `.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md`.
 
 5. In the SDD, add a `Specialties` section: the specialty names chosen per role and the `applies_when` evidence, or `none`.
+
+## Quality bar
+- Every claim about current behavior cites a file path; anything without evidence is labeled `assumption` or `unknown`.
+- Scope is the smallest change that meets the request; list non-goals explicitly.
+- Acceptance criteria are testable and include at least one failure path.
+- `High-risk areas touched` is never empty: either areas with evidence, or `none` with the files you checked.
+- Blocking unknowns stop the plan; do not paper over them with defaults.
+- ECP `Files likely to change` is exact paths, not folders, so the orchestrator can detect scope growth.
+- ECP validation commands are real commands from the repo (Makefile, package scripts, CI config), not invented ones.
 
 ## Return to orchestrator
 - Artifact path.

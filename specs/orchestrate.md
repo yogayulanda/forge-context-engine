@@ -45,7 +45,7 @@ Role prompts are tool-neutral under `.forge/runtime/agents/`. Tool wrappers such
 
 ### 4a. Specialties
 
-Roles say which step a worker does. Specialties say which expertise it brings. A specialty is an overlay file with `applies_to`, `applies_when`, `Load`, `Focus`, and `Review checklist`.
+Roles say which step a worker does. Specialties say which expertise it brings. A specialty is an overlay file with `applies_to`, `applies_when`, `Load`, and one `As <role>` section per role (for example `As planner`, `As executor`, `As reviewer`, `As orchestrator`). Each worker reads only its own role section.
 
 - Forge ships examples in `.forge/runtime/agents/specialties/`: `backend`, `frontend`, `mobile`, `infrastructure`, `security`, `tech-lead`. They are managed and refreshed by `forge update`.
 - Teams customize by adding or copying files to `.forge/agents/<name>.md`. That folder is user-owned; a file there wins over a Forge example of the same name.
