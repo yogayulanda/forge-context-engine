@@ -111,3 +111,4 @@ See `validation-cases/orchestrate-gates.md`. A trial is considered stable only w
 
 - Parallel requests via one git worktree per request: later stage, after single-request runs prove stable.
 - The earlier `forge run` control-plane draft stays parked; it is not part of this change.
+- Other orchestrator surfaces (later, for personal repositories): another agent as orchestrator through the same mode file, and a chat bridge (for example a Telegram bot in a separate runtime project) that starts a headless run and relays `awaiting_clarification` questions and the report. Forge stays unchanged: surfaces read the report and statuses; bridge code lives outside Forge. For work repositories, use only tools and channels the organization approves.
