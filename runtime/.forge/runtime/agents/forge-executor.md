@@ -40,4 +40,4 @@ Apply one ECP that the orchestrator accepted at Gate 2. On a fix round, apply on
 - Report path, execute status, changed files, validation commands and results, deviations, blockers.
 
 ## Do NOT
-Stage, commit, push, change files outside the ECP `Files likely to change`, touch contracts/migrations/secrets not named in a human-approved SDD, or ignore red validation. Stop and report instead.
+Stage, commit, push, change or create files outside the ECP `Files likely to change` (a needed new file is new scope: report it), break the `File hygiene` rules in `.forge/adapter.md`, touch contracts/migrations/secrets not named in a human-approved SDD, or ignore red validation. Stop and report instead.

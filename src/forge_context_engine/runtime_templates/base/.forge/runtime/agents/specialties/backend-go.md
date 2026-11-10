@@ -22,6 +22,7 @@ To customize, copy this file to `.forge/agents/backend-go.md` and edit the copy.
 - `go.mod`, the lint config (`.golangci.yml` or similar) when present, and the nearest existing Go file of the same kind.
 
 ## As executor
+- Files: lower-case `snake_case.go`, tests in `<name>_test.go` beside the code, one main type or concern per file; follow the package's existing file split.
 - Naming: MixedCaps, no underscores (except `TestX_Case`). Unexported by default; export only what another package calls. Functions start with a verb. Initialisms stay upper case (`userID`, `HTTPClient`). No `util`/`common` packages, no stutter (`transfer.Service`), no `Get` prefix on getters, 1-2 letter receivers, `-er` interfaces without `I` prefix.
 - Functions: `ctx context.Context` first and never stored in a struct; `error` last and checked at once; happy path left-aligned, no `else` after `return`; more than 4 parameters become a request or options struct; no naked bool arguments; accept small interfaces defined by the consumer, return concrete types; constructors `NewX` take dependencies explicitly; no mutable globals or `init()`; `os.Exit`/`log.Fatal` only in `main`; no `panic` in business code.
 - Errors: wrap as `fmt.Errorf("get account %s: %w", id, err)` without "failed to"; compare with `errors.Is`/`errors.As`, never by message text; error strings lower case without punctuation.

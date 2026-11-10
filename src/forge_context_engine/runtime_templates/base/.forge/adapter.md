@@ -74,6 +74,15 @@ Normal prompt UX:
 - Not required: `Use Forge plan mode for adding a small health check function. Do not edit files.`
 - The second form is allowed as a safety probe, but read-only core modes already carry their own no-edit boundary.
 
+## File hygiene
+
+Applies to every tool and mode that writes repository files, with or without `forge-orchestrate`.
+
+- Put a new file where existing files of the same kind live, and name it like its neighbors (case, separators, suffixes such as `_test`).
+- Never use version or status suffixes in file names: `_v2`, `_new`, `_old`, `_final`, `_fixed`, `_copy`, `_backup`, `_tmp`.
+- Never write notes, summaries, or scratch files (`SUMMARY.md`, `NOTES.md`, `plan.txt`, `output.log`) into the repository. Forge artifacts go to `.forge/generated/`; scratch work goes to `.forge/temp/` or stays in chat.
+- Create a file only when the task needs it. Prefer editing an existing file over adding a near-duplicate.
+
 ## Source of truth
 
 - `.forge/context` is the committed curated source of truth.

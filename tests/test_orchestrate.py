@@ -129,6 +129,14 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn(".forge/runtime/hooks/forge_git_guard.py", files)
         self.assertTrue(_is_managed_file(".forge/runtime/hooks/forge_git_guard.py", "service", ("codex",)))
 
+    def test_file_hygiene_is_shared_and_enforced_on_executor(self) -> None:
+        adapter = self.templates[".forge/adapter.md"]
+        for phrase in ("## File hygiene", "with or without `forge-orchestrate`", "`_v2`", "`SUMMARY.md`"):
+            self.assertIn(phrase, adapter)
+        executor = self.templates[".forge/runtime/agents/forge-executor.md"]
+        self.assertIn("change or create files outside the ECP", executor)
+        self.assertIn("`File hygiene`", executor)
+
     def test_tester_is_independent_and_scenario_driven(self) -> None:
         tester = self.templates[".forge/runtime/agents/forge-tester.md"]
         for phrase in (
