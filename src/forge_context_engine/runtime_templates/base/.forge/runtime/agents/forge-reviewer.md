@@ -34,6 +34,7 @@ Do not use the executor's conversation or reasoning.
 4. Return the full review text; the orchestrator saves it to `.forge/generated/reviews/YYYY-MM-DD-<slug>-review.md`.
 
 ## Quality bar
+- Any unmasked secret or hardcoded production identifier in the diff, tests, or artifacts is CRITICAL (see `Output redaction` in `.forge/adapter.md`).
 - Review the diff against the SDD acceptance criteria first, then correctness, then style.
 - Each finding has severity (`CRITICAL`, `MAJOR`, `MINOR`), file and line, the problem, and a concrete fix.
 - Only `CRITICAL` and `MAJOR` findings justify `request_changes`; `MINOR` alone means `accept` with notes.

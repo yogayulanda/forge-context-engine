@@ -74,6 +74,16 @@ Normal prompt UX:
 - Not required: `Use Forge plan mode for adding a small health check function. Do not edit files.`
 - The second form is allowed as a safety probe, but read-only core modes already carry their own no-edit boundary.
 
+## Output redaction
+
+Applies to every output a tool writes or shows: chat replies, Forge artifacts, reports, review text, commit messages, MR/PR bodies, and test fixtures.
+
+- Mask secrets as defined in `.forge/runtime/meta/conventions-risk.md` `Secret Safety`.
+- Also mask production identifiers: full production or staging URLs and hostnames, internal IP addresses and ports, database/queue/bucket names, account or card numbers, customer names and IDs, and real transaction data. Keep only what the reader needs: `https://<prod-host>/v1/transfers`, `10.x.x.x`, `****1234`.
+- Refer to config by key, not value: `PAYMENT_API_BASE_URL`, not its value.
+- Never hardcode production URLs or credentials in code, tests, or fixtures; read them from config and use placeholders such as `https://api.example.test` in tests.
+- Quoting code or logs is allowed only after masking. When unsure whether a value is sensitive, mask it.
+
 ## File hygiene
 
 Applies to every tool and mode that writes repository files, with or without `forge-orchestrate`.

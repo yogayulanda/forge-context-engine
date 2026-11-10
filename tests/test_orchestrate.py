@@ -137,6 +137,13 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("change or create files outside the ECP", executor)
         self.assertIn("`File hygiene`", executor)
 
+    def test_output_redaction_is_shared_and_checked_before_publish(self) -> None:
+        adapter = self.templates[".forge/adapter.md"]
+        for phrase in ("## Output redaction", "production identifiers", "`https://<prod-host>/v1/transfers`", "Never hardcode production URLs"):
+            self.assertIn(phrase, adapter)
+        self.assertIn("unmasked secret or production identifier is a stop", self.mode)
+        self.assertIn("is CRITICAL", self.templates[".forge/runtime/agents/forge-reviewer.md"])
+
     def test_tester_is_independent_and_scenario_driven(self) -> None:
         tester = self.templates[".forge/runtime/agents/forge-tester.md"]
         for phrase in (

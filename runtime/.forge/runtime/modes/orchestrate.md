@@ -81,7 +81,7 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 6b. Test: record `git status --porcelain`, then run the tester worker in a fresh context with the SDD, ECP, and diff. Afterwards, every file the tester added or changed must match the test paths in the `testing` overlay; otherwise stop. Tester verdict `fail` goes into the fix loop like review findings; `blocked_by_environment` for e2e is reported and continues only when unit, integration, and full-suite runs are green.
 7. Review: record `git status --porcelain` and `git diff` hash, then run the reviewer worker in a fresh context with the test report as an extra input, plus a security reviewer when the SDD lists a high-risk area. If the working tree changed during review, stop: reviewers must not modify files.
 8. Fix loop: on tester `fail` or review `request_changes`, pass only the failing scenarios, the review findings, and the ECP to the execute worker as the fix scope, then run a new tester and a new reviewer. Tester failures and review findings share the same counter: maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
-9. Publish: on `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution, test, and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, test report, review, and the gate trace, and states any e2e run that was `blocked_by_environment`.
+9. Publish: before committing, check the diff, artifacts, commit message, and MR/PR body against `Output redaction` in `.forge/adapter.md`; an unmasked secret or production identifier is a stop. On `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution, test, and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, test report, review, and the gate trace, and states any e2e run that was `blocked_by_environment`.
 10. Report: return the orchestration report.
 
 ## stop conditions
@@ -94,6 +94,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 - A worker finds a new blocking ambiguity after clarification. Report it as a `clarify miss` so the planner's checks can be improved; do not guess.
 - `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.
 - The diff touches a high-risk area the SDD did not list (step 6a).
+- An output to be published contains an unmasked secret or production identifier (step 9).
 - A reviewer changed the working tree (step 7).
 - The tester changed a file outside the test paths (step 6b).
 - The full test suite is red after the fix rounds.
