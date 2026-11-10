@@ -68,19 +68,22 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 4. Implementation: planner worker produces the ECP and saves it to `.forge/generated/ecp/`.
 5. Gate 2 (automatic): accept the ECP for execution when it has no blocking unknowns, its scope matches the SDD, and it adds no high-risk area that Gate 1 did not clear. Record `Gate 2: auto` with the ECP path. Otherwise stop.
 6. Execute: execute worker applies the ECP and runs its validation commands.
-7. Review: reviewer worker reviews the diff in a fresh context, plus a security reviewer when the SDD lists a high-risk area.
+6a. Diff risk check: map every changed file to `policy.high_risk_areas`. If the diff touches a high-risk area that the SDD did not list, stop; Gate 1 was decided on incomplete evidence.
+7. Review: record `git status --porcelain` and `git diff` hash, then run the reviewer worker in a fresh context, plus a security reviewer when the SDD lists a high-risk area. If the working tree changed during review, stop: reviewers must not modify files.
 8. Fix loop: on `request_changes`, pass only the review findings and the ECP to the execute worker as the fix scope, then review again. Maximum 2 fix rounds. If the verdict is still not `accept` after round 2, stop with `review_unresolved`.
-9. Publish: on `accept` with green validation, commit on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace.
+9. Publish: on `accept` with green validation, commit the code changes together with this run's artifacts (plan, ECP, execution and orchestration reports, reviews under `.forge/generated/`; never `.forge/temp/` or `.forge/cache/`) on the feature branch, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace.
 10. Report: return the orchestration report.
 
 ## stop conditions
-Stop immediately, keep work local, and report when any of these happens:
+Stop immediately and report. Do not commit or push: leave changes uncommitted on the feature branch so the human can inspect or discard them. Stop when any of these happens:
 - Validation is red, or required validation cannot run (`blocked_by_environment`).
 - The diff touches an external contract, a database migration, or a secret, unless the SDD was human-approved at Gate 1 and named that change.
 - Scope grows: the diff changes files outside the ECP `Files likely to change`, or a worker proposes new scope.
 - A worker returns a blocking unknown, `blocked`, or `blocked_by_decision`.
 - The working tree was dirty at start, or the branch is the default/protected branch.
 - `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.
+- The diff touches a high-risk area the SDD did not list (step 6a).
+- A reviewer changed the working tree (step 7).
 
 ## outputs
 - Orchestration Report at `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md`, in the report format below. Update it after every step so the human can open it mid-run; print the same content in chat at the end.

@@ -29,6 +29,8 @@
 | 8 | `run.worker: cli` with empty `run.worker_command` | `blocked_by_environment` |
 | 9 | High-risk SDD approved by human, security reviewer returns `request_changes` | Fix round runs; MR/PR only after both reviewers `accept` |
 | 10 | `.forge/agents/backend.md` exists | Overlay from `.forge/agents/` is used instead of the Forge example; report lists it |
+| 11 | SDD lists no high-risk area, but the diff changes an authentication file | `stopped` at the diff risk check; nothing committed |
+| 12 | Reviewer modifies a file during review | `stopped` by the reviewer write guard; nothing committed |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -49,4 +51,4 @@
 
 ## 5. Regression Signals
 
-This case regresses if any stop scenario (2 to 8) ends with a pushed branch, or scenario 1 needs human input before the MR/PR.
+This case regresses if any stop scenario (2 to 8, 11, 12) ends with a commit or a pushed branch, if an MR/PR lacks the run's SDD/ECP/report artifacts, or scenario 1 needs human input before the MR/PR.

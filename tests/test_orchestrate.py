@@ -76,6 +76,10 @@ class OrchestrateContractTests(unittest.TestCase):
             "orchestration-report.md",
             "| Target tool |",
             "## Steps",
+            "Diff risk check",
+            "reviewers must not modify files",
+            "leave changes uncommitted",
+            "this run's artifacts",
         ):
             self.assertIn(phrase, self.mode)
 

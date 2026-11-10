@@ -64,7 +64,7 @@ The high-risk list comes from config, so each repository can tune it. The defaul
 
 ## 6. Stop conditions
 
-The orchestrator stops, does not push, and reports when:
+The orchestrator stops, does not commit or push, leaves changes uncommitted on the feature branch, and reports when:
 
 - validation is red or cannot run;
 - the diff changes an external contract, a migration, or a secret not named in a human-approved SDD;
@@ -72,11 +72,13 @@ The orchestrator stops, does not push, and reports when:
 - a worker returns a blocking unknown or a blocked status;
 - the review verdict is not `accept` after 2 fix rounds;
 - the working tree is dirty at start, or the branch is the default/protected branch;
-- `run.worker: cli` is set without a working `run.worker_command`.
+- `run.worker: cli` is set without a working `run.worker_command`;
+- the diff touches a high-risk area the SDD did not list (Gate 1 cross-check);
+- a reviewer changed the working tree (reviewer write guard).
 
 ## 7. Publication
 
-On `accept` with green validation: commit on `forge/<YYYY-MM-DD>-<slug>`, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace. No force-push.
+On `accept` with green validation: commit the code changes plus this run's `.forge/generated/` artifacts on `forge/<YYYY-MM-DD>-<slug>`, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace. No force-push.
 
 ## 8. Worker configuration
 
