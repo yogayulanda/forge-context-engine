@@ -87,3 +87,30 @@ Forge installs `.forge/runtime/hooks/forge_git_guard.py` (Python standard librar
 ```
 
 The orchestrator role blocks pushes to `main`, `master`, or the remote default branch, force pushes, tag pushes, branch deletes, `git tag`, `git merge`, and MR/PR merge commands. Forge does not write `.claude/settings.json` itself, so existing settings are never overwritten.
+
+## Keep sensitive files out of the model
+
+`Output redaction` in `.forge/adapter.md` controls what the AI writes. It cannot stop a file's content from reaching the model once the AI reads it. To stop the read itself, add deny rules to the target repository's `.claude/settings.json` (merge with existing content, and adjust the paths to your repository):
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(secrets/**)",
+      "Read(config/prod/**)"
+    ]
+  }
+}
+```
+
+Behavior per the Claude Code permissions documentation (verify against the current docs, since it changes between versions):
+
+- Bare file names match at any depth, so `Read(.env)` blocks every `.env` under the project. A single-directory pattern such as `secrets/**` in a deny rule matches that directory at any depth.
+- Read deny rules apply to the built-in file tools, to file commands Claude Code recognizes in Bash (`cat`, `head`, `tail`, `sed`), and to redirection targets. They apply right away, without the workspace trust step.
+- They do not block a command that reads files without naming them (for example `grep -r pattern .`) or a script that opens files itself. For OS-level blocking, enable the Claude Code sandbox.
+
+Other tools have their own controls. GitHub Copilot Business and Enterprise use content exclusion configured by an organization admin. Whether your provider uses your data for training depends on your plan and organization settings; confirm with your security team.
