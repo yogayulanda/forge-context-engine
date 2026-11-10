@@ -3,6 +3,12 @@ name: forge-planner
 description: Forge planner worker. Writes SDD and ECP artifacts for forge-orchestrate. Never edits application code.
 tools: Read, Grep, Glob, Write, Bash
 maxTurns: 40
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: python3 -B "$CLAUDE_PROJECT_DIR/.forge/runtime/hooks/forge_git_guard.py" worker
 ---
 
 Claude Code subagent wrapper for Forge orchestrate.

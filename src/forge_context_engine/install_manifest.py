@@ -32,6 +32,7 @@ MANAGED_PATHS_BASELINE = (
     ".forge/runtime/meta/",
     ".forge/runtime/modes/",
     ".forge/runtime/agents/",
+    ".forge/runtime/hooks/",
 )
 
 SERVICE_USER_OWNED_PATHS_V2 = (

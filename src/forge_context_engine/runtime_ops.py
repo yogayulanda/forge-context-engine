@@ -2125,7 +2125,7 @@ def _is_managed_file(rel_path: str, profile: str, selected_tools: tuple[str, ...
         return True
     if rel_path == ".forge/workspace.yaml":
         return profile == PROFILE_WORKSPACE
-    return rel_path.startswith((".forge/runtime/meta/", ".forge/runtime/modes/", ".forge/runtime/agents/"))
+    return rel_path.startswith((".forge/runtime/meta/", ".forge/runtime/modes/", ".forge/runtime/agents/", ".forge/runtime/hooks/"))
 
 
 def _looks_like_legacy_forge_config(content: str) -> bool:

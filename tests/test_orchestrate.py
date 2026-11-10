@@ -121,6 +121,13 @@ class OrchestrateContractTests(unittest.TestCase):
             self.assertRegex(self.templates[f".claude/agents/{role}.md"], r"\nmaxTurns: \d+\n")
             self.assertNotIn("Agent", self.templates[f".claude/agents/{role}.md"].split("tools:", 1)[1].split("\n", 1)[0])
 
+    def test_workers_register_git_guard_and_guard_ships(self) -> None:
+        for role in ROLES:
+            self.assertIn("forge_git_guard.py\" worker", self.templates[f".claude/agents/{role}.md"])
+        files = _files(("codex",))
+        self.assertIn(".forge/runtime/hooks/forge_git_guard.py", files)
+        self.assertTrue(_is_managed_file(".forge/runtime/hooks/forge_git_guard.py", "service", ("codex",)))
+
     def test_reviewer_wrapper_has_no_edit_tools(self) -> None:
         wrapper = self.templates[".claude/agents/forge-reviewer.md"]
         tools_line = next(line for line in wrapper.splitlines() if line.startswith("tools:"))
@@ -193,6 +200,7 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
         ("runtime/adapters/claude/commands/forge-orchestrate.md", ".claude/commands/forge-orchestrate.md"),
         *((f"runtime/.forge/runtime/agents/{r}.md", f".forge/runtime/agents/{r}.md") for r in ROLES),
         *((f"runtime/adapters/claude/agents/{r}.md", f".claude/agents/{r}.md") for r in ROLES),
+        ("runtime/.forge/runtime/hooks/forge_git_guard.py", ".forge/runtime/hooks/forge_git_guard.py"),
         *(
             (f"runtime/.forge/runtime/agents/specialties/{n}.md", f".forge/runtime/agents/specialties/{n}.md")
             for n in ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead")

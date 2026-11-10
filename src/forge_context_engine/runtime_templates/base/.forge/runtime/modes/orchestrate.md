@@ -56,13 +56,19 @@ Run one request through `plan -> implementation -> execute -> review` by delegat
 - When the SDD lists any high-risk area, run one extra reviewer with the `security` specialty in addition to the normal reviewer. Both must return `accept`.
 - Pass the role prompt and the selected overlay paths to each worker. Do not inline their content.
 
+## git guard
+- `.forge/runtime/hooks/forge_git_guard.py` is a deterministic check, not an AI judgment. Exit code 2 blocks the command.
+- `worker` role (registered in each `.claude/agents/forge-<role>.md`): blocks `git commit`, `push`, `merge`, `rebase`, `tag`, `reset`, `checkout`, `switch`, and MR/PR merge commands.
+- `orchestrator` role (registered by the human in `.claude/settings.json`): blocks pushes to `main`, `master`, or the remote default branch, force pushes, tag pushes, branch deletes, `git tag`, `git merge`, and MR/PR merge commands.
+- A blocked command is a stop condition; report the guard message.
+
 ## worker dispatch
 - `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`, whose `maxTurns` caps each worker; a worker that hits the cap without a complete report counts as `blocked`. The reviewer is always a new subagent, never a resumed one.
 - `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
 - The orchestrator may run the planner and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
 ## behavior
-1. Preflight: confirm the working tree is clean, the current branch is not the default/protected branch, and create a feature branch `forge/<YYYY-MM-DD>-<slug>` when not already on one.
+1. Preflight: when the host is Claude Code, confirm `.claude/settings.json` registers `.forge/runtime/hooks/forge_git_guard.py orchestrator` as a `PreToolUse` Bash hook; if it does not, continue but put `git guard hook missing` in the report `Note`. Confirm the working tree is clean, the current branch is not the default/protected branch, and create a feature branch `forge/<YYYY-MM-DD>-<slug>` when not already on one.
 2. Clarify, then plan: the planner reads the request against the repository (step list in `forge-planner.md`) before writing the SDD. If it finds any ambiguity, contradiction, or missing value that changes the outcome, it saves the plan with status `blocked_by_decision` and a `Clarification Questions` section. Stop with `awaiting_clarification` and show all questions at once, in `ui.language`. Do not continue on guesses.
 2b. Resume after answers: the human answers in one reply (accepting recommendations is allowed, for example `ok all recommendations, except Q2: B`). The planner records the answers in the plan under `Confirmed Decisions` and writes the SDD. Ask again only if an answer itself creates a new blocking question.
 3. Gate 1 (risk-gated): classify the SDD against `policy.high_risk_areas` and `policy.require_human_confirmation_for`. If any area matches, or the classification is uncertain, stop with `awaiting_sdd_approval`. Otherwise record `Gate 1: auto (no high-risk area)` with the evidence and continue.

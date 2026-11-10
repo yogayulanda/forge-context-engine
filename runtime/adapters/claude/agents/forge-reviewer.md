@@ -3,6 +3,12 @@ name: forge-reviewer
 description: Forge reviewer worker. Reviews the diff in a fresh context and returns a verdict. Never edits code.
 tools: Read, Grep, Glob, Bash
 maxTurns: 40
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: python3 -B "$CLAUDE_PROJECT_DIR/.forge/runtime/hooks/forge_git_guard.py" worker
 ---
 
 Claude Code subagent wrapper for Forge orchestrate.

@@ -63,3 +63,27 @@ The Claude adapter must not:
 - introduce orchestration, schedulers, or persistent memory
 
 Current code, docs, ADRs, and human confirmations win over adapter text.
+
+## forge-orchestrate git guard
+
+Forge installs `.forge/runtime/hooks/forge_git_guard.py` (Python standard library only). Worker subagents in `.claude/agents/` already register it with the `worker` role. To guard the orchestrator session as well, add this once to the target repository's `.claude/settings.json` (merge with existing content):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -B \"$CLAUDE_PROJECT_DIR/.forge/runtime/hooks/forge_git_guard.py\" orchestrator"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The orchestrator role blocks pushes to `main`, `master`, or the remote default branch, force pushes, tag pushes, branch deletes, `git tag`, `git merge`, and MR/PR merge commands. Forge does not write `.claude/settings.json` itself, so existing settings are never overwritten.

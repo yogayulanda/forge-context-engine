@@ -80,6 +80,15 @@ The orchestrator stops, does not commit or push, leaves changes uncommitted on t
 - the diff touches a high-risk area the SDD did not list (Gate 1 cross-check);
 - a reviewer changed the working tree (reviewer write guard).
 
+## 6a. Git guard
+
+Some stops are enforced by a script instead of the agent's judgment. `.forge/runtime/hooks/forge_git_guard.py` runs as a Claude Code `PreToolUse` hook on Bash and blocks with exit code 2:
+
+- worker role (registered in the Forge subagent files): any commit, push, merge, rebase, tag, reset, checkout, or switch;
+- orchestrator role (registered by the human in `.claude/settings.json`): push to `main`, `master`, or the remote default branch, force push, tag push, branch delete, `git tag`, `git merge`, and MR/PR merge commands.
+
+Other stop conditions (scope, risk, reviewer writes) are agent-checked for now; candidates for script checks are chosen from trial results.
+
 ## 7. Publication
 
 On `accept` with green validation: commit the code changes plus this run's `.forge/generated/` artifacts on `forge/<YYYY-MM-DD>-<slug>`, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace. No force-push.
