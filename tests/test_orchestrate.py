@@ -169,7 +169,7 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("only inside `forge-orchestrate`", conventions)
 
 
-SPECIALTIES = ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead", "testing")
+SPECIALTIES = ("backend", "backend-go", "frontend", "mobile", "infrastructure", "security", "tech-lead", "testing")
 
 
 class OrchestrateSpecialtyTests(unittest.TestCase):
@@ -201,6 +201,16 @@ class OrchestrateSpecialtyTests(unittest.TestCase):
         )
         self.assertFalse(any(rel.startswith(".forge/agents/") for rel in _files(("claude",))))
 
+    def test_backend_overlays_defer_to_repo_and_shared_errors(self) -> None:
+        templates = iter_template_files("base")
+        backend = templates[".forge/runtime/agents/specialties/backend.md"]
+        for phrase in ("existing pattern wins", "shared error catalog", "new error code is a contract change", "binary floating point"):
+            self.assertIn(phrase, backend.replace("A new", "a new"))
+        go = templates[".forge/runtime/agents/specialties/backend-go.md"]
+        for phrase in ("existing Go style wins", "ctx context.Context", "enums start at 1", "## As executor", "## As reviewer"):
+            self.assertIn(phrase, go)
+        self.assertNotIn("## As planner", go)
+
     def test_mode_defines_lookup_and_security_reviewer(self) -> None:
         mode = iter_template_files("base")[MODE]
         self.assertIn("`.forge/agents/<name>.md` (user-owned, wins)", mode)
@@ -220,7 +230,7 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
         ("runtime/.forge/runtime/hooks/forge_git_guard.py", ".forge/runtime/hooks/forge_git_guard.py"),
         *(
             (f"runtime/.forge/runtime/agents/specialties/{n}.md", f".forge/runtime/agents/specialties/{n}.md")
-            for n in ("backend", "frontend", "mobile", "infrastructure", "security", "tech-lead", "testing")
+            for n in SPECIALTIES
         ),
     )
 

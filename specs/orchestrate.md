@@ -52,7 +52,7 @@ The executor writes unit tests next to its code. A separate tester then writes i
 
 Roles say which step a worker does. Specialties say which expertise it brings. A specialty is an overlay file with `applies_to`, `applies_when`, `Load`, and one `As <role>` section per role (for example `As planner`, `As executor`, `As reviewer`, `As orchestrator`). Each worker reads only its own role section.
 
-- Forge ships examples in `.forge/runtime/agents/specialties/`: `backend`, `frontend`, `mobile`, `infrastructure`, `security`, `tech-lead`. They are managed and refreshed by `forge update`.
+- Forge ships examples in `.forge/runtime/agents/specialties/`: `backend`, `backend-go`, `frontend`, `mobile`, `infrastructure`, `security`, `tech-lead`, `testing`. Language overlays such as `backend-go` stack on top of `backend`. The repository's existing patterns win over every overlay rule. They are managed and refreshed by `forge update`.
 - Teams customize by adding or copying files to `.forge/agents/<name>.md`. That folder is user-owned; a file there wins over a Forge example of the same name.
 - Selection: `--as <names>`, else the planner matches `applies_when` against the SDD and records the choice, else no overlay. `tech-lead` always applies to the orchestrator.
 - High-risk SDDs get an extra `security` reviewer; both reviewers must `accept`.
