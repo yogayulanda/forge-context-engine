@@ -2,13 +2,13 @@
 
 Adapters are thin invocation bridges for AI tools.
 
-They point tools to shared Forge skills and Forge context. They do not contain repository cognition, lifecycle semantics, governance semantics, runtime state, orchestration behavior, or memory.
+They point tools to shared Forge skills and Forge context. They do not contain repository cognition, lifecycle semantics, governance semantics, runtime state, orchestration behavior, or memory. Orchestration lives only in the shared `forge-orchestrate` skill and `orchestrate` mode; adapters may only point to it.
 
 ## Layout
 
 ```text
 adapters/
-+-- claude/
++-- claude/        (commands/ and agents/)
 +-- codex/
 +-- copilot/
 +-- opencode/
@@ -25,12 +25,14 @@ Adapters may:
 - Map tool-specific command surfaces to shared skills.
 - Provide loading hints.
 - Define concise command wrappers.
+- Define thin worker wrappers (for example `.claude/agents/forge-<role>.md`) that point to `.forge/runtime/agents/forge-<role>.md` and set tool limits.
 
 Adapters must not:
 - Duplicate `.forge/context` content.
 - Define repository-specific behavior.
 - Reimplement mode semantics.
 - Add workflow DAGs, execution engines, schedulers, triggers, agent loops, plugin marketplaces, or memory systems.
+- Add their own orchestration logic or gate rules; `forge-orchestrate` owns those.
 
 The same adapter command must behave differently across repositories only because local `.forge/context` differs.
 

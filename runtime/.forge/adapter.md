@@ -23,7 +23,7 @@ Thin adapter contract for target-repository entrypoints such as `AGENTS.md`, `CL
 - All tools must treat `.forge/context-patches/...` as proposals only until reviewed and promoted.
 - Tool-specific edit mechanics belong in tool wrappers or a clearly labeled `Target Tool Notes` section, not in universal lifecycle artifacts.
 - Universal Plan, ECP, Execution Report, and Review artifacts stay tool-neutral unless explicitly targeted.
-- Commit, push, merge, and similar repository publication actions remain human-controlled unless explicitly requested.
+- Commit, push, merge, and similar repository publication actions remain human-controlled unless explicitly requested. `forge-orchestrate` is such a request: it may commit and push a feature branch and open an MR/PR, never merge, tag, or deploy.
 
 ## Core lifecycle
 
@@ -35,13 +35,14 @@ init -> ask -> plan -> implementation -> execute -> review -> verify-context
 
 - `plan` creates a reviewable plan or SDD and does not edit code.
 - `plan` is read-only by definition; users do not need to append "Do not edit files" in normal usage.
-- Gate 1 = human approval from `plan` to `implementation`.
+- Gate 1 = human approval from `plan` to `implementation`. Under `forge-orchestrate`, Gate 1 is automatic only when the SDD touches no `policy.high_risk_areas` or `policy.require_human_confirmation_for` area; otherwise it stays human.
 - `implementation` creates an ECP/readiness package and does not edit code.
 - `implementation` is read-only by definition; users do not need to append "Do not edit files" in normal usage.
-- Gate 2 = human approval from ECP to `execute`.
+- Gate 2 = human approval from ECP to `execute`. Under `forge-orchestrate`, Gate 2 is automatic: the invocation is the approval, and the orchestrator records the decision in its gate trace.
 - `execute` applies only an approved ECP within bounded scope and reports validation honestly.
 - `review` checks correctness, validation evidence, security, and context impact.
-- `review` is read-only by default; fixes require a separately approved execution flow.
+- `review` is read-only by default; fixes require a separately approved execution flow. Under `forge-orchestrate`, review findings are the fix scope for at most 2 fix rounds.
+- `orchestrate` sequences worker agents through `plan -> implementation -> execute -> review` for one request and stops at a pushed feature branch and MR/PR. See `.forge/runtime/modes/orchestrate.md`.
 - `verify-context` checks `.forge/context` health only.
 
 Legacy names such as `planning`, `testing`, `incident`, and `refactor` are not active core modes. If present, they are legacy aliases or scenario guidance only.
@@ -70,6 +71,25 @@ Normal prompt UX:
 - Use: `Use Forge plan mode for adding a small health check function.`
 - Not required: `Use Forge plan mode for adding a small health check function. Do not edit files.`
 - The second form is allowed as a safety probe, but read-only core modes already carry their own no-edit boundary.
+
+## Output redaction
+
+Applies to every output a tool writes or shows: chat replies, Forge artifacts, reports, review text, commit messages, MR/PR bodies, and test fixtures.
+
+- Mask secrets as defined in `.forge/runtime/meta/conventions-risk.md` `Secret Safety`.
+- Also mask production identifiers: full production or staging URLs and hostnames, internal IP addresses and ports, database/queue/bucket names, account or card numbers, customer names and IDs, and real transaction data. Keep only what the reader needs: `https://<prod-host>/v1/transfers`, `10.x.x.x`, `****1234`.
+- Refer to config by key, not value: `PAYMENT_API_BASE_URL`, not its value.
+- Never hardcode production URLs or credentials in code, tests, or fixtures; read them from config and use placeholders such as `https://api.example.test` in tests.
+- Quoting code or logs is allowed only after masking. When unsure whether a value is sensitive, mask it.
+
+## File hygiene
+
+Applies to every tool and mode that writes repository files, with or without `forge-orchestrate`.
+
+- Put a new file where existing files of the same kind live, and name it like its neighbors (case, separators, suffixes such as `_test`).
+- Never use version or status suffixes in file names: `_v2`, `_new`, `_old`, `_final`, `_fixed`, `_copy`, `_backup`, `_tmp`.
+- Never write notes, summaries, or scratch files (`SUMMARY.md`, `NOTES.md`, `plan.txt`, `output.log`) into the repository. Forge artifacts go to `.forge/generated/`; scratch work goes to `.forge/temp/` or stays in chat.
+- Create a file only when the task needs it. Prefer editing an existing file over adding a near-duplicate.
 
 ## Source of truth
 

@@ -34,6 +34,7 @@ Skills are not:
 | `review` | `forge-review` |
 | `ai-readiness` | `forge-ai-readiness` |
 | `verify-context` | `forge-verify-context` |
+| `orchestrate` | `forge-orchestrate` |
 
 Scenario compatibility skills such as `forge-test`, `forge-incident`, and `forge-refactor` route into the core lifecycle. They are not core modes.
 
@@ -57,4 +58,4 @@ Adapters reference skills. Skills invoke Forge modes. Forge context remains auth
 tool syntax -> tool UX layer -> adapter -> shared skill -> .forge/context mode -> scoped repository evidence
 ```
 
-Skills may reduce invocation friction. They must not add autonomous chaining, schedulers, DAGs, CI/CD behavior, deploy logic, agent loops, persistent memory, or hidden execution state.
+Skills may reduce invocation friction. They must not add autonomous chaining, schedulers, DAGs, CI/CD behavior, deploy logic, agent loops, persistent memory, or hidden execution state. The only exception is `forge-orchestrate`, which sequences worker agents for one human-invoked request within `.forge/runtime/modes/orchestrate.md`.

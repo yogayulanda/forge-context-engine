@@ -47,6 +47,8 @@ These are future directions only. They do not change the v1 baseline and should 
 
 ## Rules For Future Refinement
 
+> Amendment (2026-11-10, proposed): `forge-orchestrate` is a bounded exception to the no-orchestration and no-agent rules below. See `specs/orchestrate.md`.
+
 - Preserve repository/code as source of truth.
 - Keep lifecycle modes distinct.
 - Do not add statuses, modes, artifact types, or workflow concepts without repeated real-world evidence.

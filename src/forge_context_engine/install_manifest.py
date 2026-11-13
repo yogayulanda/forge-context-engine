@@ -31,6 +31,8 @@ MANAGED_PATHS_BASELINE = (
     ".forge/skills/",
     ".forge/runtime/meta/",
     ".forge/runtime/modes/",
+    ".forge/runtime/agents/",
+    ".forge/runtime/hooks/",
 )
 
 SERVICE_USER_OWNED_PATHS_V2 = (
@@ -74,6 +76,7 @@ WORKSPACE_USER_OWNED_PATHS_V2 = (
 )
 
 SHARED_USER_OWNED_PATHS_V2 = (
+    ".forge/agents/",
     ".forge/context-patches/",
     ".forge/generated/",
 )
@@ -236,7 +239,7 @@ def build_managed_paths(profile: str, selected_tools: tuple[str, ...]) -> tuple[
         paths.append(".opencode/skills/")
         paths.append(".opencode/opencode.json")
     if "claude" in selected_tools:
-        paths.extend(("CLAUDE.md", ".claude/.gitignore", ".claude/commands/"))
+        paths.extend(("CLAUDE.md", ".claude/.gitignore", ".claude/commands/", ".claude/agents/"))
     if "copilot" in selected_tools:
         paths.extend((".github/copilot-instructions.md", ".github/skills/"))
     if profile == PROFILE_WORKSPACE:

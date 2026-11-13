@@ -13,17 +13,20 @@ The goal is to preserve a scalable, modular, token-efficient, and hallucination-
 - mobile workflows
 - infrastructure workflows
 - Forge lifecycle modes: ask, planning, implementation, execute, testing, review, incident, and refactor
+- bounded orchestration of one request through `forge-orchestrate` (plan -> implementation -> execute -> review -> MR/PR)
 - thin invocation surfaces for Claude, Codex, GitHub Copilot, Cursor, and future AI tools
 
 This phase is NOT about:
 - automation runtime
 - deployment workflows
-- orchestration systems
+- general orchestration systems, schedulers, or workflow DAGs
 - CI/CD pipelines
 - runtime executors
 - persistent AI memory systems
 - plugin marketplaces
-- autonomous chaining
+- autonomous chaining across requests
+
+Orchestration exception: `forge-orchestrate` (`specs/orchestrate.md`) may sequence worker agents for one human-invoked request, with risk-gated Gate 1, automatic Gate 2, a 2-round review fix loop, and a stop at a pushed feature branch plus MR/PR. It never merges, tags, or deploys. No other skill, mode, or adapter orchestrates.
 
 Canonical invocation chain:
 
@@ -60,7 +63,7 @@ When modifying Forge:
 - Keep mode files compact and machine-resolvable.
 - Keep skills useful but thin.
 - Keep adapters as pointers to shared skills and `.forge/context`, not alternate cognition stores.
-- Do not add orchestration, schedulers, workflow DAGs, runtime executors, deploy/CI behavior, persistent memory systems, plugin marketplaces, or autonomous chaining.
+- Do not add orchestration outside `forge-orchestrate`, and do not add schedulers, workflow DAGs, runtime executors, deploy/CI behavior, persistent memory systems, plugin marketplaces, or chaining across requests.
 
 Output style:
 - structured

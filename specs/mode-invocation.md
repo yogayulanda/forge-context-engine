@@ -504,7 +504,7 @@ See `docs/workflow.md` for the canonical workflow narrative, approval gate UX, a
 
 ### Approval Gates
 
-Both gates are required and cannot be skipped. See `docs/workflow.md` for exact approval signal wording.
+Both gates are required. In manual flow they cannot be skipped. See `docs/workflow.md` for exact approval signal wording. Under `forge-orchestrate`, the gates are decided as described in `specs/orchestrate.md`: Gate 1 stays human for SDDs that touch a high-risk area, and Gate 2 is automatic for the invoked request.
 
 - **Gate 1**: Human must explicitly approve a plan before `forge-implementation` treats it as approved. Plan output begins as `status: proposed`.
 - **Gate 2**: Human must explicitly approve an ECP before `forge-execute` runs. ECP begins as `status: proposed`.

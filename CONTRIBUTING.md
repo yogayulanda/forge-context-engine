@@ -2,7 +2,7 @@
 
 Forge is a foundation for bounded engineering cognition: repo-first, evidence-driven, operational, and human-review-aware.
 
-Contributions are welcome when they make real engineering work clearer, safer, and easier to review without expanding Forge into an autonomous automation platform.
+Contributions are welcome when they make real engineering work clearer, safer, and easier to review without expanding Forge into an autonomous automation platform. The one bounded exception is `forge-orchestrate`; see `specs/orchestrate.md`.
 
 ## Contribution Philosophy
 
@@ -17,8 +17,9 @@ Prefer changes that:
 
 Avoid changes that:
 
-- add orchestration semantics
-- add agent loops or autonomous execution systems
+- add orchestration semantics outside `forge-orchestrate`
+- widen `forge-orchestrate` beyond one request, its stop conditions, or its no-merge/no-deploy boundary
+- add agent loops or autonomous execution systems other than the bounded review -> fix loop in `forge-orchestrate`
 - add DAG or workflow engines
 - add hidden persistent memory systems
 - encourage broad global context loading by default
