@@ -146,6 +146,7 @@ class OrchestrateContractTests(unittest.TestCase):
             self.assertIn("forge_git_guard.py\" worker", self.templates[f".claude/agents/{role}.md"])
         files = _files(("codex",))
         self.assertIn(".forge/runtime/hooks/forge_git_guard.py", files)
+        self.assertIn(".forge/runtime/meta/git-guard-rules.json", files)
         self.assertTrue(_is_managed_file(".forge/runtime/hooks/forge_git_guard.py", "service", ("codex",)))
 
     def test_file_hygiene_is_shared_and_enforced_on_executor(self) -> None:
@@ -263,6 +264,7 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
         *((f"runtime/.forge/runtime/agents/{r}.md", f".forge/runtime/agents/{r}.md") for r in ROLES),
         *((f"runtime/adapters/claude/agents/{r}.md", f".claude/agents/{r}.md") for r in ROLES),
         ("runtime/.forge/runtime/hooks/forge_git_guard.py", ".forge/runtime/hooks/forge_git_guard.py"),
+        ("runtime/.forge/runtime/meta/git-guard-rules.json", ".forge/runtime/meta/git-guard-rules.json"),
         *(
             (f"runtime/.forge/runtime/agents/specialties/{n}.md", f".forge/runtime/agents/specialties/{n}.md")
             for n in SPECIALTIES

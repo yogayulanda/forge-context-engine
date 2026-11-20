@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -9,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARD = ROOT / "src/forge_context_engine/runtime_templates/base/.forge/runtime/hooks/forge_git_guard.py"
+RULES = json.loads((GUARD.parents[1] / "meta/git-guard-rules.json").read_text(encoding="utf-8"))
 
 
 def _git(cwd: Path, *args: str) -> None:
@@ -86,6 +88,70 @@ class GitGuardTests(unittest.TestCase):
         for command in ("git diff", "git status --porcelain", "git log -5 --oneline", "go test ./... 2>&1", "git --no-pager diff --stat"):
             code, _ = self.run_guard(command, "worker")
             self.assertEqual(code, 0, command)
+
+    def test_decisions_match_rules_file(self) -> None:
+        _git(self.repo, "checkout", "-q", "-b", "forge/x")
+        pattern_samples = {"gh pr merge 5", "glab mr merge 12"}
+        for role, role_rules in RULES["roles"].items():
+            for sub in role_rules["blocked_git"]:
+                code, err = self.run_guard(f"git {sub} x", role)
+                self.assertEqual(code, 2, (role, sub))
+                self.assertIn(role_rules["blocked_git"][sub], err)
+            for pattern in role_rules["blocked_patterns"]:
+                samples = [c for c in pattern_samples if re.search(pattern, c)]
+                self.assertTrue(samples, f"no sample command for pattern {pattern}")
+                for command in samples:
+                    self.assertEqual(self.run_guard(command, role)[0], 2, (role, command))
+            if "push" not in role_rules["blocked_git"]:
+                for branch in RULES["protected_branches"]:
+                    self.assertEqual(self.run_guard(f"git push origin {branch}", role)[0], 2, (role, branch))
+                for flag in RULES["forbidden_push_flags"]:
+                    self.assertEqual(self.run_guard(f"git push {flag} origin forge/x", role)[0], 2, (role, flag))
+                self.assertEqual(self.run_guard("git push origin forge/x", role)[0], 0, role)
+
+    def test_unknown_role_and_missing_rules_fail_closed(self) -> None:
+        self.assertEqual(self.run_guard("git status", "intern")[0], 2)
+        code, err = self._run_with_rules(None)
+        self.assertEqual(code, 2)
+        self.assertIn("git-guard-rules.json", err)
+
+    def test_malformed_rules_fail_closed(self) -> None:
+        good_role = {"blocked_patterns": {}, "blocked_git": {"commit": "no"}}
+        base = {"protected_branches": ["main"], "forbidden_push_flags": ["-f"], "roles": {"worker": good_role}}
+        cases = [
+            "not json",
+            [],
+            {},
+            {**base, "roles": {}},
+            {**base, "roles": {"worker": []}},
+            {**base, "roles": {"worker": {**good_role, "blocked_git": ["commit"]}}},
+            {**base, "roles": {"worker": {**good_role, "blocked_patterns": {"(": "x"}}}},
+            {**base, "roles": {"worker": {"blocked_git": {"commit": "no"}}}},
+            {k: v for k, v in base.items() if k != "forbidden_push_flags"},
+            {k: v for k, v in base.items() if k != "protected_branches"},
+            {**base, "protected_branches": "main"},
+            {**base, "roles": {"worker": {**good_role, "blocked_git": {"commit": ""}}}},
+            "[" * 100000,
+        ]
+        self.assertEqual(self._run_with_rules(json.dumps(base))[0], 0)  # control: valid file allows git status
+        for rules in cases:
+            text = rules if isinstance(rules, str) else json.dumps(rules)
+            code, err = self._run_with_rules(text)
+            self.assertEqual(code, 2, text)
+            self.assertIn("git-guard-rules.json", err, text)
+
+    def _run_with_rules(self, rules_text: str | None) -> tuple[int, str]:
+        """Run a copy of the guard whose sibling rules file holds rules_text (None: no file)."""
+        root = Path(tempfile.mkdtemp(dir=self._tmp.name)) / ".forge/runtime"
+        (root / "hooks").mkdir(parents=True)
+        (root / "meta").mkdir()
+        (root / "hooks" / GUARD.name).write_text(GUARD.read_text(encoding="utf-8"), encoding="utf-8")
+        if rules_text is not None:
+            (root / "meta/git-guard-rules.json").write_text(rules_text, encoding="utf-8")
+        payload = {"tool_name": "Bash", "tool_input": {"command": "git status"}, "cwd": str(self.repo)}
+        result = subprocess.run([sys.executable, "-B", str(root / "hooks" / GUARD.name), "worker"],
+                                input=json.dumps(payload), capture_output=True, text=True)
+        return result.returncode, result.stderr
 
     def test_non_bash_tool_is_ignored(self) -> None:
         result = subprocess.run(

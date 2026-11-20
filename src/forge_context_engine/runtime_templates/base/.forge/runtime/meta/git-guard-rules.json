@@ -1,0 +1,33 @@
+{
+  "protected_branches": ["main", "master"],
+  "forbidden_push_flags": ["-f", "--force", "--force-with-lease", "--mirror", "--tags", "--delete", "-d", "--all"],
+  "roles": {
+    "worker": {
+      "blocked_patterns": {
+        "\\b(gh\\s+pr|glab\\s+mr)\\s+merge\\b": "merging an MR/PR is a human action"
+      },
+      "blocked_git": {
+        "commit": "workers must not run 'git commit'; only the orchestrator handles git",
+        "push": "workers must not run 'git push'; only the orchestrator handles git",
+        "merge": "workers must not run 'git merge'; only the orchestrator handles git",
+        "rebase": "workers must not run 'git rebase'; only the orchestrator handles git",
+        "tag": "workers must not run 'git tag'; only the orchestrator handles git",
+        "reset": "workers must not run 'git reset'; only the orchestrator handles git",
+        "checkout": "workers must not run 'git checkout'; only the orchestrator handles git",
+        "switch": "workers must not run 'git switch'; only the orchestrator handles git",
+        "stash": "workers must not run 'git stash'; only the orchestrator handles git",
+        "clean": "workers must not run 'git clean'; only the orchestrator handles git",
+        "restore": "workers must not run 'git restore'; only the orchestrator handles git"
+      }
+    },
+    "orchestrator": {
+      "blocked_patterns": {
+        "\\b(gh\\s+pr|glab\\s+mr)\\s+merge\\b": "merging an MR/PR is a human action"
+      },
+      "blocked_git": {
+        "tag": "tagging is a human action",
+        "merge": "merging is a human action"
+      }
+    }
+  }
+}
