@@ -15,7 +15,7 @@ run:
   output_detail: standard
   write_behavior: draft
   failure_behavior: stop
-  # forge-orchestrate worker: subagent (host tool subagents) or cli (external agent CLI).
+  # forge-orchestrate worker: subagent (host tool subagents), cli (external agent CLI), or host (dispatch tool provided by a host that runs the orchestrator).
   worker: subagent
   # Used only when worker: cli. {prompt_file} is replaced with the worker prompt path.
   worker_command: ""

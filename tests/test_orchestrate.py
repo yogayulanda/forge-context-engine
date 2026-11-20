@@ -50,12 +50,31 @@ class OrchestrateInstallTests(unittest.TestCase):
         self.assertIn('  worker_command: ""\n', config)
         template = iter_template_files("base")[".forge/forge.config.yaml"]
         self.assertIn("  worker: subagent\n", template)
+        host = "or host (dispatch tool provided by a host that runs the orchestrator)"
+        self.assertIn(host, config)
+        self.assertIn(host, template)
 
 
 class OrchestrateContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.templates = iter_template_files("base")
         self.mode = self.templates[MODE]
+
+    def test_mode_host_dispatch_resume_and_guard(self) -> None:
+        dispatch = self.mode.split("## worker dispatch", 1)[1].split("\n## ", 1)[0]
+        for phrase in (
+            "`run.worker: host`",
+            "dispatch tool the host provides",
+            "end the turn",
+            "same orchestrator session",
+            "A fresh session is not a resume",
+            "never a human answer, Gate 1 approval, or verdict for another role",
+            "forge_git_guard.py worker",
+            "worker git guard not confirmed",
+        ):
+            self.assertIn(phrase, dispatch)
+        stops = self.mode.split("## stop conditions", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("`run.worker: host` is set but no host dispatch tool is available", stops)
 
     def test_mode_keeps_schema_prefix(self) -> None:
         headings = re.findall(r"^## (\S.*)$", self.mode, flags=re.MULTILINE)

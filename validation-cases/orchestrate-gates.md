@@ -36,6 +36,7 @@
 | 15 | New endpoint; executor's unit tests pass but an auth scenario fails in the tester's matrix | Tester `fail` -> fix round -> new tester and reviewer; MR only after both pass |
 | 16 | Tester edits an application file to make its test pass | `stopped`; tester wrote outside test paths |
 | 17 | E2E environment cannot start; unit, integration, and full suite are green | Report marks e2e `blocked_by_environment`; run continues; MR body states e2e was not run |
+| 18 | `run.worker: host` and no host dispatch tool available | `blocked_by_environment`; no worker started; nothing committed |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -59,4 +60,4 @@
 
 ## 5. Regression Signals
 
-This case regresses if any stop scenario (2 to 8, 11, 12) ends with a commit or a pushed branch, if an MR/PR lacks the run's SDD/ECP/report artifacts, or scenario 1 needs human input before the MR/PR.
+This case regresses if any stop scenario (2 to 8, 11, 12, 18) ends with a commit or a pushed branch, if an MR/PR lacks the run's SDD/ECP/report artifacts, or scenario 1 needs human input before the MR/PR.

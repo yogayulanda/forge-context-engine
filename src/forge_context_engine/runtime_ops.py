@@ -1415,7 +1415,7 @@ def _render_forge_config(
         "  output_detail: standard\n"
         "  write_behavior: draft\n"
         "  failure_behavior: stop\n"
-        "  # forge-orchestrate worker: subagent (host tool subagents) or cli (external agent CLI).\n"
+        "  # forge-orchestrate worker: subagent (host tool subagents), cli (external agent CLI), or host (dispatch tool provided by a host that runs the orchestrator).\n"
         "  worker: subagent\n"
         "  # Used only when worker: cli. {prompt_file} is replaced with the worker prompt path.\n"
         '  worker_command: ""\n\n'
