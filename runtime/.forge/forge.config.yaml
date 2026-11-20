@@ -15,6 +15,10 @@ run:
   output_detail: standard
   write_behavior: draft
   failure_behavior: stop
+  # forge-orchestrate worker: subagent (host tool subagents) or cli (external agent CLI).
+  worker: subagent
+  # Used only when worker: cli. {prompt_file} is replaced with the worker prompt path.
+  worker_command: ""
 
 workflow:
   default_mode: ask

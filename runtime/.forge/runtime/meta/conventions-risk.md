@@ -67,6 +67,8 @@ Forge must never print, copy, summarize, or expose raw secrets discovered during
 
 Sensitive values include API keys, access tokens, refresh tokens, passwords, private keys, JWTs, session cookies, webhook secrets, database URLs with credentials, Kafka/SASL credentials, cloud credentials, and OAuth client secrets.
 
+Production identifiers (full production URLs and hostnames, internal IPs, infrastructure names, account numbers, customer data) are not secrets but are masked in every output too; see `Output redaction` in `.forge/adapter.md`.
+
 When a secret is detected:
 
 - Redact the raw value before output or context write.

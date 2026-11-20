@@ -97,3 +97,7 @@ This case regresses if Forge:
 - Converts review findings into an ECP and executes it without human approval.
 - Produces a fix loop that skips the human approval gate between review findings and execution.
 - Re-invokes `forge-review` without checking whether prior findings were resolved.
+
+## Orchestrate Exception
+
+Under `forge-orchestrate`, review findings become the fix scope for at most 2 fix rounds without a new human approval; after that the run stops with `review_unresolved`. See `validation-cases/orchestrate-gates.md`. The rules above still apply to the manual flow.

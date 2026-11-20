@@ -72,3 +72,7 @@ The Copilot adapter must not:
 - define execution triggers or scheduler behavior
 
 The same prompt should produce different answers in different repositories only because local `.forge/context` and repository evidence differ.
+
+## forge-orchestrate worker (unverified)
+
+`forge-orchestrate` can hand a worker role to an external agent CLI through `run.worker: cli` and `run.worker_command`. Forge does not define, document, or test GitHub Copilot CLI flags for this. Confirm on your own machine that the CLI can read a prompt file non-interactively and edit files in the working tree before you set `run.worker: cli`.

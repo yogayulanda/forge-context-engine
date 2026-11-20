@@ -34,7 +34,7 @@ updated: 2026-10-15
 Apply an approved ECP into code within explicit boundaries.
 
 ## inputs
-- Approved ECP, or a named set of approved batch ECPs.
+- Approved ECP, or a named set of approved batch ECPs, or an ECP accepted by `forge-orchestrate` at Gate 2.
 - Allowed files and scope.
 - Task sequence.
 - Coding rules.

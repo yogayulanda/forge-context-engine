@@ -96,3 +96,7 @@ This case regresses if Forge:
 - Transitions directly from `forge-implementation` output to code modifications.
 - Treats proposed ECP task cards as execution-approved.
 - Executes code changes when the human has not said "approved" or named the ECP for execution.
+
+## Orchestrate Exception
+
+Under `forge-orchestrate`, the invocation is the Gate 2 approval for that request's ECP only. See `validation-cases/orchestrate-gates.md`. The rules above still apply to the manual flow.

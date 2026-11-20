@@ -264,8 +264,8 @@ Proposed defaults never become confirmed facts without human confirmation.
 13. **Implicit Constraint Extraction** — during init, scan code for implicit constraints. See `conventions-evidence.md` for extraction table and routing.
 14. **Internal Table Hygiene** — markdown table cells follow the same conventions as front-matter. Owner cells use `unresolved`, never `TBD`. Status/classification cells use the canonical vocabulary.
 15. **Secret Safety** — raw secrets are never displayed, copied, summarized, or stored. See `conventions-risk.md`.
-16. **Automation Safety** — automation-safe behavior never asks conversational questions, never auto-approves HIGH-risk decisions, and never treats decision traces as orchestration state.
-17. **Scoped Intelligence Safety** — `CONTEXT_BUDGET_LIMITED`, drift statuses, cross-repo awareness, incident/refactor intelligence, and governance signals are semantic reporting tools only; they do not add RAG, vector search, knowledge graphs, agents, orchestration, schedulers, CI/CD, deploy behavior, runtime executors, or autonomous loops.
+16. **Automation Safety** — automation-safe behavior never asks conversational questions and never auto-approves HIGH-risk decisions. `forge-orchestrate` may auto-pass Gate 1 only for SDDs with no high-risk area and Gate 2 only for the invoked request; its gate trace is a report section, not persistent state.
+17. **Scoped Intelligence Safety** — `CONTEXT_BUDGET_LIMITED`, drift statuses, cross-repo awareness, incident/refactor intelligence, and governance signals are semantic reporting tools only; they do not add RAG, vector search, knowledge graphs, schedulers, CI/CD, deploy behavior, or runtime executors. Worker agents and the review -> fix loop exist only inside `forge-orchestrate`, bounded to one request and 2 fix rounds.
 
 ## Confidence Calibration
 

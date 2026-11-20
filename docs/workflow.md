@@ -135,6 +135,14 @@ Rules:
 - ECP readiness in implementation output is a readiness signal, not autonomous permission to execute.
 - Continuing from a saved ECP still requires checking that the artifact is an ECP, that it still matches current evidence, and that approval exists.
 
+### Gates under forge-orchestrate
+
+`/forge-orchestrate <request>` runs the lifecycle with worker agents for one request. See `specs/orchestrate.md`.
+
+- Gate 1 is automatic only when the SDD lists no high-risk area. Otherwise the run stops with `awaiting_sdd_approval`; approve with `Approved. Continue forge-orchestrate from .forge/generated/plans/<file>.md`.
+- Gate 2 is automatic. The invocation is the approval for this request's ECP only.
+- The human reviews at the MR/PR. Forge never merges, tags, or deploys.
+
 ## Continue From Saved Artifact
 
 Supported mapping:

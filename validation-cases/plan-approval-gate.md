@@ -93,3 +93,7 @@ This case regresses if Forge:
 - Appends ECP task cards or implementation scaffolding to plan output.
 - Invokes or simulates `forge-implementation` immediately after `forge-plan` without a human approval step.
 - Treats casual affirmative language as a formal approval gate signal.
+
+## Orchestrate Exception
+
+Under `forge-orchestrate`, Gate 1 passes automatically only when the SDD lists no high-risk area; otherwise human approval is still required. See `validation-cases/orchestrate-gates.md`. The rules above still apply to the manual flow.
