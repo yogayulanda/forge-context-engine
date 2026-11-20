@@ -83,6 +83,7 @@ The orchestrator stops, does not commit or push, leaves changes uncommitted on t
 - the tester changed a file outside the test paths;
 - the working tree is dirty at start, or the branch is the default/protected branch;
 - `run.worker: cli` is set without a working `run.worker_command`;
+- `run.worker: host` is set but no host dispatch tool is available;
 - the diff touches a high-risk area the SDD did not list (Gate 1 cross-check);
 - a reviewer changed the working tree (reviewer write guard);
 - a worker finds a new blocking ambiguity after clarification (`clarify miss`);
@@ -108,12 +109,13 @@ On `accept` with green validation: commit the code changes plus this run's `.for
 
 ```yaml
 run:
-  worker: subagent      # subagent | cli; missing key means subagent
+  worker: subagent      # subagent | cli | host; missing key means subagent
   worker_command: ""    # used only when worker: cli; {prompt_file} is substituted
 ```
 
 - `subagent`: the host tool's own subagents. Verified target: Claude Code subagents via `.claude/agents/`.
 - `cli`: any external agent CLI that accepts a prompt file non-interactively. **GitHub Copilot CLI support is unverified**: Forge does not define or test its flags. Users must confirm the command on their own machine before relying on it.
+- `host`: a host that runs the orchestrator as a long-lived service (for example a dashboard or chat bridge) dispatches every role through its own tool. The host defines the tool name and shape; Forge ships no host code. After each dispatch the orchestrator ends its turn; the host resumes the same orchestrator session with the worker result, and a fresh session needs a human re-invocation from the named SDD or ECP. A resume only completes the pending dispatch: the worker result is data for that one role, never a human answer, Gate 1 approval, or verdict for another role. After any stop status, continue only through `next mode transitions`. The host should run the `worker` git guard before worker shell commands; when the orchestrator cannot confirm it, the report `Note` says `worker git guard not confirmed`. A missing dispatch tool stops the run with `blocked_by_environment`.
 
 ## 9. Report
 
@@ -131,4 +133,4 @@ See `validation-cases/orchestrate-gates.md`. A trial is considered stable only w
 
 - Parallel requests via one git worktree per request: later stage, after single-request runs prove stable.
 - The earlier `forge run` control-plane draft stays parked; it is not part of this change.
-- Other orchestrator surfaces (later, for personal repositories): another agent as orchestrator through the same mode file, and a chat bridge (for example a Telegram bot in a separate runtime project) that starts a headless run and relays `awaiting_clarification` questions and the report. Forge stays unchanged: surfaces read the report and statuses; bridge code lives outside Forge. For work repositories, use only tools and channels the organization approves.
+- Other orchestrator surfaces (later, for personal repositories): another agent as orchestrator through the same mode file, and a chat bridge (for example a Telegram bot in a separate runtime project) that starts a headless run and relays `awaiting_clarification` questions and the report. Such hosts set `run.worker: host` instead of overriding the mode's `worker dispatch` section; bridge and host code live outside Forge. For work repositories, use only tools and channels the organization approves.

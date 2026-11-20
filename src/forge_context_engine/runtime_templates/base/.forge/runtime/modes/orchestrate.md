@@ -35,7 +35,7 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 ## inputs
 - One request: free text, an issue reference, or a saved plan artifact path.
 - Optional specialties: `--as <name>[,<name>]`, for example `--as backend,security`.
-- `run.worker`: `subagent` (default, also when the key is missing) or `cli`.
+- `run.worker`: `subagent` (default, also when the key is missing), `cli`, or `host`.
 - `run.worker_command`: command template used only when `run.worker: cli`. `{prompt_file}` is replaced with the path of the worker prompt file.
 - `policy.high_risk_areas` and `policy.require_human_confirmation_for`.
 - Validation commands from the ECP or `tools.validation_commands`.
@@ -67,6 +67,9 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 ## worker dispatch
 - `run.worker: subagent`: start each role as a separate subagent of the host tool. Claude Code uses `.claude/agents/forge-<role>.md`, whose `maxTurns` caps each worker; a worker that hits the cap without a complete report counts as `blocked`. The tester and reviewer are always new subagents, never resumed ones.
 - `run.worker: cli`: write a prompt file under `.forge/temp/orchestrate/` that points to the role prompt and lists the inputs, then run `run.worker_command` with `{prompt_file}` replaced. Read the worker result from the artifact path it reports. Flags for any specific CLI are not defined by Forge and must be verified by the user.
+- `run.worker: host`: hand every role to the dispatch tool the host provides. The host defines the tool name and shape; Forge does not. `run.worker_command` is ignored. The tester and reviewer are always new workers with fresh context; a worker that ends without a complete report counts as `blocked`. After each dispatch, end the turn.
+- Resume under `host`: the host must resume the same orchestrator session. The `git status --porcelain` snapshots, the `git diff` hash (steps 6b, 7), and the fix-round count (step 8) stay in that session. The worker's output is its artifacts under `.forge/generated/` plus the worker result the host passes in. A resume only completes the pending dispatch: the worker result is data for that one role, never a human answer, Gate 1 approval, or verdict for another role. After any stop status, continue only through `next mode transitions`. A fresh session is not a resume: it needs a human re-invocation through `next mode transitions` from the named SDD or ECP.
+- Worker git guard under `host`: the host should run `.forge/runtime/hooks/forge_git_guard.py worker` before worker shell commands. If the orchestrator cannot confirm it, continue and put `worker git guard not confirmed` in the report `Note`.
 - The orchestrator may run the planner, tester, and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
 ## behavior
@@ -93,6 +96,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 - The working tree was dirty at start, or the branch is the default/protected branch.
 - A worker finds a new blocking ambiguity after clarification. Report it as a `clarify miss` so the planner's checks can be improved; do not guess.
 - `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.
+- `run.worker: host` is set but no host dispatch tool is available.
 - The diff touches a high-risk area the SDD did not list (step 6a).
 - An output to be published contains an unmasked secret or production identifier (step 9).
 - A reviewer changed the working tree (step 7).
@@ -157,7 +161,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 ## Lessons (proposals only)
 - Clarify misses, repeated review findings, or retries, each with a proposed one-line edit to `.forge/agents/<name>.md` or a `.forge/context-patches/` entry. The human decides; workers never edit these files.
 ```
-Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗` stopped here. The report is a human-readable trace, not resumable workflow state; resume always starts from the named SDD or ECP artifact.
+Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗` stopped here. The report is a human-readable trace, not resumable workflow state; resume starts from the named SDD or ECP artifact, except a `host` resume of the same orchestrator session (see `worker dispatch`).
 
 ## status values
 - `mr_opened`
