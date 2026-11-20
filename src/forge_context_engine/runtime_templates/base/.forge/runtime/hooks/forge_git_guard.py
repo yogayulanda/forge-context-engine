@@ -3,6 +3,9 @@
 Blocks git actions that forge-orchestrate must never take. Exit code 2 blocks
 the command and shows stderr to the agent. Standard library only.
 
+The blocked command rules per role live in `.forge/runtime/meta/git-guard-rules.json`
+so other hosts can enforce the same rules for non-Claude workers.
+
 Usage (hook command):
   python3 -B "$CLAUDE_PROJECT_DIR/.forge/runtime/hooks/forge_git_guard.py" orchestrator
   python3 -B "$CLAUDE_PROJECT_DIR/.forge/runtime/hooks/forge_git_guard.py" worker
@@ -16,14 +19,43 @@ import re
 import shlex
 import subprocess
 import sys
+from pathlib import Path
 
-PROTECTED = {"main", "master"}
+RULES_PATH = Path(__file__).resolve().parents[1] / "meta" / "git-guard-rules.json"
 SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||&|\n|\$\(|`|\(|\)")
 COMMAND_PREFIXES = {"sudo", "env", "command", "exec", "nohup", "time", "xargs"}
 SHELLS = {"sh", "bash", "zsh", "dash"}
 GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix"}
-WORKER_BLOCKED = {"commit", "push", "merge", "rebase", "tag", "reset", "checkout", "switch", "stash", "clean", "restore"}
-MERGE_CLI = re.compile(r"\b(gh\s+pr|glab\s+mr)\s+merge\b")
+
+
+def _str_list(value: object) -> bool:
+    return isinstance(value, list) and all(isinstance(v, str) for v in value)
+
+
+def _str_map(value: object) -> bool:
+    return isinstance(value, dict) and all(isinstance(k, str) and isinstance(v, str) and v.strip() for k, v in value.items())
+
+
+def load_rules(path: Path = RULES_PATH) -> dict:
+    """Load and validate the rules; raise ValueError on any shape problem so the hook fails closed."""
+    rules = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(rules, dict) or not isinstance(rules.get("roles"), dict) or not rules["roles"]:
+        raise ValueError("'roles' must be a non-empty object")
+    for key in ("protected_branches", "forbidden_push_flags"):
+        if not _str_list(rules.get(key)):
+            raise ValueError(f"'{key}' must be a list of strings")
+    for role, role_rules in rules["roles"].items():
+        if not isinstance(role_rules, dict):
+            raise ValueError(f"role '{role}' must be an object")
+        for key in ("blocked_git", "blocked_patterns"):
+            if not _str_map(role_rules.get(key)):
+                raise ValueError(f"role '{role}': '{key}' must map strings to non-empty strings")
+        for pattern in role_rules["blocked_patterns"]:
+            try:
+                re.compile(pattern)  # patterns must stay simple: they run on every Bash command
+            except re.error as exc:
+                raise ValueError(f"role '{role}': bad pattern {pattern!r}: {exc}") from exc
+    return rules
 
 
 def _default_branch(cwd: str) -> str | None:
@@ -81,24 +113,26 @@ def _git_args(tokens: list[str]) -> list[str] | None:
     return args
 
 
-def check(command: str, role: str, cwd: str, protected: set[str]) -> str | None:
+def check(command: str, role: str, cwd: str, protected: set[str], rules: dict) -> str | None:
     """Return a block reason, or None when the command is allowed."""
-    if MERGE_CLI.search(command):
-        return "merging an MR/PR is a human action"
+    role_rules = rules["roles"].get(role)
+    if role_rules is None:
+        return f"unknown role '{role}'"
+    for pattern, reason in role_rules["blocked_patterns"].items():
+        if re.search(pattern, command):
+            return reason
+    blocked_git = role_rules["blocked_git"]
+    forbidden_flags = set(rules["forbidden_push_flags"])
     for tokens in _segments(command):
         args = _git_args(tokens)
         if not args:
             continue
         sub, rest = args[0], args[1:]
-        if role == "worker" and sub in WORKER_BLOCKED:
-            return f"workers must not run 'git {sub}'; only the orchestrator handles git"
-        if sub == "tag":
-            return "tagging is a human action"
-        if sub == "merge":
-            return "merging is a human action"
+        if sub in blocked_git:
+            return blocked_git[sub]
         if sub == "push":
             flags = [a for a in rest if a.startswith("-")]
-            if any(f in {"-f", "--force", "--force-with-lease", "--mirror", "--tags", "--delete", "-d", "--all"} or f.startswith("--force") for f in flags):
+            if any(f in forbidden_flags or f.startswith("--force") for f in flags):
                 return f"forbidden push option: {' '.join(flags)}"
             positional = [a for a in rest if not a.startswith("-")]
             refspecs = positional[1:]
@@ -126,11 +160,19 @@ def main(argv: list[str]) -> int:
         return 0
     command = (payload.get("tool_input") or {}).get("command") or ""
     cwd = payload.get("cwd") or os.getcwd()
-    protected = set(PROTECTED)
+    try:
+        rules = load_rules()
+    except Exception as exc:  # fail closed: a missing or broken rules file blocks; exit 1 would not
+        print(f"Blocked by Forge git guard: cannot read {RULES_PATH.name}: {exc}.", file=sys.stderr)
+        return 2
+    protected = set(rules["protected_branches"])
     default = _default_branch(cwd)
     if default:
         protected.add(default)
-    reason = check(command, role, cwd, protected)
+    try:
+        reason = check(command, role, cwd, protected, rules)
+    except Exception as exc:  # fail closed: exit 1 would let Claude Code run the command
+        reason = f"internal error: {exc!r}"
     if reason:
         print(f"Blocked by Forge git guard: {reason}.", file=sys.stderr)
         return 2

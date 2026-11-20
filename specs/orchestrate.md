@@ -98,6 +98,8 @@ Some stops are enforced by a script instead of the agent's judgment. `.forge/run
 
 The guard parses `git` global options, chained commands (`&&`, `;`, `&`, pipes, `$(...)`), common wrappers (`sudo`, `env`), and `sh -c`. It also treats `HEAD` as the current branch and `:<ref>` as a branch delete. It is a guard rail, not a sandbox: a command hidden in a script file or an alias is not seen.
 
+The blocked command rules per role (protected branches, forbidden push flags, blocked `git` subcommands, blocked command patterns) live in `.forge/runtime/meta/git-guard-rules.json`; the hook reads that file and fails closed (blocks every Bash command) when it is missing, is not valid JSON, has the wrong shape, or contains a pattern that does not compile. A role not listed in the file is blocked. Hosts that run non-Claude workers (for example through ACP permission requests) may read the same file to enforce the same rules instead of copying the list. This repository ships no enforcement code for other CLIs.
+
 Other stop conditions (scope, risk, reviewer writes) are agent-checked for now; candidates for script checks are chosen from trial results.
 
 ## 7. Publication
