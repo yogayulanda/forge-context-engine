@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../../../specs/orchestrate.md }]
 owner: forge-context-engine
-updated: 2026-11-10
+updated: 2026-11-20
 ---
 
 # Mode: Orchestrate
@@ -59,9 +59,9 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 
 ## git guard
 - `.forge/runtime/hooks/forge_git_guard.py` is a deterministic check, not an AI judgment. Exit code 2 blocks the command.
-- `worker` role (registered in each `.claude/agents/forge-<role>.md`): blocks `git commit`, `push`, `merge`, `rebase`, `tag`, `reset`, `checkout`, `switch`, and MR/PR merge commands.
+- `worker` role (registered in each `.claude/agents/forge-<role>.md`): blocks `git commit`, `push`, `merge`, `rebase`, `tag`, `reset`, `checkout`, `switch`, `stash`, `clean`, `restore`, and MR/PR merge commands.
 - The tester uses the `worker` role too.
-- `orchestrator` role (registered by the human in `.claude/settings.json`): blocks pushes to `main`, `master`, or the remote default branch, force pushes, tag pushes, branch deletes, `git tag`, `git merge`, and MR/PR merge commands.
+- `orchestrator` role (registered by the human in `.claude/settings.json`): blocks pushes to `main`, `master`, or the remote default branch, force pushes, tag pushes, branch deletes (including `:<ref>`), `git tag`, `git merge`, and MR/PR merge commands.
 - A blocked command is a stop condition; report the guard message.
 
 ## worker dispatch
