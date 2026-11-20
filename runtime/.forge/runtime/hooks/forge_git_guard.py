@@ -18,7 +18,11 @@ import subprocess
 import sys
 
 PROTECTED = {"main", "master"}
-SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||\n")
+SEGMENT_SPLIT = re.compile(r"&&|\|\||;|\||&|\n|\$\(|`|\(|\)")
+COMMAND_PREFIXES = {"sudo", "env", "command", "exec", "nohup", "time", "xargs"}
+SHELLS = {"sh", "bash", "zsh", "dash"}
+GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--super-prefix"}
+WORKER_BLOCKED = {"commit", "push", "merge", "rebase", "tag", "reset", "checkout", "switch", "stash", "clean", "restore"}
 MERGE_CLI = re.compile(r"\b(gh\s+pr|glab\s+mr)\s+merge\b")
 
 
@@ -44,18 +48,36 @@ def _current_branch(cwd: str) -> str | None:
     return out or None
 
 
-def _git_args(segment: str) -> list[str] | None:
+def _tokens(segment: str) -> list[str]:
     try:
         tokens = shlex.split(segment)
     except ValueError:
         tokens = segment.split()
-    while tokens and "=" in tokens[0] and not tokens[0].startswith("-"):
-        tokens = tokens[1:]  # leading VAR=value assignments
+    while tokens and (("=" in tokens[0] and not tokens[0].startswith("-")) or os.path.basename(tokens[0]) in COMMAND_PREFIXES):
+        tokens = tokens[1:]  # leading VAR=value assignments and wrappers such as sudo/env
+    return tokens
+
+
+def _segments(command: str, depth: int = 0) -> list[list[str]]:
+    """Split a shell command into token lists, descending into `sh -c '...'`."""
+    result: list[list[str]] = []
+    for segment in SEGMENT_SPLIT.split(command):
+        tokens = _tokens(segment.strip())
+        if not tokens:
+            continue
+        if depth < 3 and os.path.basename(tokens[0]) in SHELLS and "-c" in tokens[1:-1]:
+            result.extend(_segments(tokens[tokens.index("-c") + 1], depth + 1))
+            continue
+        result.append(tokens)
+    return result
+
+
+def _git_args(tokens: list[str]) -> list[str] | None:
     if not tokens or os.path.basename(tokens[0]) != "git":
         return None
     args = tokens[1:]
-    while args and args[0] in {"-C", "-c"} and len(args) > 1:
-        args = args[2:]
+    while args and args[0].startswith("-"):
+        args = args[2:] if args[0] in GIT_VALUE_OPTIONS else args[1:]  # global options such as -C, --no-pager
     return args
 
 
@@ -63,12 +85,12 @@ def check(command: str, role: str, cwd: str, protected: set[str]) -> str | None:
     """Return a block reason, or None when the command is allowed."""
     if MERGE_CLI.search(command):
         return "merging an MR/PR is a human action"
-    for segment in SEGMENT_SPLIT.split(command):
-        args = _git_args(segment.strip())
+    for tokens in _segments(command):
+        args = _git_args(tokens)
         if not args:
             continue
         sub, rest = args[0], args[1:]
-        if role == "worker" and sub in {"commit", "push", "merge", "rebase", "tag", "reset", "checkout", "switch"}:
+        if role == "worker" and sub in WORKER_BLOCKED:
             return f"workers must not run 'git {sub}'; only the orchestrator handles git"
         if sub == "tag":
             return "tagging is a human action"
@@ -80,12 +102,14 @@ def check(command: str, role: str, cwd: str, protected: set[str]) -> str | None:
                 return f"forbidden push option: {' '.join(flags)}"
             positional = [a for a in rest if not a.startswith("-")]
             refspecs = positional[1:]
-            targets = {r.split(":")[-1].lstrip("+").removeprefix("refs/heads/") for r in refspecs}
             if any(r.startswith("+") for r in refspecs):
                 return "force push via '+refspec' is forbidden"
-            if not refspecs:
-                current = _current_branch(cwd)
-                targets = {current} if current else set()
+            if any(r.startswith(":") for r in refspecs):
+                return "deleting a remote branch via ':ref' is forbidden"
+            current = _current_branch(cwd)
+            targets = {r.split(":")[-1].removeprefix("refs/heads/") for r in refspecs}
+            if not refspecs or "HEAD" in targets or "@" in targets:
+                targets = (targets - {"HEAD", "@"}) | ({current} if current else set())
             hit = targets & protected
             if hit:
                 return f"push to protected branch {sorted(hit)[0]} is forbidden; push the forge/ feature branch only"

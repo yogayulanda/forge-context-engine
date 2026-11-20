@@ -47,6 +47,14 @@ class GitGuardTests(unittest.TestCase):
             "gh pr merge 5 --squash",
             "go test ./... && git push origin main",
             "git push",  # current branch is main
+            "git push origin HEAD",  # HEAD resolves to main
+            "git push origin :forge/x",  # delete via empty source
+            "git --no-pager push origin main",
+            "git --git-dir .git push origin main",
+            "true & git push origin main",
+            "sudo git push origin main",
+            "bash -c 'git push origin main'",
+            "echo $(git tag v1)",
         ):
             code, err = self.run_guard(command, "orchestrator")
             self.assertEqual(code, 2, command)
@@ -59,6 +67,8 @@ class GitGuardTests(unittest.TestCase):
             "git add -A && git commit -m 'feat: x'",
             "git push -u origin forge/2026-11-10-x",
             "git push",  # current branch is the feature branch
+            "git push origin HEAD 2>&1",
+            "git --no-pager log --oneline -3",
             "glab mr create --draft",
             "git diff --stat",
             "go test ./...",
@@ -67,12 +77,13 @@ class GitGuardTests(unittest.TestCase):
             self.assertEqual(code, 0, command)
 
     def test_worker_blocks_all_git_writes(self) -> None:
-        for command in ("git commit -m x", "git push origin forge/x", "git reset --hard", "git checkout main", "FOO=1 git -C . commit -m x"):
+        for command in ("git commit -m x", "git push origin forge/x", "git reset --hard", "git checkout main", "FOO=1 git -C . commit -m x",
+                        "git --no-pager commit -m x", "git stash", "git clean -fd", "git restore ."):
             code, _ = self.run_guard(command, "worker")
             self.assertEqual(code, 2, command)
 
     def test_worker_allows_reads_and_tests(self) -> None:
-        for command in ("git diff", "git status --porcelain", "git log -5 --oneline", "go test ./..."):
+        for command in ("git diff", "git status --porcelain", "git log -5 --oneline", "go test ./... 2>&1", "git --no-pager diff --stat"):
             code, _ = self.run_guard(command, "worker")
             self.assertEqual(code, 0, command)
 

@@ -6,7 +6,7 @@
 | Version | 0.1 |
 | Date | 2026-11-10 |
 | Status | `proposed` |
-| Scope | One request through `plan -> implementation -> execute -> review` with worker agents, ending at an MR/PR |
+| Scope | One request through `plan -> implementation -> execute -> test -> review` with worker agents, ending at an MR/PR |
 | Dependency | `specs/mode-invocation.md`, `runtime/.forge/runtime/modes/orchestrate.md`, `runtime/.forge/runtime/agents/*.md` |
 
 ---
@@ -84,14 +84,19 @@ The orchestrator stops, does not commit or push, leaves changes uncommitted on t
 - the working tree is dirty at start, or the branch is the default/protected branch;
 - `run.worker: cli` is set without a working `run.worker_command`;
 - the diff touches a high-risk area the SDD did not list (Gate 1 cross-check);
-- a reviewer changed the working tree (reviewer write guard).
+- a reviewer changed the working tree (reviewer write guard);
+- a worker finds a new blocking ambiguity after clarification (`clarify miss`);
+- an output to be published contains an unmasked secret or production identifier;
+- the full test suite is red after the fix rounds.
 
 ## 6a. Git guard
 
 Some stops are enforced by a script instead of the agent's judgment. `.forge/runtime/hooks/forge_git_guard.py` runs as a Claude Code `PreToolUse` hook on Bash and blocks with exit code 2:
 
-- worker role (registered in the Forge subagent files): any commit, push, merge, rebase, tag, reset, checkout, or switch;
+- worker role (registered in the Forge subagent files): any commit, push, merge, rebase, tag, reset, checkout, switch, stash, clean, or restore, plus MR/PR merge commands;
 - orchestrator role (registered by the human in `.claude/settings.json`): push to `main`, `master`, or the remote default branch, force push, tag push, branch delete, `git tag`, `git merge`, and MR/PR merge commands.
+
+The guard parses `git` global options, chained commands (`&&`, `;`, `&`, pipes, `$(...)`), common wrappers (`sudo`, `env`), and `sh -c`. It also treats `HEAD` as the current branch and `:<ref>` as a branch delete. It is a guard rail, not a sandbox: a command hidden in a script file or an alias is not seen.
 
 Other stop conditions (scope, risk, reviewer writes) are agent-checked for now; candidates for script checks are chosen from trial results.
 
@@ -112,7 +117,7 @@ run:
 
 ## 9. Report
 
-The orchestrator writes `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md` and updates it after every step. Header fields: `Artifact`, `Repo`, `Date`, `Target tool`, `Status`, `Run`, `Goal`, `Note`. Body: a step checklist (`✓` done, `✱` in progress/waiting, `○` not started, `✗` stopped), artifacts, gate trace, validation, review rounds, and the MR/PR link. Exact shape lives in the mode file. The report is a trace for humans, not resumable state.
+The orchestrator writes `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md` and updates it after every step. Header fields: `Artifact`, `Repo`, `Date`, `Target tool`, `Specialties`, `Status`, `Run`, `Goal`, `Note`. Body: a step checklist (`✓` done, `✱` in progress/waiting, `○` not started, `✗` stopped), artifacts, gate trace, validation, review rounds, and the MR/PR link. Exact shape lives in the mode file. The report is a trace for humans, not resumable state.
 
 ## 10. Statuses
 
