@@ -81,7 +81,7 @@ The orchestrator stops, does not commit or push, leaves changes uncommitted on t
 - a worker returns a blocking unknown or a blocked status;
 - the review verdict is not `accept`, or the tester verdict is `fail`, after 2 fix rounds;
 - the tester changed a file outside the test paths;
-- the working tree is dirty at start, or the branch is the default/protected branch;
+- the working tree is dirty at start and resume in place (section 9a) does not apply, or the branch is the default/protected branch;
 - `run.worker: cli` is set without a working `run.worker_command`;
 - `run.worker: host` is set but no host dispatch tool is available;
 - the diff touches a high-risk area the SDD did not list (Gate 1 cross-check);
@@ -136,7 +136,11 @@ Optional. A host may give the orchestrator a status-report tool, a question tool
 
 ## 9. Report
 
-The orchestrator writes `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md` and updates it after every step. Header fields: `Artifact`, `Repo`, `Date`, `Target tool`, `Specialties`, `Status`, `Run`, `Goal`, `Note`. Body: a step checklist (`✓` done, `✱` in progress/waiting, `○` not started, `✗` stopped), artifacts, gate trace, validation, review rounds, and the MR/PR link. Exact shape lives in the mode file. The report is a trace for humans, not resumable state.
+The orchestrator writes `.forge/generated/reports/YYYY-MM-DD-<slug>-orchestration-report.md` and updates it after every step. Header fields: `Artifact`, `Repo`, `Date`, `Target tool`, `Specialties`, `Status`, `Run`, `Goal`, `Note`. Body: a step checklist (`✓` done, `✱` in progress/waiting, `○` not started, `✗` stopped), artifacts, gate trace, validation, review rounds, and the MR/PR link. Exact shape lives in the mode file. The report is a trace for humans, not a workflow state store; resume in place (section 9a) reads only its `Run` branch, step markers, `Artifacts` paths, and `Review rounds` row count.
+
+## 9a. Resume in place
+
+When an orchestrator session is lost mid-run, the human re-invokes `forge-orchestrate` with the run's ECP. With a dirty tree, the run continues on its feature branch only when the orchestration report whose file name has the ECP file's date and slug exists, the current branch is its `Run` branch, its `Gate 2` step is done, no step is stopped (`✗`), and every changed or untracked path is in the ECP `Files likely to change`, a report `Artifacts` table path under `.forge/generated/` whose file name starts with the ECP's `<YYYY-MM-DD>-<slug>`, or a test file under the `testing` overlay test paths after the test step started. Every path in the report `Artifacts` table, not only changed or untracked ones, must be under `.forge/generated/` with a file name starting with the ECP's `<YYYY-MM-DD>-<slug>`, because gitignored files never appear in `git status --porcelain` but Publish force-adds every `Artifacts` path. Execute re-runs only when the execution report is missing (per the report `Artifacts` table), or when the last `[execute]` step is in progress (`✱`), with the ECP, plus the last review findings if any, as the fix scope in the same round; otherwise the run continues at the diff risk check with a new tester and a new reviewer in fresh context, never at Publish. The fix-round counter continues from the report and never resets; the limit stays 2. The report gets one `Resume in place` step line; no new file is created. If any condition fails, the run stops for a dirty tree.
 
 ## 10. Statuses
 
