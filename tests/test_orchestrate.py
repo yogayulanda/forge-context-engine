@@ -207,6 +207,59 @@ class OrchestrateContractTests(unittest.TestCase):
         stops = self.mode.split("## stop conditions", 1)[1].split("\n## ", 1)[0]
         self.assertIn("The staged files differ from ECP-scope files", stops)
 
+    RESULT_FIELDS = ("role:", "status:", "verdict:", "artifact:", "changed_files:", "note:")
+    ENVELOPE_FIELDS = ("role", "prompt", "specialties", "request", "inputs", "fix_scope", "fresh_context", "branch", "base")
+
+    @staticmethod
+    def _block(text: str, marker: str) -> list[str]:
+        return text.split(f"\n{marker}\n", 1)[1].split(f"END_{marker}", 1)[0].splitlines()
+
+    def test_mode_defines_handoff_envelope_and_result_block(self) -> None:
+        self.assertLess(self.mode.index("\n## worker dispatch\n"), self.mode.index("\n## worker handoff\n"))
+        self.assertLess(self.mode.index("\n## worker handoff\n"), self.mode.index("\n## host status and questions\n"))
+        handoff = self.mode.split("\n## worker handoff\n", 1)[1].split("\n## ", 1)[0]
+        envelope = self._block(handoff, "FORGE_HANDOFF")
+        self.assertEqual([line.split(":", 1)[0] for line in envelope], list(self.ENVELOPE_FIELDS))
+        result = self._block(handoff, "FORGE_RESULT")
+        self.assertEqual([line.split(" ", 1)[0] for line in result], list(self.RESULT_FIELDS))
+        for phrase in (
+            "at most 1000 characters",
+            "block first, then from the artifact it names",
+            "a block that is not the last text",
+            "a block over 1000 characters",
+            "contradicts its artifact counts as `blocked`",
+            "`fresh_context` is always `true` for the tester and reviewer",
+            "`git status --porcelain` stays the evidence",
+        ):
+            self.assertIn(phrase, handoff)
+        dispatch = self.mode.split("\n## worker dispatch\n", 1)[1].split("\n## ", 1)[0]
+        cli = next(line for line in dispatch.splitlines() if line.startswith("- `run.worker: cli`"))
+        host = next(line for line in dispatch.splitlines() if line.startswith("- `run.worker: host`"))
+        self.assertIn("`FORGE_HANDOFF`", cli)
+        self.assertIn("`FORGE_RESULT`", host)
+
+    def test_worker_prompts_end_with_result_block(self) -> None:
+        for role in ROLES:
+            prompt = self.templates[f".forge/runtime/agents/{role}.md"]
+            ret = prompt.split("\n## Return to orchestrator\n", 1)[1].split("\n## ", 1)[0]
+            self.assertIn("at most 1000 characters, with nothing after it", ret, role)
+            block = self._block(ret, "FORGE_RESULT")
+            self.assertEqual([line.split(" ", 1)[0] for line in block], list(self.RESULT_FIELDS), role)
+            self.assertEqual(block[0], f"role: {role.split('-')[1]}", role)
+        reviewer = self.templates[".forge/runtime/agents/forge-reviewer.md"]
+        self.assertIn("\nartifact: none\n", reviewer)
+
+    def test_malformed_result_uses_existing_blocked_stop(self) -> None:
+        # Failure path: no new stop or status; a bad block routes to the existing `blocked` stop.
+        stops = self.mode.split("## stop conditions", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("- A worker returns a blocking unknown, `blocked`, or `blocked_by_decision`.", stops)
+        self.assertNotIn("FORGE_RESULT", stops)
+        self.assertNotIn("FORGE_RESULT", self.mode.split("## status values", 1)[1].split("\n## ", 1)[0])
+        spec = (ROOT / "specs/orchestrate.md").read_text(encoding="utf-8")
+        section8 = spec.split("## 8. Worker configuration", 1)[1].split("\n## ", 1)[0]
+        for phrase in ("`FORGE_HANDOFF`", "`FORGE_RESULT`", "counts as `blocked`"):
+            self.assertIn(phrase, section8)
+
     def test_tester_is_independent_and_scenario_driven(self) -> None:
         tester = self.templates[".forge/runtime/agents/forge-tester.md"]
         for phrase in (

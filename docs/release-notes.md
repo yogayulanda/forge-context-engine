@@ -11,6 +11,7 @@ Added (proposed, `specs/orchestrate.md`):
 - Independent tester worker: scenario-matrix integration/e2e tests from the SDD plus full regression, before review; `testing` overlay holds team test commands and paths.
 - `run.worker` (`subagent` | `cli` | `host`) and `run.worker_command` config. Copilot CLI as a worker is unverified. `host` lets a host that runs the orchestrator dispatch workers through its own tool; Forge ships no host code.
 - Optional host status and question tools for `forge-orchestrate`: stage IDs, host states (`progress`, `waiting_for_human`, `blocked`, `done`), one question at a time with 2 to 4 options; without them the run stops and waits as before.
+- Worker handoff for `forge-orchestrate`: a `FORGE_HANDOFF` envelope for `cli` and `host` dispatch and a `FORGE_RESULT` block every worker ends with. A worker result without a valid block counts as `blocked`, so `cli` and `host` workers must end with the block.
 
 Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.
 

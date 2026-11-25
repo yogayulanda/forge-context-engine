@@ -40,7 +40,19 @@ Apply one ECP that the orchestrator accepted at Gate 2. On a fix round, apply on
 - Run the repo's own security checks when they exist (for example a vulnerability or static-analysis command in the Makefile or CI config) and report the result like any other validation.
 
 ## Return to orchestrator
-- Report path, execute status, changed files, validation commands and results, deviations, blockers.
+End your output with this block, at most 1000 characters, with nothing after it. Details stay in the artifact (`worker handoff` in `.forge/runtime/modes/orchestrate.md`).
+```text
+FORGE_RESULT
+role: executor
+status: done | blocked | blocked_by_environment
+verdict: n/a
+artifact: <execution report path under .forge/generated/>
+changed_files: <count of files you added or changed outside .forge/generated/>
+note: <one line>
+END_FORGE_RESULT
+```
+- `status`: execute `success` is `done`; `partial_success`, `not_validated`, `blocked`, a blocking unknown, or new scope is `blocked`; `blocked_by_environment` stays `blocked_by_environment`.
+- Changed files, validation commands and results, deviations, and blockers stay in the report.
 
 ## Do NOT
 Stage, commit, push, change or create files outside the ECP `Files likely to change` (a needed new file is new scope: report it), break the `File hygiene` rules in `.forge/adapter.md`, touch contracts/migrations/secrets not named in a human-approved SDD, or ignore red validation. Stop and report instead.
