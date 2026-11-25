@@ -300,6 +300,22 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("never auto-approves HIGH-risk decisions", conventions)
         self.assertIn("only inside `forge-orchestrate`", conventions)
 
+    def test_sdd_path_and_status_are_one_set(self) -> None:
+        sources = {
+            "forge-planner.md (template)": self.templates[".forge/runtime/agents/forge-planner.md"],
+            "orchestrate.md (template)": self.mode,
+            "specs/orchestrate.md": (ROOT / "specs/orchestrate.md").read_text(encoding="utf-8"),
+        }
+        for name, text in sources.items():
+            self.assertIn(".forge/generated/plans/YYYY-MM-DD-<slug>-plan.md", text, name)
+            self.assertIn("ready_for_implementation", text, name)
+            self.assertNotIn("-sdd.md", text, name)
+            self.assertNotIn("`draft`", text, name)
+        self.assertIn("SDD -> .forge/generated/plans/<YYYY-MM-DD>-<slug>-plan.md", self.mode)
+        step2 = next(line for line in self.mode.splitlines() if line.startswith("2. Clarify"))
+        for status in ("`ready_for_implementation`", "`blocked_by_decision`", "`needs_more_context`"):
+            self.assertIn(status, step2)
+
 
 SPECIALTIES = ("backend", "backend-go", "frontend", "mobile", "infrastructure", "security", "tech-lead", "testing")
 
