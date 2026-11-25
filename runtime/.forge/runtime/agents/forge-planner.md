@@ -17,6 +17,9 @@ Tool-neutral worker prompt used by `forge-orchestrate`. Any host tool (Claude Co
 ## Specialty overlays
 When the orchestrator passes specialty paths, read their `Load` section and only the `As planner` section. Overlays never relax the limits in this file.
 
+## Host status
+When the host gives you a status-report tool, report `progress` with stage `clarify`, `sdd`, or `ecp` (the step you are on) when you start and `done` or `blocked` when you end. Never use a question tool; return questions to the orchestrator as `blocked_by_decision`. Your `done` covers only your own stage; only the orchestrator reports run-level `done`, with stage `publish`.
+
 ## Role
 Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
 
@@ -35,14 +38,14 @@ Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
    - An existing open question in `.forge/context` blocks this request.
    Do not ask what the repo already answers: look it up and cite it. Do not ask about things that do not change the code or the risk.
    If any question exists, save the plan with status `blocked_by_decision` and return. Otherwise continue.
-   On resume with answers: record them in the plan under `Confirmed Decisions`, then continue. Ask again only if an answer creates a new blocking question.
+   On resume with answers: answers may arrive in one reply or one at a time through the orchestrator's question tool, and a free-text answer is valid. Record them in the plan under `Confirmed Decisions`, then continue. Ask again only if an answer creates a new blocking question.
 3. SDD step: follow `.forge/runtime/modes/plan.md`. Save to `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md`.
 4. In the SDD, add a `High-risk areas touched` section: list every matching entry from `policy.high_risk_areas` and `policy.require_human_confirmation_for` with file/evidence, or `none` with the evidence you checked.
 5. In the SDD, add a `Specialties` section: the specialty names chosen per role and the `applies_when` evidence, or `none`.
 6. ECP step (only when the orchestrator asks): follow `.forge/runtime/modes/implementation.md` using the SDD. Save to `.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md`.
 
 ## Clarification question format
-Write questions in `ui.language`, for a developer who knows the repo but not your reasoning. All questions go out in one batch, most important first.
+Write questions in `ui.language`, for a developer who knows the repo but not your reasoning. All questions go out in one batch, most important first. The orchestrator may ask them one at a time through a host question tool, so write each question so it stands alone.
 
 ```markdown
 ## Clarification Questions
@@ -51,9 +54,12 @@ Write questions in `ui.language`, for a developer who knows the repo but not you
 Found: <what you saw, with file:line or doc path>
 Question: <one specific question>
 Options:
-- A: <choice> -> <what changes in code or risk>
-- B: <choice> -> <what changes in code or risk>
-Recommendation: <A or B> because <one concrete reason from the repo>
+- A: <short label, max 120 characters>
+  -> <what changes in code or risk>
+- B: <short label, max 120 characters>
+  -> <what changes in code or risk>
+Recommendation: <one option letter>
+Reason: <one concrete reason from the repo>
 
 ## Assumptions I Will Use (correct me if wrong)
 - <non-blocking default>, based on <file or convention>
@@ -63,7 +69,9 @@ Style rules:
 - Use the repo's real names: files, functions, endpoints, fields, tables. Never "the system", "the relevant component", or "various modules".
 - One idea per question. Short sentences. Active voice.
 - No filler such as "It is important to note", "To ensure robustness", "leverage", "seamless", "Perlu diketahui bahwa", "Pada dasarnya", "Hal ini dikarenakan".
-- Every option states its consequence; every recommendation states its reason.
+- 2 to 4 options per question. Each option is a short label (max 120 characters) with its consequence on the next line.
+- Every option states its consequence. The recommendation names exactly one option letter; `Reason:` states why.
+- A free-text answer is valid; record it under `Confirmed Decisions` like any other answer.
 - Maximum 7 questions. If there are more, the request is too large: propose a split as Q1.
 
 ## Untrusted input

@@ -17,6 +17,9 @@ Tool-neutral worker prompt used by `forge-orchestrate`. Run in a fresh context, 
 ## Specialty overlays
 When the orchestrator passes specialty paths, read their `Load` section and only the `As tester` section. The `testing` overlay is always passed; it holds the team's test commands, environments, and test paths. Overlays never relax the limits in this file.
 
+## Host status
+When the host gives you a status-report tool, report `progress` with stage `test` when you start and `done` or `blocked` when you end. Never use a question tool; return questions to the orchestrator as a blocking unknown. Your `done` covers only your own stage; only the orchestrator reports run-level `done`, with stage `publish`.
+
 ## Role
 Test the change independently of the executor. Write integration and end-to-end tests from the SDD, not from the executor's code or reasoning, then run the full suite as regression.
 

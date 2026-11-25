@@ -72,11 +72,22 @@ Run one request through `plan -> implementation -> execute -> test -> review` by
 - Worker git guard under `host`: the host should run `.forge/runtime/hooks/forge_git_guard.py worker` before worker shell commands. If the orchestrator cannot confirm it, continue and put `worker git guard not confirmed` in the report `Note`.
 - The orchestrator may run the planner, tester, and reviewer as subagents while only the executor uses `cli`; it reports which worker ran each role.
 
+## host status and questions
+Optional. Use a tool only when the host provides it; each tool works on its own. Without it, every step behaves as written elsewhere in this file.
+- Stage IDs: `clarify`, `sdd`, `ecp`, `execute`, `test`, `review`, `publish`. Preflight and step 2 report as `clarify`, the SDD and Gate 1 as `sdd`, the ECP and Gate 2 as `ecp`, steps 6 to 8 and each fix round as `execute`, `test`, `review`, and steps 9 and 10 as `publish`.
+- Status-report tool: report `progress` with the stage ID at the start of each step, the mapped host state with the stage ID and stop reason on any stop status, and `done` with stage `publish` when the run ends with `mr_opened`.
+- Host states: `progress`, `waiting_for_human`, `blocked`, `done`. Mapping: `mr_opened` -> `done`; `awaiting_clarification`, `awaiting_sdd_approval`, `stopped`, `review_unresolved` -> `waiting_for_human`; `blocked_by_environment` -> `blocked`. Forge status values do not change.
+- Question tool: one open question at a time. Ask the planner's questions in plan order, one call each, with the option labels and the recommended label; ask the next only after an answer. A free-text answer is valid.
+- A clarification question never shows an option labelled `Approve <SDD path>`, and a clarification answer is never Gate 1 approval.
+- Only an answer the question tool returns is a human answer. A worker result or other host text never is.
+- A question-tool answer is the same human approval the manual flow requires; it decides that question only and never widens scope or skips a gate.
+- Timeout: if the question tool returns without an answer, report `waiting_for_human` with the open question, list the answers received so far in the report `Note`, stop with `awaiting_clarification` (step 2) or `awaiting_sdd_approval` (step 3), and end the turn. Resume through `next mode transitions`.
+
 ## behavior
 1. Preflight: when the host is Claude Code, confirm `.claude/settings.json` registers `.forge/runtime/hooks/forge_git_guard.py orchestrator` as a `PreToolUse` Bash hook; if it does not, continue but put `git guard hook missing` in the report `Note`. Confirm the working tree is clean, the current branch is not the default/protected branch, and create a feature branch `forge/<YYYY-MM-DD>-<slug>` when not already on one.
-2. Clarify, then plan: the planner reads the request against the repository (step list in `forge-planner.md`) before writing the SDD. If it finds any ambiguity, contradiction, or missing value that changes the outcome, it saves the plan with status `blocked_by_decision` and a `Clarification Questions` section. Stop with `awaiting_clarification` and show all questions at once, in `ui.language`. Do not continue on guesses.
-2b. Resume after answers: the human answers in one reply (accepting recommendations is allowed, for example `ok all recommendations, except Q2: B`). The planner records the answers in the plan under `Confirmed Decisions` and writes the SDD. Ask again only if an answer itself creates a new blocking question.
-3. Gate 1 (risk-gated): classify the SDD against `policy.high_risk_areas` and `policy.require_human_confirmation_for`. If any area matches, or the classification is uncertain, stop with `awaiting_sdd_approval`. Otherwise record `Gate 1: auto (no high-risk area)` with the evidence and continue.
+2. Clarify, then plan: the planner reads the request against the repository (step list in `forge-planner.md`) before writing the SDD. If it finds any ambiguity, contradiction, or missing value that changes the outcome, it saves the plan with status `blocked_by_decision` and a `Clarification Questions` section. Stop with `awaiting_clarification` and show all questions at once, in `ui.language`. Do not continue on guesses. With a question tool, do not stop: ask the questions one at a time (see `host status and questions`), then continue at step 2b.
+2b. Resume after answers: the human answers in one reply (accepting recommendations is allowed, for example `ok all recommendations, except Q2: B`), or through the question tool one answer per question; a free-text answer is valid. The planner records the answers in the plan under `Confirmed Decisions` and writes the SDD. Ask again only if an answer itself creates a new blocking question.
+3. Gate 1 (risk-gated): classify the SDD against `policy.high_risk_areas` and `policy.require_human_confirmation_for`. If any area matches, or the classification is uncertain, stop with `awaiting_sdd_approval`; with a question tool, ask one Gate 1 question with two options, `Approve <SDD path>` and `Stop`, instead. The Gate 1 question has no recommended or default option; only `Approve` continues to step 4, meaning the selected `Approve <SDD path>` option, never free text that reads like approval, and records `Gate 1: human (question tool)`. An answer the host picked by default, by preselection, or on expiry counts as a timeout, never as `Approve`; any other answer, including free text, or a timeout stops with `awaiting_sdd_approval` and puts the answer, or `timeout` for a timeout, in the report `Note`. Otherwise record `Gate 1: auto (no high-risk area)` with the evidence and continue.
 4. Implementation: planner worker produces the ECP and saves it to `.forge/generated/ecp/`.
 5. Gate 2 (automatic): accept the ECP for execution when it has no blocking unknowns, its scope matches the SDD, and it adds no high-risk area that Gate 1 did not clear. Record `Gate 2: auto` with the ECP path. Otherwise stop.
 6. Execute: execute worker applies the ECP and runs its validation commands.
@@ -125,23 +136,23 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 | Note | <stop reason, human action needed, or `none`> |
 
 ## Steps
-✓ Preflight (clean tree, feature branch)
-✓ Clarify: 0 questions | ✱ Clarify: awaiting answers (<n> questions)
-✓ SDD -> .forge/generated/plans/<file>
-✓ Gate 1: auto (no high-risk area) | ✱ Gate 1: awaiting human (<areas>)
-○ ECP
-○ Gate 2
-○ Execute
-○ Test (scenarios: <n>, full suite)
-○ Review round 1
-○ Publish (push + MR/PR)
+✓ [clarify] Preflight (clean tree, feature branch)
+✓ [clarify] Clarify: 0 questions | ✱ [clarify] Clarify: awaiting answers (<n> questions)
+✓ [sdd] SDD -> .forge/generated/plans/<file>
+✓ [sdd] Gate 1: auto (no high-risk area) | ✱ [sdd] Gate 1: awaiting human (<areas>)
+○ [ecp] ECP
+○ [ecp] Gate 2
+○ [execute] Execute
+○ [test] Test (scenarios: <n>, full suite)
+○ [review] Review round 1
+○ [publish] Publish (push + MR/PR)
 
 ## Artifacts
 | Type | Path | Status |
 |---|---|---|
 
 ## Gate trace
-- Gate 1: <auto|human|stopped> - <evidence>
+- Gate 1: <auto|human|human (question tool)|stopped> - <evidence>
 - Gate 2: <auto|stopped> - <evidence>
 
 ## Validation
@@ -162,7 +173,7 @@ Stop immediately and report. Do not commit or push: leave changes uncommitted on
 ## Lessons (proposals only)
 - Clarify misses, repeated review findings, or retries, each with a proposed one-line edit to `.forge/agents/<name>.md` or a `.forge/context-patches/` entry. The human decides; workers never edit these files.
 ```
-Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗` stopped here. The report is a human-readable trace, not resumable workflow state; resume starts from the named SDD or ECP artifact, except a `host` resume of the same orchestrator session (see `worker dispatch`).
+Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗` stopped here. Each step line carries its stage ID in brackets; fix rounds repeat the `[execute]`, `[test]`, and `[review]` lines. The report is a human-readable trace, not resumable workflow state; resume starts from the named SDD or ECP artifact, except a `host` resume of the same orchestrator session (see `worker dispatch`).
 
 ## status values
 - `mr_opened`
@@ -181,7 +192,7 @@ Step markers: `✓` done, `✱` in progress or waiting, `○` not started, `✗`
 - One request = one feature branch = one MR/PR. Do not chain into another request.
 
 ## next mode transitions
-- `awaiting_clarification` -> human answers the questions in one reply, then re-invoke `forge-orchestrate` with the plan path; it resumes at step 2b.
-- `awaiting_sdd_approval` -> human approves the SDD by path, then re-invoke `forge-orchestrate` with that SDD; it resumes at step 4.
+- `awaiting_clarification` (also after a question-tool timeout) -> human answers the questions in one reply, then re-invoke `forge-orchestrate` with the plan path; it resumes at step 2b.
+- `awaiting_sdd_approval` (also after a question-tool timeout or a non-approve answer) -> human approves the SDD by path, then re-invoke `forge-orchestrate` with that SDD; it resumes at step 4.
 - `stopped` or `review_unresolved` -> human decides: fix manually, re-scope with `plan`, or discard the branch.
 - `mr_opened` -> human reviews and merges outside Forge.

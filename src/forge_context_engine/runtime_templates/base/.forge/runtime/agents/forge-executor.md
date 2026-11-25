@@ -17,6 +17,9 @@ Tool-neutral worker prompt used by `forge-orchestrate`.
 ## Specialty overlays
 When the orchestrator passes specialty paths, read their `Load` section and only the `As executor` section. Overlays never relax the limits in this file.
 
+## Host status
+When the host gives you a status-report tool, report `progress` with stage `execute` when you start and `done` or `blocked` when you end. Never use a question tool; return questions to the orchestrator as a blocking unknown. Your `done` covers only your own stage; only the orchestrator reports run-level `done`, with stage `publish`.
+
 ## Role
 Apply one ECP that the orchestrator accepted at Gate 2. On a fix round, apply only the review findings the orchestrator passes in.
 

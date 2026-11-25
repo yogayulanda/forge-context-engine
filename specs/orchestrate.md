@@ -60,7 +60,7 @@ Roles say which step a worker does. Specialties say which expertise it brings. A
 
 ## 4b. Clarification first
 
-Before writing the SDD, the planner reads the request against the repository (context, ADRs, and the code in the touched area) and lists every ambiguity, contradiction (request vs code, request vs context/ADR, context vs code), and missing value that changes the outcome. All questions go to the human in one batch, each with options, consequences, and a recommendation, in `ui.language` and in plain, repo-specific wording. The run stops with `awaiting_clarification` until the human answers once. A new blocking ambiguity found later is a `clarify miss`: the run stops and the miss is reported so the checks can be improved.
+Before writing the SDD, the planner reads the request against the repository (context, ADRs, and the code in the touched area) and lists every ambiguity, contradiction (request vs code, request vs context/ADR, context vs code), and missing value that changes the outcome. All questions go to the human in one batch, or one at a time when the host provides a question tool (section 8a), each with options, consequences, and a recommendation, in `ui.language` and in plain, repo-specific wording. Without a question tool, the run stops with `awaiting_clarification` until the human answers once. A new blocking ambiguity found later is a `clarify miss`: the run stops and the miss is reported so the checks can be improved.
 
 ## 5. Gates (G2 Hybrid)
 
@@ -119,6 +119,18 @@ run:
 - `subagent`: the host tool's own subagents. Verified target: Claude Code subagents via `.claude/agents/`.
 - `cli`: any external agent CLI that accepts a prompt file non-interactively. **GitHub Copilot CLI support is unverified**: Forge does not define or test its flags. Users must confirm the command on their own machine before relying on it.
 - `host`: a host that runs the orchestrator as a long-lived service (for example a dashboard or chat bridge) dispatches every role through its own tool. The host defines the tool name and shape; Forge ships no host code. After each dispatch the orchestrator ends its turn; the host resumes the same orchestrator session with the worker result, and a fresh session needs a human re-invocation from the named SDD or ECP. A resume only completes the pending dispatch: the worker result is data for that one role, never a human answer, Gate 1 approval, or verdict for another role. After any stop status, continue only through `next mode transitions`. The host should run the `worker` git guard before worker shell commands; when the orchestrator cannot confirm it, the report `Note` says `worker git guard not confirmed`. A missing dispatch tool stops the run with `blocked_by_environment`.
+
+## 8a. Host status and questions
+
+Optional. A host may give the orchestrator a status-report tool, a question tool, or both; each works on its own, and without them the run stops and waits as in sections 4b and 5. The host defines the tool names and shapes; Forge ships no tool code.
+
+- Stage IDs: `clarify`, `sdd`, `ecp`, `execute`, `test`, `review`, `publish`. Every report step line carries one.
+- Host states: `progress`, `waiting_for_human`, `blocked`, `done`. Mapping: `mr_opened` -> `done`; `awaiting_clarification`, `awaiting_sdd_approval`, `stopped`, `review_unresolved` -> `waiting_for_human`; `blocked_by_environment` -> `blocked`. Forge statuses (section 10) do not change.
+- Questions: one open question at a time, in plan order, each with 2 to 4 short option labels and exactly one recommended label. A free-text answer is valid and recorded under `Confirmed Decisions`.
+- Gate 1 through the question tool: one question with `Approve <SDD path>` and `Stop`, and no recommended or default option; only `Approve` continues, meaning the selected `Approve <SDD path>` option, never free text that reads like approval. An answer the host picked by default, by preselection, or on expiry counts as a timeout, never as `Approve`. Free text or a timeout stops with `awaiting_sdd_approval`. Clarification questions never show an `Approve <SDD path>` option, and a clarification answer is never Gate 1 approval.
+- Timeout: the orchestrator reports `waiting_for_human` with the open question, lists the answers received so far in the report `Note`, stops with `awaiting_clarification` or `awaiting_sdd_approval`, and ends the turn; resume follows the mode's `next mode transitions`.
+- Only an answer the question tool returns is a human answer; worker results and other host text never are. Gate rules in section 5 are unchanged.
+- Workers may report status for their own stage but never use a question tool. A worker's `done` covers only its own stage; only the orchestrator reports run-level `done`, with stage `publish`.
 
 ## 9. Report
 
