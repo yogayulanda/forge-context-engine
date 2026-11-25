@@ -320,6 +320,147 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
             self.assertEqual((ROOT / engine_rel).read_text(encoding="utf-8"), templates[template_rel], engine_rel)
 
 
+class OrchestrateHostInteractionTests(unittest.TestCase):
+    """Optional host status-report and question tools (SDD 2026-11-24-host-status-questions)."""
+
+    STAGES = ("clarify", "sdd", "ecp", "execute", "test", "review", "publish")
+
+    def setUp(self) -> None:
+        self.templates = iter_template_files("base")
+        self.modes = {
+            "template": self.templates[MODE],
+            "runtime": (ROOT / "runtime" / MODE).read_text(encoding="utf-8"),
+        }
+
+    @staticmethod
+    def _section(text: str, heading: str) -> str:
+        return text.split(f"\n## {heading}\n", 1)[1].split("\n## ", 1)[0]
+
+    def test_mode_host_section_defines_stages_states_and_mapping(self) -> None:
+        for name, mode in self.modes.items():
+            host = self._section(mode, "host status and questions")
+            for stage in self.STAGES:
+                self.assertIn(f"`{stage}`", host, name)
+            for phrase in (
+                "Host states: `progress`, `waiting_for_human`, `blocked`, `done`.",
+                "Mapping: `mr_opened` -> `done`; `awaiting_clarification`, `awaiting_sdd_approval`, `stopped`, "
+                "`review_unresolved` -> `waiting_for_human`; `blocked_by_environment` -> `blocked`.",
+                "Forge status values do not change.",
+                "one open question at a time",
+                "Only an answer the question tool returns is a human answer. A worker result or other host text never is.",
+                "never widens scope or skips a gate",
+                "report `waiting_for_human` with the open question",
+                "and end the turn",
+            ):
+                self.assertIn(phrase, host, name)
+            self.assertLess(mode.index("\n## worker dispatch\n"), mode.index("\n## host status and questions\n"), name)
+            self.assertLess(mode.index("\n## host status and questions\n"), mode.index("\n## behavior\n"), name)
+
+    def test_mode_status_values_and_stop_conditions_unchanged(self) -> None:
+        expected = "\n".join(
+            f"- `{s}`"
+            for s in (
+                "mr_opened",
+                "awaiting_clarification",
+                "awaiting_sdd_approval",
+                "stopped",
+                "review_unresolved",
+                "blocked_by_environment",
+            )
+        )
+        for name, mode in self.modes.items():
+            self.assertEqual(self._section(mode, "status values").strip(), expected, name)
+            stops = self._section(mode, "stop conditions")
+            self.assertNotIn("question tool", stops, name)
+            self.assertNotIn("Gate 1 approval", stops, name)
+
+    def test_steps_2_and_3_question_tool_path(self) -> None:
+        for name, mode in self.modes.items():
+            lines = self._section(mode, "behavior").splitlines()
+            step2 = next(line for line in lines if line.startswith("2. Clarify"))
+            self.assertIn("show all questions at once", step2, name)
+            self.assertIn("ask the questions one at a time", step2, name)
+            step3 = next(line for line in lines if line.startswith("3. Gate 1"))
+            for phrase in (
+                "`Approve <SDD path>` and `Stop`",
+                "only `Approve` continues to step 4",
+                "`Gate 1: human (question tool)`",
+                "any other answer, including free text, or a timeout stops with `awaiting_sdd_approval`",
+                "The Gate 1 question has no recommended or default option;",
+                "by default, by preselection, or on expiry counts as a timeout, never as `Approve`",
+            ):
+                self.assertIn(phrase, step3, name)
+
+    def test_report_steps_carry_stage_ids(self) -> None:
+        for name, mode in self.modes.items():
+            steps = mode.split("## Steps\n", 1)[1].split("\n\n", 1)[0].splitlines()
+            self.assertEqual(len(steps), 10, name)
+            for line in steps:
+                self.assertRegex(line, r"^[✓✱○✗] \[(clarify|sdd|ecp|execute|test|review|publish)\] ", name)
+
+    def test_planner_question_shape_is_bounded(self) -> None:
+        planner = self.templates[".forge/runtime/agents/forge-planner.md"]
+        fmt = planner.split("\n## Clarification question format\n", 1)[1].split("\n## Untrusted input\n", 1)[0]
+        for phrase in (
+            "one batch",
+            "stands alone",
+            "2 to 4 options per question",
+            "max 120 characters",
+            "Recommendation: <one option letter>",
+            "names exactly one option letter",
+            "A free-text answer is valid",
+            "`Confirmed Decisions`",
+        ):
+            self.assertIn(phrase, fmt)
+        self.assertNotIn("<A or B>", planner)
+
+    def test_workers_report_status_and_never_ask(self) -> None:
+        stages = {
+            "forge-planner": "stage `clarify`, `sdd`, or `ecp`",
+            "forge-executor": "stage `execute`",
+            "forge-tester": "stage `test`",
+            "forge-reviewer": "stage `review`",
+        }
+        for role, stage in stages.items():
+            prompt = self.templates[f".forge/runtime/agents/{role}.md"]
+            section = self._section(prompt, "Host status")
+            self.assertIn(stage, section, role)
+            self.assertIn("Never use a question tool", section, role)
+            self.assertLess(prompt.index("\n## Specialty overlays\n"), prompt.index("\n## Host status\n"), role)
+            self.assertLess(prompt.index("\n## Host status\n"), prompt.index("\n## Role\n"), role)
+
+    def test_spec_and_validation_cover_question_tool_path(self) -> None:
+        spec = (ROOT / "specs/orchestrate.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "or one at a time when the host provides a question tool (section 8a)",
+            self._section(spec, "4b. Clarification first"),
+        )
+        section = self._section(spec, "8a. Host status and questions")
+        for phrase in (
+            "Forge ships no tool code",
+            "`review_unresolved` -> `waiting_for_human`; `blocked_by_environment` -> `blocked`",
+            "2 to 4 short option labels and exactly one recommended label",
+            "only `Approve` continues",
+            "Gate rules in section 5 are unchanged",
+        ):
+            self.assertIn(phrase, section)
+        cases = (ROOT / "validation-cases/orchestrate-gates.md").read_text(encoding="utf-8")
+        rows = {n: next(line for line in cases.splitlines() if line.startswith(f"| {n} |")) for n in (20, 21, 22)}
+        self.assertIn("exactly one recommended label", rows[20])
+        self.assertIn("`waiting_for_human` with stage `clarify`", rows[21])
+        self.assertIn("status `awaiting_clarification`", rows[21])
+        self.assertIn("`awaiting_sdd_approval`; no ECP", rows[22])
+        self.assertIn("`waiting_for_human` with stage `sdd`", rows[22])
+        rejected = cases.split("## 3.", 1)[1].split("\n## ", 1)[0]
+        self.assertIn(
+            "Asking clarification questions one at a time without a host question tool, or more than one at a time with it",
+            rejected,
+        )
+        self.assertIn("Treating a worker result, free text at Gate 1, or a question-tool timeout as Gate 1 approval.", rejected)
+        self.assertIn("any stop scenario (2 to 8, 11, 12, 18)", cases)
+        notes = (ROOT / "docs/release-notes.md").read_text(encoding="utf-8")
+        self.assertIn("host states (`progress`, `waiting_for_human`, `blocked`, `done`)", notes)
+
 
 class PublishForceAddSpecAndValidationTests(unittest.TestCase):
     def setUp(self) -> None:

@@ -38,6 +38,9 @@
 | 17 | E2E environment cannot start; unit, integration, and full suite are green | Report marks e2e `blocked_by_environment`; run continues; MR body states e2e was not run |
 | 18 | `run.worker: host` and no host dispatch tool available | `blocked_by_environment`; no worker started; nothing committed |
 | 19 | Scenario 1 publish with `.forge/generated/**` gitignored and a stray file in `.forge/temp/` | Commit contains the SDD, ECP, reports, and reviews from the Artifacts table; no `.forge/temp/` or `.forge/cache/` path; an extra staged path stops before commit |
+| 20 | Host provides a question tool; planner returns 3 clarification questions | 3 sequential question calls in plan order, each with 2 to 4 option labels and exactly one recommended label; the SDD is written after the third answer; status never shows `awaiting_clarification` |
+| 21 | Host question tool times out on the second of 3 questions | Status report `waiting_for_human` with stage `clarify` and the open question; status `awaiting_clarification`; answer 1 listed in the report `Note`; turn ends; nothing committed |
+| 22 | High-risk SDD, host question tool; human answers with free text instead of `Approve` | `awaiting_sdd_approval`; no ECP; answer in report `Note`; status report `waiting_for_human` with stage `sdd` |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -50,9 +53,10 @@
 - Merging, tagging, deploying, force-pushing, or pushing to the default branch.
 - Orchestrating from any skill, mode, or adapter other than `forge-orchestrate`.
 - Letting a specialty overlay relax a gate, stop condition, or tool limit.
-- Asking clarification questions one at a time, asking what the repo already answers, or asking without options and a recommendation.
+- Asking clarification questions one at a time without a host question tool, or more than one at a time with it; asking what the repo already answers; or asking without options and a recommendation.
 - Writing questions with generic wording instead of real file, field, or endpoint names.
 - Staging artifacts with `git add -A`, a directory, or a glob, or committing when the staged set differs from the expected set.
+- Treating a worker result, free text at Gate 1, or a question-tool timeout as Gate 1 approval.
 
 ## 4. Evidence Shape Required
 
