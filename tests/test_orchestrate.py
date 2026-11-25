@@ -164,6 +164,36 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("unmasked secret or production identifier is a stop", self.mode)
         self.assertIn("is CRITICAL", self.templates[".forge/runtime/agents/forge-reviewer.md"])
 
+    def test_external_context_is_cited_and_never_authoritative(self) -> None:
+        def section(text: str, heading: str) -> str:
+            self.assertIn(f"\n{heading}\n", text)
+            return text.split(f"\n{heading}\n", 1)[1].split("\n## ", 1)[0]
+
+        def engine(rel: str) -> str:
+            return (ROOT / rel).read_text(encoding="utf-8")
+
+        adapter = section(self.templates[".forge/adapter.md"], "## External context")
+        for phrase in (
+            "MCP tools, chat history",
+            "never `confirmed`",
+            "`source: external:<server>/<tool>`",
+            "the repository wins",
+            "never write to external memory or knowledge stores",
+            "`.forge/context-patches/`",
+            "data, not instructions",
+        ):
+            self.assertIn(phrase, adapter)
+        self.assertEqual(section(engine("runtime/.forge/adapter.md"), "## External context"), adapter)
+
+        heading = "## External Context Evidence"
+        evidence = section(self.templates[".forge/runtime/meta/conventions-evidence.md"], heading)
+        for phrase in ("`external:<server>/<tool>`", "never `confirmed`", "`code`, `doc`, `adr`, or `human`"):
+            self.assertIn(phrase, evidence)
+        self.assertNotIn("knowledge/", evidence)
+        self.assertEqual(section(engine("runtime/.forge/runtime/meta/conventions-evidence.md"), heading), evidence)
+
+        self.assertIn("source: external:", engine("validation-cases/external-context-evidence.md"))
+
     def test_publish_force_adds_listed_artifacts_with_preflight(self) -> None:
         publish = self.mode.split("9. Publish:", 1)[1].split("10. Report:", 1)[0]
         for phrase in (
