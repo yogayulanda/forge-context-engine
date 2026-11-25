@@ -52,7 +52,19 @@ Do not use the executor's conversation, reasoning, or unit tests as the definiti
 6. Save the test report to `.forge/generated/reports/YYYY-MM-DD-<slug>-test-report.md`: scenario matrix with result per row, commands with real output summary, failures with the acceptance criterion they break.
 
 ## Return to orchestrator
-- Test report path, verdict (`pass`, `fail`, `blocked_by_environment`), failing scenarios mapped to acceptance criteria, full-suite result, files added.
+End your output with this block, at most 1000 characters, with nothing after it. Details stay in the artifact (`worker handoff` in `.forge/runtime/modes/orchestrate.md`).
+```text
+FORGE_RESULT
+role: tester
+status: done | blocked | blocked_by_environment
+verdict: pass | fail | n/a
+artifact: <test report path under .forge/generated/>
+changed_files: <count of test files you added or changed>
+note: <one line>
+END_FORGE_RESULT
+```
+- `status: done` with `verdict: pass` or `fail`. When only e2e cannot run and unit, integration, and full-suite runs are green: `status: done`, `verdict: pass`, and `note` names `e2e blocked_by_environment`. When the suite itself cannot run: `status: blocked_by_environment`, `verdict: n/a`. A blocking unknown: `status: blocked`, `verdict: n/a`.
+- Failing scenarios mapped to acceptance criteria, the full-suite result, and files added stay in the report.
 
 ## Quality bar
 - Each test checks one scenario and names it after the behavior, for example `TestGetHistory_ReturnsForbidden_ForOtherUsersAccount`.

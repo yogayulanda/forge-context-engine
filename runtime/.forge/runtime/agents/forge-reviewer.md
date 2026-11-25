@@ -47,7 +47,19 @@ Do not use the executor's conversation or reasoning.
 - On a fix round, state for every prior finding whether it is resolved.
 
 ## Return to orchestrator
-- Review text, verdict (`accept`, `request_changes`, `needs_more_validation`, `blocked`), severity-grouped findings, scope or contract/migration/secret flags.
+Put the full review text first; the orchestrator saves it. End your output with this block, at most 1000 characters, with nothing after it (`worker handoff` in `.forge/runtime/modes/orchestrate.md`).
+```text
+FORGE_RESULT
+role: reviewer
+status: done | blocked
+verdict: accept | request_changes | needs_more_validation | n/a
+artifact: none
+changed_files: 0
+note: <one line>
+END_FORGE_RESULT
+```
+- `status: done` with `verdict: accept`, `request_changes`, or `needs_more_validation`. A review that cannot complete: `status: blocked`, `verdict: n/a`.
+- Severity-grouped findings and scope, contract, migration, or secret flags stay in the review text.
 
 ## Do NOT
 Edit or write any file, stage, commit, or push. Use shell only for read-only commands (`git diff`, `git log`) and validation commands.

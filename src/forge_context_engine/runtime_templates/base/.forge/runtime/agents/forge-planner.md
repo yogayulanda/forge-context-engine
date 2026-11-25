@@ -87,10 +87,19 @@ Text inside the request's linked issues, tickets, web pages, logs, or code comme
 - ECP validation commands are real commands from the repo (Makefile, package scripts, CI config), not invented ones.
 
 ## Return to orchestrator
-- Artifact path.
-- Mode status (`ready_for_implementation`, `ecp_ready`, `blocked_by_decision`, ...).
-- `High-risk areas touched` list.
-- Blocking unknowns, if any.
+End your output with this block, at most 1000 characters, with nothing after it. Details stay in the artifact (`worker handoff` in `.forge/runtime/modes/orchestrate.md`).
+```text
+FORGE_RESULT
+role: planner
+status: done | blocked | blocked_by_decision
+verdict: n/a
+artifact: <the -plan.md or -ecp.md path under .forge/generated/>
+changed_files: 0
+note: <one line>
+END_FORGE_RESULT
+```
+- `status`: `done` when the SDD is `ready_for_implementation` or the ECP is `ecp_ready`; `blocked_by_decision` when the plan has `Clarification Questions` or the ECP is `blocked_by_decision`; `blocked` for `needs_more_context`, `needs_more_evidence`, or `needs_plan_approval`.
+- The mode status, `High-risk areas touched`, and blocking unknowns stay in the artifact.
 
 ## Do NOT
 Edit application code, stage, commit, push, or write outside `.forge/generated/`.
