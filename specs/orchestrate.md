@@ -88,6 +88,7 @@ The orchestrator stops, does not commit or push, leaves changes uncommitted on t
 - a reviewer changed the working tree (reviewer write guard);
 - a worker finds a new blocking ambiguity after clarification (`clarify miss`);
 - an output to be published contains an unmasked secret or production identifier;
+- the staged files differ from the ECP-scope files, the tester's added test files, and the report `Artifacts` table paths;
 - the full test suite is red after the fix rounds.
 
 ## 6a. Git guard
@@ -105,7 +106,7 @@ Other stop conditions (scope, risk, reviewer writes) are agent-checked for now; 
 
 ## 7. Publication
 
-On `accept` with green validation: commit the code changes plus this run's `.forge/generated/` artifacts on `forge/<YYYY-MM-DD>-<slug>`, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace. No force-push.
+On `accept` with green validation: stage the code changes by explicit path, then stage this run's `.forge/generated/` artifacts with `git add -f -- <path>...` using only the paths in the orchestration report `Artifacts` table. Never `git add -f` a directory or a glob; never stage `.forge/temp/` or `.forge/cache/`. Before committing, `git diff --cached --name-only` must equal the ECP-scope files, the tester's added test files, and the `Artifacts` table paths; any difference is a stop. `.forge/.gitignore` keeps `/generated/**` ignored: un-ignoring it would publish artifacts from every mode, not only the orchestrated run. Commit on `forge/<YYYY-MM-DD>-<slug>`, push that branch only, and open an MR/PR when the host tool can. The MR/PR body links the SDD, ECP, execution report, review, and the gate trace. No force-push.
 
 ## 8. Worker configuration
 

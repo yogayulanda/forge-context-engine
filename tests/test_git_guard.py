@@ -67,6 +67,7 @@ class GitGuardTests(unittest.TestCase):
         for command in (
             "git checkout -b forge/2026-11-10-y",
             "git add -A && git commit -m 'feat: x'",
+            "git add -f -- .forge/generated/plans/x.md",
             "git push -u origin forge/2026-11-10-x",
             "git push",  # current branch is the feature branch
             "git push origin HEAD 2>&1",
@@ -77,6 +78,39 @@ class GitGuardTests(unittest.TestCase):
         ):
             code, _ = self.run_guard(command, "orchestrator")
             self.assertEqual(code, 0, command)
+
+    def test_orchestrator_still_blocks_short_force_push_next_to_force_add(self) -> None:
+        _git(self.repo, "checkout", "-q", "-b", "forge/2026-11-10-x")
+        for command in (
+            "git push -f origin forge/2026-11-10-x",
+            "git add -f -- .forge/generated/plans/x.md && git push -f origin forge/2026-11-10-x",
+        ):
+            code, err = self.run_guard(command, "orchestrator")
+            self.assertEqual(code, 2, command)
+            self.assertIn("Forge git guard", err)
+
+    def test_force_add_stages_listed_artifacts_but_not_temp_or_cache(self) -> None:
+        from forge_context_engine.runtime_ops import FORGE_LOCAL_GITIGNORE
+
+        forge = self.repo / ".forge"
+        (forge / "generated/plans").mkdir(parents=True)
+        (forge / "temp").mkdir()
+        (forge / "cache").mkdir()
+        (forge / ".gitignore").write_text(FORGE_LOCAL_GITIGNORE, encoding="utf-8")
+        _git(self.repo, "add", ".forge/.gitignore")
+        plan = ".forge/generated/plans/x-plan.md"
+        (self.repo / plan).write_text("sdd\n", encoding="utf-8")
+        (forge / "temp/stray.md").write_text("stray\n", encoding="utf-8")
+        (forge / "cache/c.json").write_text("{}\n", encoding="utf-8")
+
+        plain = subprocess.run(["git", "add", "--", plan], cwd=self.repo, capture_output=True, text=True)
+        self.assertNotEqual(plain.returncode, 0)  # plain add refuses the gitignored artifact
+        _git(self.repo, "add", "-A")
+        _git(self.repo, "add", "-f", "--", plan)
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"], cwd=self.repo, capture_output=True, text=True, check=True
+        ).stdout.split()
+        self.assertEqual(sorted(staged), sorted([".forge/.gitignore", plan]))
 
     def test_worker_blocks_all_git_writes(self) -> None:
         for command in ("git commit -m x", "git push origin forge/x", "git reset --hard", "git checkout main", "FOO=1 git -C . commit -m x",
