@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../modes/orchestrate.md }]
 owner: forge-context-engine
-updated: 2026-11-10
+updated: 2026-11-25
 ---
 
 # Worker: Planner
@@ -39,7 +39,7 @@ Turn one request into an SDD, and after Gate 1, turn the SDD into an ECP.
    Do not ask what the repo already answers: look it up and cite it. Do not ask about things that do not change the code or the risk.
    If any question exists, save the plan with status `blocked_by_decision` and return. Otherwise continue.
    On resume with answers: answers may arrive in one reply or one at a time through the orchestrator's question tool, and a free-text answer is valid. Record them in the plan under `Confirmed Decisions`, then continue. Ask again only if an answer creates a new blocking question.
-3. SDD step: follow `.forge/runtime/modes/plan.md`. Save to `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md`.
+3. SDD step: follow `.forge/runtime/modes/plan.md`. Save to `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md` with one `plan` mode status.
 4. In the SDD, add a `High-risk areas touched` section: list every matching entry from `policy.high_risk_areas` and `policy.require_human_confirmation_for` with file/evidence, or `none` with the evidence you checked.
 5. In the SDD, add a `Specialties` section: the specialty names chosen per role and the `applies_when` evidence, or `none`.
 6. ECP step (only when the orchestrator asks): follow `.forge/runtime/modes/implementation.md` using the SDD. Save to `.forge/generated/ecp/YYYY-MM-DD-<slug>-ecp.md`.

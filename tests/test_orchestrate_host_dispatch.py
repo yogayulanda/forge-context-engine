@@ -27,8 +27,8 @@ def _section(text: str, heading: str) -> str:
 
 def _mode_copies() -> dict[str, str]:
     return {
-        "template": iter_template_files("base")[MODE],
-        "runtime": (ROOT / "runtime" / MODE).read_text(encoding="utf-8"),
+        "orchestrate.md (template)": iter_template_files("base")[MODE],
+        "orchestrate.md (runtime/)": (ROOT / "runtime" / MODE).read_text(encoding="utf-8"),
     }
 
 
@@ -69,35 +69,34 @@ class HostConfigIntegrationTests(unittest.TestCase):
 class HostModeContractTests(unittest.TestCase):
     def test_Inputs_ListHostAsWorkerValue_WithSubagentDefault(self) -> None:
         for name, mode in _mode_copies().items():
-            self.assertIn(
-                "- `run.worker`: `subagent` (default, also when the key is missing), `cli`, or `host`.",
-                _section(mode, "inputs"),
-                name,
-            )
+            line = next(l for l in _section(mode, "inputs").splitlines() if l.startswith("- `run.worker`:"))
+            for token in ("`subagent` (default", "when the key is missing", "`cli`", "`host`"):
+                self.assertIn(token, line, name)
 
     def test_HostDispatch_HandsEveryRoleToHostTool_AndEndsTurn(self) -> None:
         for name, mode in _mode_copies().items():
             dispatch = _section(mode, "worker dispatch")
-            for phrase in (
+            for token in (
                 "hand every role to the dispatch tool the host provides",
-                "The host defines the tool name and shape; Forge does not.",
-                "`run.worker_command` is ignored.",
-                "The tester and reviewer are always new workers with fresh context",
-                "a worker that ends without a complete report counts as `blocked`",
-                "After each dispatch, end the turn.",
+                "The host defines the tool name and shape",
+                "`run.worker_command` is ignored",
+                "always new workers with fresh context",
+                "counts as `blocked`",
+                "After each dispatch, end the turn",
             ):
-                self.assertIn(phrase, dispatch, name)
+                self.assertIn(token, dispatch, name)
 
     def test_HostResume_IsSameSessionOnly_FreshSessionRestartsFromArtifact(self) -> None:
         for name, mode in _mode_copies().items():
             dispatch = _section(mode, "worker dispatch")
-            for phrase in (
+            for token in (
                 "the host must resume the same orchestrator session",
                 "fix-round count (step 8) stay in that session",
-                "artifacts under `.forge/generated/` plus the worker result the host passes in",
-                "A fresh session is not a resume: it needs a human re-invocation through `next mode transitions` from the named SDD or ECP.",
+                "plus the worker result the host passes in",
+                "A fresh session is not a resume",
+                "human re-invocation through `next mode transitions`",
             ):
-                self.assertIn(phrase, dispatch, name)
+                self.assertIn(token, dispatch, name)
             # R7: report stays a trace, no new state file.
             self.assertIn("not resumable workflow state", mode, name)
             self.assertIn("except a `host` resume of the same orchestrator session", mode, name)
@@ -105,46 +104,83 @@ class HostModeContractTests(unittest.TestCase):
 
     def test_HostResume_WorkerResultNeverGrantsHumanAnswerApprovalOrOtherVerdict(self) -> None:
         # Negative/permission boundary (fix round 1): a host resume cannot stand in for a human or another role.
-        boundary = (
-            "A resume only completes the pending dispatch: the worker result is data for that one role, "
-            "never a human answer, Gate 1 approval, or verdict for another role. "
-            "After any stop status, continue only through `next mode transitions`."
-        )
         spec = (ROOT / "specs/orchestrate.md").read_text(encoding="utf-8")
-        spec_bullet = next(line for line in spec.splitlines() if line.startswith("- `host`:"))
         sources = {name: _section(mode, "worker dispatch") for name, mode in _mode_copies().items()}
-        sources["spec"] = spec_bullet
+        sources["specs/orchestrate.md (`host` bullet)"] = next(
+            line for line in spec.splitlines() if line.startswith("- `host`:")
+        )
         for name, text in sources.items():
-            self.assertIn(boundary, text, name)
-            self.assertIn("needs a human re-invocation", text, name)
-        # The boundary must not leak into stop conditions as a new stop.
+            for token in (
+                "A resume only completes the pending dispatch",
+                "the worker result is data for that one role",
+                "never a human answer, Gate 1 approval, or verdict for another role",
+                "continue only through `next mode transitions`",
+                "needs a human re-invocation",
+            ):
+                self.assertIn(token, text, name)
+        # The boundary adds no stop: stop lines naming a host or a resume are exactly these two.
         for name, mode in _mode_copies().items():
-            self.assertNotIn("Gate 1 approval", _section(mode, "stop conditions"), name)
+            stops = [
+                line
+                for line in _section(mode, "stop conditions").splitlines()
+                if "host" in line or "resume" in line.lower()
+            ]
+            self.assertEqual(len(stops), 2, name)
+            self.assertTrue(any("no host dispatch tool is available" in line for line in stops), name)
+            self.assertTrue(any("resume in place (step 1a) does not apply" in line for line in stops), name)
 
     def test_HostGuard_IsAdvisory_NotAStopCondition(self) -> None:
         for name, mode in _mode_copies().items():
             dispatch = _section(mode, "worker dispatch")
-            self.assertIn("run `.forge/runtime/hooks/forge_git_guard.py worker` before worker shell commands", dispatch)
-            self.assertIn("continue and put `worker git guard not confirmed` in the report `Note`", dispatch)
+            bullet = next(line for line in dispatch.splitlines() if line.startswith("- Git guard under `host`:"))
+            for token in (
+                "`.forge/runtime/hooks/forge_git_guard.py worker`",
+                "`worker git guard not confirmed`",
+                "role `orchestrator`",
+                "`.forge/runtime/meta/git-guard-rules.json`",
+                "`orchestrator git guard not confirmed`",
+            ):
+                self.assertIn(token, bullet, name)
             stops = _section(mode, "stop conditions")
-            self.assertNotIn("git guard not confirmed", stops, name)
-            self.assertNotIn("forge_git_guard.py worker", stops, name)
+            for token in ("git guard not confirmed", "forge_git_guard.py worker", "git-guard-rules.json"):
+                self.assertNotIn(token, stops, name)
+
+    def test_Preflight_NonClaudeHost_OrchestratorGuardIsAdvisory(self) -> None:
+        for name, mode in _mode_copies().items():
+            step1 = next(line for line in _section(mode, "behavior").splitlines() if line.startswith("1. Preflight"))
+            for token in (
+                "when the host is Claude Code",
+                "`git guard hook missing`",
+                "Otherwise, the host should enforce role `orchestrator`",
+                "`.forge/runtime/meta/git-guard-rules.json`",
+                "`orchestrator git guard not confirmed`",
+            ):
+                self.assertIn(token, step1, name)
+            stops = _section(mode, "stop conditions")
+            self.assertNotIn("orchestrator git guard", stops, name)
+            self.assertNotIn("git-guard-rules.json", stops, name)
 
     def test_StopConditions_HostWithoutDispatchTool_AddsExactlyOneHostStop(self) -> None:
         for name, mode in _mode_copies().items():
             stops = _section(mode, "stop conditions")
             host_stops = [line for line in stops.splitlines() if "`run.worker: host`" in line]
-            self.assertEqual(host_stops, ["- `run.worker: host` is set but no host dispatch tool is available."], name)
+            self.assertEqual(len(host_stops), 1, name)
+            self.assertIn("no host dispatch tool is available", host_stops[0], name)
 
     def test_Regression_CliAndSubagentDispatchAndCliStop_Unchanged(self) -> None:
         for name, mode in _mode_copies().items():
             dispatch = _section(mode, "worker dispatch")
-            self.assertIn("The tester and reviewer are always new subagents, never resumed ones.", dispatch)
-            self.assertIn("Flags for any specific CLI are not defined by Forge and must be verified by the user.", dispatch)
-            self.assertIn("while only the executor uses `cli`; it reports which worker ran each role.", dispatch)
+            for token in (
+                "always new subagents, never resumed ones",
+                "not defined by Forge and must be verified by the user",
+                "while only the executor uses `cli`",
+                "reports which worker ran each role",
+            ):
+                self.assertIn(token, dispatch, name)
             self.assertIn(
-                "- `run.worker: cli` is set but `run.worker_command` is empty or the command fails to start.",
+                "`run.worker: cli` is set but `run.worker_command` is empty",
                 _section(mode, "stop conditions"),
+                name,
             )
 
     def test_Regression_NoNewStatusValue(self) -> None:
@@ -158,30 +194,37 @@ class HostSpecAndValidationTests(unittest.TestCase):
         self.cases = (ROOT / "validation-cases/orchestrate-gates.md").read_text(encoding="utf-8")
 
     def test_Spec_StopsHostWithoutDispatchTool(self) -> None:
-        self.assertIn("- `run.worker: host` is set but no host dispatch tool is available;", self.spec)
+        stops = _section(self.spec, "6. Stop conditions")
+        line = next(line for line in stops.splitlines() if line.startswith("- `run.worker: host`"))
+        self.assertIn("no host dispatch tool is available", line)
 
     def test_Spec_ConfigListsHost_AndHostBulletOwnsNoHostCode(self) -> None:
-        self.assertIn("worker: subagent      # subagent | cli | host; missing key means subagent", self.spec)
+        self.assertIn("# subagent | cli | host; missing key means subagent", self.spec)
         bullet = next(line for line in self.spec.splitlines() if line.startswith("- `host`:"))
-        for phrase in (
+        for token in (
             "Forge ships no host code",
             "resumes the same orchestrator session",
-            "a fresh session needs a human re-invocation from the named SDD or ECP",
+            "a fresh session needs a human re-invocation",
             "`worker git guard not confirmed`",
+            "`orchestrator git guard not confirmed`",
             "`blocked_by_environment`",
         ):
-            self.assertIn(phrase, bullet)
+            self.assertIn(token, bullet)
+
+    def test_Spec_GitGuard_RulesFileCoversOrchestratorRoleForOtherHosts(self) -> None:
+        section = _section(self.spec, "6a. Git guard")
+        for token in ("may read the same file", "role `worker` and role `orchestrator`", "`.forge/runtime/meta/git-guard-rules.json`"):
+            self.assertIn(token, section)
 
     def test_Spec_OpenItems_DropsForgeStaysUnchanged(self) -> None:
         self.assertNotIn("Forge stays unchanged", self.spec)
-        self.assertIn("set `run.worker: host` instead of overriding the mode's `worker dispatch` section", self.spec)
+        self.assertIn("instead of overriding the mode's `worker dispatch` section", self.spec)
 
     def test_ValidationCase18_ExpectsBlockedByEnvironment_AndIsInRegressionList(self) -> None:
-        self.assertIn(
-            "| 18 | `run.worker: host` and no host dispatch tool available | `blocked_by_environment`; no worker started; nothing committed |",
-            self.cases,
-        )
-        self.assertIn("any stop scenario (2 to 8, 11, 12, 18, 24)", self.cases)
+        row = next(line for line in self.cases.splitlines() if line.startswith("| 18 |"))
+        for token in ("`run.worker: host`", "no host dispatch tool", "`blocked_by_environment`", "nothing committed"):
+            self.assertIn(token, row)
+        self.assertRegex(self.cases, r"any stop scenario \([^)]*\b18\b")
 
     def test_ReleaseNotes_ListHostWorker(self) -> None:
         notes = (ROOT / "docs/release-notes.md").read_text(encoding="utf-8")

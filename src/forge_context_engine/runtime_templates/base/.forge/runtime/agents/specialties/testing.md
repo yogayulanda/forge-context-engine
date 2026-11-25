@@ -7,7 +7,7 @@ confidence: high
 source: human
 evidence: [{ type: doc, ref: ../../modes/orchestrate.md }]
 owner: forge-context-engine
-updated: 2026-11-10
+updated: 2026-11-25
 applies_to: [tester, reviewer]
 applies_when: always for the tester; for the reviewer when a test report exists
 ---
@@ -43,3 +43,4 @@ When a value is still a `<placeholder>`, find it in the Makefile, package script
 - Negative scenarios exist for each high-risk area in the SDD.
 - No existing test was weakened, skipped, or deleted.
 - The full suite ran; a skipped full suite is a finding.
+- Assert key tokens, not whole sentences or prose rows.

@@ -13,6 +13,7 @@ Added (proposed, `specs/orchestrate.md`):
 - Optional host status and question tools for `forge-orchestrate`: stage IDs, host states (`progress`, `waiting_for_human`, `blocked`, `done`), one question at a time with 2 to 4 options; without them the run stops and waits as before.
 - Worker handoff for `forge-orchestrate`: a `FORGE_HANDOFF` envelope for `cli` and `host` dispatch and a `FORGE_RESULT` block every worker ends with. A worker result without a valid block counts as `blocked`, so `cli` and `host` workers must end with the block.
 - Resume in place for `forge-orchestrate`: after a lost session, re-invoking with the run's ECP continues on the feature branch when the branch, the changed paths, and the orchestration report match; otherwise the dirty-tree stop applies. Test and review always re-run before publish.
+- `forge-orchestrate` preflight: a host that is not Claude Code should enforce git guard role `orchestrator` from `.forge/runtime/meta/git-guard-rules.json`; when the orchestrator cannot confirm it, the report `Note` says `orchestrator git guard not confirmed` (advisory, not a stop). The SDD path is `.forge/generated/plans/YYYY-MM-DD-<slug>-plan.md` with a `plan` mode status in planner, mode, and spec.
 
 Batched execution from real usage (go-core internal release, 2026-10): per-workstream ECP approval took 4-5 round trips per batch; grouping and one approval per round cut about 15 review cycles to 2. No new modes, statuses, or artifact types.
 
