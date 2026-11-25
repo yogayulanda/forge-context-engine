@@ -41,6 +41,8 @@
 | 20 | Host provides a question tool; planner returns 3 clarification questions | 3 sequential question calls in plan order, each with 2 to 4 option labels and exactly one recommended label; the SDD is written after the third answer; status never shows `awaiting_clarification` |
 | 21 | Host question tool times out on the second of 3 questions | Status report `waiting_for_human` with stage `clarify` and the open question; status `awaiting_clarification`; answer 1 listed in the report `Note`; turn ends; nothing committed |
 | 22 | High-risk SDD, host question tool; human answers with free text instead of `Approve` | `awaiting_sdd_approval`; no ECP; answer in report `Note`; status report `waiting_for_human` with stage `sdd` |
+| 23 | Session lost after `[execute] Execute` is `✓`; tree has only ECP-scope changes; re-invoked with the ECP | Resumes in place at the diff risk check; new tester and new reviewer in fresh context; fix-round counter unchanged; report shows `Resume in place`; no new report file |
+| 24 | Session lost after Execute; tree has a changed file outside the ECP `Files likely to change` and outside the test paths; re-invoked with the ECP | `stopped` for a dirty tree at start; no worker started; nothing committed |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -57,6 +59,7 @@
 - Writing questions with generic wording instead of real file, field, or endpoint names.
 - Staging artifacts with `git add -A`, a directory, or a glob, or committing when the staged set differs from the expected set.
 - Treating a worker result, free text at Gate 1, or a question-tool timeout as Gate 1 approval.
+- Resuming in place with a `✗` step, a path outside ECP scope, or on another branch, or publishing after a resume without a new tester and reviewer.
 
 ## 4. Evidence Shape Required
 
@@ -66,4 +69,4 @@
 
 ## 5. Regression Signals
 
-This case regresses if any stop scenario (2 to 8, 11, 12, 18) ends with a commit or a pushed branch, if an MR/PR lacks the run's SDD/ECP/report artifacts, or scenario 1 needs human input before the MR/PR.
+This case regresses if any stop scenario (2 to 8, 11, 12, 18, 24) ends with a commit or a pushed branch, if an MR/PR lacks the run's SDD/ECP/report artifacts, or scenario 1 needs human input before the MR/PR.

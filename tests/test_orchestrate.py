@@ -373,6 +373,54 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
             self.assertEqual((ROOT / engine_rel).read_text(encoding="utf-8"), templates[template_rel], engine_rel)
 
 
+class OrchestrateResumeInPlaceTests(unittest.TestCase):
+    """Resume in place after a lost session (SDD 2026-11-24-orchestrate-resume-in-place)."""
+
+    def setUp(self) -> None:
+        self.modes = {
+            "template": iter_template_files("base")[MODE],
+            "runtime": (ROOT / "runtime" / MODE).read_text(encoding="utf-8"),
+        }
+        self.spec = (ROOT / "specs/orchestrate.md").read_text(encoding="utf-8")
+        self.cases = (ROOT / "validation-cases/orchestrate-gates.md").read_text(encoding="utf-8")
+
+    def test_mode_step_1a_conditions_resume_point_and_counter(self) -> None:
+        for name, mode in self.modes.items():
+            step = mode.split("1a. Resume in place:", 1)[1].split("\n2. ", 1)[0]
+            for phrase in (
+                "names an ECP and the working tree is dirty",
+                "the current branch is its `Run` branch",
+                "`[ecp] Gate 2` step is `✓` and no step is `✗`",
+                "in the ECP `Files likely to change`, a report `Artifacts` table path",
+                "path under `.forge/generated/` whose file name starts with the ECP's `<YYYY-MM-DD>-<slug>`",
+                "test paths in the `testing` overlay while a `[test]` step",
+                "Re-run execute only when the execution report is missing (per the report `Artifacts` table)",
+                "the last `[execute]` step is `✱`, with the ECP, plus the last review findings if any, as the fix scope (the same round, not a new one)",
+                "Every path in the report `Artifacts` table, not only those in `git status --porcelain`, must be under `.forge/generated/`",
+                "a new reviewer in fresh context; never resume at Publish",
+                "the counter never resets and the limit stays 2",
+                "Resume in place (from <step>; fix rounds used: <n>)",
+                "If any condition fails, stop for a dirty tree.",
+            ):
+                self.assertIn(phrase, step, name)
+            stops = mode.split("## stop conditions", 1)[1].split("\n## ", 1)[0]
+            self.assertIn("dirty at start and resume in place (step 1a) does not apply", stops, name)
+            self.assertIn("Session lost mid-run", mode.split("## next mode transitions", 1)[1], name)
+            self.assertIn("not resumable workflow state", mode, name)
+            self.assertIn("a resume in place (step 1a), which reads only", mode, name)
+
+    def test_spec_and_validation_cases_match_mode(self) -> None:
+        self.assertIn("resume in place (section 9a) does not apply", self.spec)
+        section = self.spec.split("## 9a. Resume in place", 1)[1].split("\n## ", 1)[0]
+        for phrase in ("never at Publish", "never resets", "the run stops for a dirty tree"):
+            self.assertIn(phrase, section)
+        self.assertNotRegex(self.spec.lower(), r"state file|\.forge/state|session\.json")
+        row = next(line for line in self.cases.splitlines() if line.startswith("| 24 |"))
+        self.assertIn("`stopped` for a dirty tree at start", row)
+        self.assertIn("nothing committed", row)
+        self.assertIn("any stop scenario (2 to 8, 11, 12, 18, 24)", self.cases)
+
+
 class OrchestrateHostInteractionTests(unittest.TestCase):
     """Optional host status-report and question tools (SDD 2026-11-24-host-status-questions)."""
 
@@ -510,7 +558,7 @@ class OrchestrateHostInteractionTests(unittest.TestCase):
             rejected,
         )
         self.assertIn("Treating a worker result, free text at Gate 1, or a question-tool timeout as Gate 1 approval.", rejected)
-        self.assertIn("any stop scenario (2 to 8, 11, 12, 18)", cases)
+        self.assertIn("any stop scenario (2 to 8, 11, 12, 18, 24)", cases)
         notes = (ROOT / "docs/release-notes.md").read_text(encoding="utf-8")
         self.assertIn("host states (`progress`, `waiting_for_human`, `blocked`, `done`)", notes)
 

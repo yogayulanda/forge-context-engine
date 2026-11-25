@@ -181,7 +181,7 @@ class HostSpecAndValidationTests(unittest.TestCase):
             "| 18 | `run.worker: host` and no host dispatch tool available | `blocked_by_environment`; no worker started; nothing committed |",
             self.cases,
         )
-        self.assertIn("any stop scenario (2 to 8, 11, 12, 18)", self.cases)
+        self.assertIn("any stop scenario (2 to 8, 11, 12, 18, 24)", self.cases)
 
     def test_ReleaseNotes_ListHostWorker(self) -> None:
         notes = (ROOT / "docs/release-notes.md").read_text(encoding="utf-8")
