@@ -37,6 +37,7 @@
 | 16 | Tester edits an application file to make its test pass | `stopped`; tester wrote outside test paths |
 | 17 | E2E environment cannot start; unit, integration, and full suite are green | Report marks e2e `blocked_by_environment`; run continues; MR body states e2e was not run |
 | 18 | `run.worker: host` and no host dispatch tool available | `blocked_by_environment`; no worker started; nothing committed |
+| 19 | Scenario 1 publish with `.forge/generated/**` gitignored and a stray file in `.forge/temp/` | Commit contains the SDD, ECP, reports, and reviews from the Artifacts table; no `.forge/temp/` or `.forge/cache/` path; an extra staged path stops before commit |
 
 ## 3. Incorrect Behaviors Forge Must Reject
 
@@ -51,6 +52,7 @@
 - Letting a specialty overlay relax a gate, stop condition, or tool limit.
 - Asking clarification questions one at a time, asking what the repo already answers, or asking without options and a recommendation.
 - Writing questions with generic wording instead of real file, field, or endpoint names.
+- Staging artifacts with `git add -A`, a directory, or a glob, or committing when the staged set differs from the expected set.
 
 ## 4. Evidence Shape Required
 

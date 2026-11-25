@@ -164,6 +164,19 @@ class OrchestrateContractTests(unittest.TestCase):
         self.assertIn("unmasked secret or production identifier is a stop", self.mode)
         self.assertIn("is CRITICAL", self.templates[".forge/runtime/agents/forge-reviewer.md"])
 
+    def test_publish_force_adds_listed_artifacts_with_preflight(self) -> None:
+        publish = self.mode.split("9. Publish:", 1)[1].split("10. Report:", 1)[0]
+        for phrase in (
+            "git add -f -- <path>...",
+            "report `Artifacts` table",
+            "Never `git add -f` a directory or a glob",
+            "git diff --cached --name-only",
+            "any extra or missing path is a stop",
+        ):
+            self.assertIn(phrase, publish)
+        stops = self.mode.split("## stop conditions", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("The staged files differ from ECP-scope files", stops)
+
     def test_tester_is_independent_and_scenario_driven(self) -> None:
         tester = self.templates[".forge/runtime/agents/forge-tester.md"]
         for phrase in (
@@ -276,6 +289,36 @@ class OrchestrateSourceSyncTests(unittest.TestCase):
         for engine_rel, template_rel in self.PAIRS:
             self.assertEqual((ROOT / engine_rel).read_text(encoding="utf-8"), templates[template_rel], engine_rel)
 
+
+
+class PublishForceAddSpecAndValidationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.spec = (ROOT / "specs/orchestrate.md").read_text(encoding="utf-8")
+        self.cases = (ROOT / "validation-cases/orchestrate-gates.md").read_text(encoding="utf-8")
+
+    def test_spec_stop_list_has_staged_set_mismatch(self) -> None:
+        stops = self.spec.split("## 6. Stop conditions", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("- the staged files differ from the ECP-scope files", stops)
+
+    def test_spec_publication_force_adds_explicit_paths_and_keeps_ignore(self) -> None:
+        publication = self.spec.split("## 7. Publication", 1)[1].split("\n## ", 1)[0]
+        for phrase in (
+            "git add -f -- <path>...",
+            "`Artifacts` table",
+            "Never `git add -f` a directory or a glob",
+            "never stage `.forge/temp/` or `.forge/cache/`",
+            "git diff --cached --name-only",
+            "keeps `/generated/**` ignored",
+            "No force-push.",
+        ):
+            self.assertIn(phrase, publication)
+
+    def test_validation_case_19_stops_on_extra_staged_path(self) -> None:
+        row = next(line for line in self.cases.splitlines() if line.startswith("| 19 |"))
+        for phrase in ("no `.forge/temp/` or `.forge/cache/` path", "an extra staged path stops before commit"):
+            self.assertIn(phrase, row)
+        rejected = self.cases.split("## 3.", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("Staging artifacts with `git add -A`, a directory, or a glob", rejected)
 
 if __name__ == "__main__":
     unittest.main()

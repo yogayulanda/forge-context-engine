@@ -18,6 +18,7 @@ Fixed:
 - `forge update` no longer stops with a conflict when a wrapper (`AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`) has user content outside the Forge-managed block; only the block is refreshed, as specified.
 - Adopting a previous-generation Forge wrapper without managed-block markers now archives and replaces it instead of appending a second copy, so the next `forge update` stays conflict-free.
 - `scripts/validate_forge_cli.py` realigned with the current CLI: version read from `version.py`, v2 numbered context, `.forge/runtime/` paths, `codex,copilot` default tools, `.github/skills/`, and replace semantics for `--tools`.
+- `forge-orchestrate` publish (step 9) now force-adds this run's artifacts by explicit path from the report `Artifacts` table, so the SDD, ECP, reports, and reviews reach the MR/PR even though `.forge/generated/**` is gitignored; a staged-set preflight stops the commit on any extra or missing path.
 
 - `plan`: an SDD is closed against the code before `ready_for_implementation`, with all decisions needed in one list; Implementation Split groups work into the fewest reviewable batches.
 - `implementation`: may produce one ECP per remaining batch in one response, with recurring rules and the non-blocking details execute may decide.
